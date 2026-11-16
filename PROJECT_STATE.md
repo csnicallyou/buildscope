@@ -12,7 +12,7 @@
 
 Фактически проверено: typecheck, lint, 71 unit, production build, все 34 E2E в Chromium. Реальные касания проверяют выбор в наряде и накопление сборок, тесты — сохранность единиц/неизвестных, дубли и Excel-экспорт. Осмотрены workspace-09, light/mobile, work-order-map, анимации desktop/mobile. После более крупного кадрирования допуск сравнения возвращённого Canvas 96x96 — средняя RGB-разница <6 (2,4% диапазона); сохранность камеры/выбранного объёма проверяется. Основной бандл 1,590 МБ / gzip 455 КБ, прежние предупреждения chunk/PURE остаются. Облачный CI ранее блокировался биллингом GitHub; это результаты локальных проверок.
 
-Последний предыдущий checkpoint: 184f3a8 (код 0.8), 4266db1 (передача). Текущая ветка codex/work-order-model-stage. Публикация 0.9 и проверенный commit будут записаны отдельным checkpoint после отправки. Репозиторий csnicallyou/buildscope PRIVATE повторно подтверждён; исходные PDF/XLSX/персональные записи не входят в коммит или Sites.
+Checkpoint 0.9: проверенный код 0804aa7, ветка codex/work-order-model-stage отправлена и интегрирована fast-forward в main/origin. Sites succeeded: appgdep_6afb20d1e0608191bb3894991e5948df; source 593aa8b5f50513e1aad2224861c00f590660c842; version appgprj_6afaa04a49d081918a3a150eb28b57f0~appgver_9eba0f20ea908191aa3fb605e4cba92b. URL https://buildscope-kzh-mobile.csnicallyou.chatgpt.site, доступ owner-only custom подтверждён, аудитория не менялась. Репозиторий csnicallyou/buildscope PRIVATE повторно подтверждён; исходные PDF/XLSX/персональные записи не входят в коммит или Sites. Предыдущий checkpoint: 184f3a8 (код 0.8), 4266db1 (передача).
 
 Дата: 2026-11-16. Этап: реконструкция предоставленного комплекта 10-25-М-КЖ1.5 завершена в пределах явно описанной геометрии и схем.
 
