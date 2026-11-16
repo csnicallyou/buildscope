@@ -228,7 +228,7 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.3</span>
+          <span>0.3.1</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -916,7 +916,12 @@ export default function App() {
                 <dl>
                   <dt>Материал</dt>
                   <dd>{selected.material}</dd>
-                  <dt>Объём</dt>
+                  <dt>
+                    {selected.material === "Щебень" &&
+                    selected.confidence === "assumed"
+                      ? "Объём (расчётный)"
+                      : "Объём"}
+                  </dt>
                   <dd data-testid="element-volume">
                     {quantitiesExcluded
                       ? "Не определён"

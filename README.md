@@ -1,4 +1,4 @@
-# BuildScope 0.3
+# BuildScope 0.3.1
 
 Локальный инженерный 3D-просмотрщик на React / TypeScript / Three.js. Windows 10/11, без Docker, Blender и платных API.
 
@@ -65,3 +65,5 @@ npm.cmd run e2e
 Обновление: остановить сервер, сохранить свои JSON и изменения кода, затем `git switch main`, `git pull --ff-only`, `npm ci`, `./start.ps1`. При конфликте не применять reset --hard.
 
 Документы: [ARCHITECTURE](ARCHITECTURE.md), [DATA_MODEL](DATA_MODEL.md), [DEVELOPMENT](DEVELOPMENT.md), [AGENTS](AGENTS.md), [HANDOFF](HANDOFF.md).
+
+Щебень под Фм1/3/4: расчёт по телу с откосами, при одинаковых выпусках со всех сторон (явное допущение). Фм4 — 3,376 м³ на экземпляр. Общий расчёт расходится с ведомостью PDF; это зафиксировано в источниках. Под Фм2 полный контур щебня пока не определён.

@@ -161,9 +161,11 @@ export function materialAmounts(
       excluded ? null : elementQuantities(e).volume,
       excluded
         ? "Контур / тело не определены"
-        : e.evidence?.representation === "nominal"
-          ? "Номинальная геометрия"
-          : "Геометрия",
+        : e.material === "Щебень" && e.confidence === "assumed"
+          ? "Расчёт по разрезу · одинаковые откосы со всех сторон"
+          : e.evidence?.representation === "nominal"
+            ? "Номинальная геометрия"
+            : "Геометрия",
     );
     for (const r of includeRebar ? (e.evidence?.reinforcement ?? []) : [])
       add(

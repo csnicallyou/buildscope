@@ -112,7 +112,7 @@ export function ObjectInspector({
           )}
           <dt>Тел и слоёв</dt>
           <dd>{object.members.length}</dd>
-          <dt>Объём определённых тел</dt>
+          <dt>Объём тел модели</dt>
           <dd>
             {knownVolumes.length
               ? `${f(knownVolumes.reduce((sum, r) => sum + r.value, 0))} м³`

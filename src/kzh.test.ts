@@ -15,6 +15,53 @@ import { toSourceCSV } from "./model";
 const count = (list: Element[], mark: string) =>
   list.filter((e) => e.mark === mark).length;
 describe("КЖ1.5: сверка с независимыми спецификациями", () => {
+  it("щебень Фм1/3/4 считается по телу с откосами, допущение и расхождение с ведомостью явные", () => {
+    for (const variant of ["plan", "sections"] as const) {
+      const p = parseProject(JSON.stringify(createKzh("canopy", variant)));
+      const gravel = p.elements.filter((e) => e.mark === "ЩП");
+      expect(gravel).toHaveLength(17);
+      const expected: Record<string, number> = {
+        Фм1: 2.532,
+        Фм3: 3.44985,
+        Фм4: 3.37575,
+      };
+      for (const e of gravel) {
+        const type = p.elements.find(
+          (parent) => parent.id === e.parentId,
+        )!.mark;
+        if (type === "Фм2") {
+          expect(e.evidence!.representation).toBe("envelope");
+          continue;
+        }
+        expect(e.shape!.kind).toBe("solid");
+        expect(validateShape(e.shape!)).toBeNull();
+        expect(e.confidence).toBe("assumed");
+        expect(e.evidence!.representation).toBe("nominal");
+        expect(elementQuantities(e).volume).toBeCloseTo(expected[type], 8);
+        expect(e.evidence!.notes.join(" ")).toContain("одинаковые откосы");
+        const bounds = elementBounds(e);
+        expect(bounds.max[1] - bounds.min[1]).toBeCloseTo(0.3);
+        if (type === "Фм4") {
+          const solid = e.shape!;
+          if (solid.kind !== "solid") throw Error("Expected solid");
+          expect(
+            Math.max(...solid.vertices.slice(0, 4).map((v) => v[0])) * 2,
+          ).toBeCloseTo(3.05);
+          expect(
+            Math.max(...solid.vertices.slice(4).map((v) => v[0])) * 2,
+          ).toBeCloseTo(3.65);
+        }
+      }
+      expect(totals(gravel)["Щебень"]).toBeCloseTo(44.80485, 8);
+      expect(
+        p.document!.materials.find((r) => r.name === "Щебёночная подготовка")!
+          .value,
+      ).toBe(39.8);
+      expect(
+        p.document!.issues.find((i) => i.id === "gravel-quantity")?.detail,
+      ).toContain("44,80485");
+    }
+  });
   it("павильон: все ФБС, ФЛ, плиты; повторные подписи не удваивают блоки", () => {
     const p = createKzh("pavilion");
     expect(parseProject(JSON.stringify(p))).toEqual(p);

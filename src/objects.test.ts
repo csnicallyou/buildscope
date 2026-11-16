@@ -40,7 +40,8 @@ describe("Объект и его части", () => {
       339.4,
     );
     expect(rows.find((r) => r.name === "Анкеры M24")?.value).toBe(8);
-    expect(rows.find((r) => r.name === "Щебень")?.unknown).toBe(1);
+    expect(rows.find((r) => r.name === "Щебень")?.value).toBeCloseTo(2.532);
+    expect(rows.find((r) => r.name === "Щебень")?.unknown).toBe(0);
     expect(materialAmounts([o.root], false)).toHaveLength(1);
     expect(objectItems(o).filter((i) => i.kind === "steel")).toHaveLength(2);
   });

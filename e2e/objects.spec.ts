@@ -19,7 +19,8 @@ for (const mobile of [false, true])
     await expect(materials).toContainText("0,676 м³");
     await expect(materials).toContainText("339,4 кг");
     await expect(materials).toContainText("Щебень");
-    await expect(materials).toContainText("Не определено");
+    await expect(materials).toContainText("2,532 м³");
+    await expect(materials).toContainText("одинаковые откосы");
     if (!mobile) {
       await page
         .getByRole("button", { name: "Изолировать", exact: true })
