@@ -1,4 +1,4 @@
-# BuildScope 0.7
+# BuildScope 0.8
 
 Локальный инженерный 3D-просмотрщик на React / TypeScript / Three.js. Windows 10/11, без Docker, Blender и платных API.
 
