@@ -150,6 +150,9 @@ function Part({ item }: { item: SceneItem }) {
     () => (s.section ? [new Plane(new Vector3(-1, 0, 0), s.cut)] : []),
     [s.section, s.cut],
   );
+  const inCalculation =
+    s.calculatorOpen &&
+    s.calculatedObjects.includes(objectFor(s.project, e.id)?.id ?? e.id);
   const highlighted =
     s.selected === item.id ||
     (!s.openedObject && s.selected === objectFor(s.project, e.id)?.id);
@@ -178,7 +181,9 @@ function Part({ item }: { item: SceneItem }) {
             onUpdate={(material) => {
               material.needsUpdate = true;
             }}
-            color={highlighted ? "#f4b85d" : e.color}
+            color={
+              inCalculation ? "#5ccbb7" : highlighted ? "#f4b85d" : e.color
+            }
             roughness={0.82}
             metalness={e.material === "Сталь" ? 0.35 : 0}
             transparent={s.opacity < 1}
@@ -188,14 +193,21 @@ function Part({ item }: { item: SceneItem }) {
             clippingPlanes={planes}
           />
           {!s.section && !s.wire && (
-            <Edges threshold={20} color={highlighted ? "#fff0c5" : "#3e5558"} />
+            <Edges
+              threshold={20}
+              color={
+                inCalculation ? "#c8fff0" : highlighted ? "#fff0c5" : "#3e5558"
+              }
+            />
           )}
         </mesh>
       ))}
       {steel && (
         <mesh geometry={steel} onClick={click}>
           <meshStandardMaterial
-            color={highlighted ? "#ffcf76" : "#dba45b"}
+            color={
+              inCalculation ? "#c8fff0" : highlighted ? "#ffcf76" : "#dba45b"
+            }
             roughness={0.5}
             metalness={0.3}
             clippingPlanes={planes}

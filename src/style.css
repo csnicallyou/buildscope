@@ -521,6 +521,7 @@ details summary::-webkit-details-marker {
 }
 .view-controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 18px;
   padding: 8px 19px 13px;
@@ -954,7 +955,12 @@ tfoot {
   }
   .model-footer {
     font-size: 9px;
-    gap: 8px;
+    gap: 6px 8px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 38px;
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
 }
 
@@ -998,6 +1004,86 @@ tfoot {
   border-bottom: 1px solid var(--border);
   font-size: 12px;
   overflow-wrap: anywhere;
+}
+.calculator-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 36px;
+}
+.calculator-toggle span {
+  border-radius: 12px;
+  padding: 2px 6px;
+  background: var(--accent-bg);
+}
+.calculation-check {
+  padding: 10px 4px 10px 9px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.calculation-check input {
+  width: 17px;
+  height: 17px;
+  accent-color: #5ccbb7;
+  cursor: pointer;
+}
+.tree-row.in-calculation {
+  background: #5ccbb720;
+  box-shadow: inset 3px 0 #5ccbb7;
+}
+.selection-calculator .category {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.selection-calculator .property-section {
+  display: block;
+  width: 100%;
+}
+.calculator-actions button {
+  margin: 0 6px 9px 0;
+  min-height: 36px;
+}
+.calculator-actions small {
+  display: block;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.calculation-object {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.calculation-object span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.calculation-object small {
+  display: block;
+  color: var(--muted);
+  padding-top: 5px;
+}
+.calculation-object button {
+  padding: 8px;
+  min-width: 36px;
+  min-height: 36px;
+}
+.calculation-caution {
+  color: #d6ad66;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.calculation-hint {
+  display: block;
+  color: #90e1cd;
+  font-size: 11px;
+  margin-top: 7px;
+  max-width: 80%;
 }
 .material-card strong {
   font-size: 16px;

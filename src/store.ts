@@ -5,6 +5,8 @@ type State = {
   project: Project;
   selected: string | null;
   openedObject: string | null;
+  calculatorOpen: boolean;
+  calculatedObjects: string[];
   hidden: string[];
   isolated: string | null;
   offsets: Record<string, Vec3>;
@@ -30,6 +32,8 @@ export const useStore = create<State>((set, get) => ({
   project: demo(),
   selected: null,
   openedObject: null,
+  calculatorOpen: false,
+  calculatedObjects: [],
   hidden: [],
   isolated: null,
   offsets: {},
@@ -48,6 +52,16 @@ export const useStore = create<State>((set, get) => ({
   set,
   select: (id) => {
     const s = get();
+    if (s.calculatorOpen && !s.openedObject) {
+      const root = objectFor(s.project, id)?.id;
+      if (root)
+        set({
+          calculatedObjects: s.calculatedObjects.includes(root)
+            ? s.calculatedObjects.filter((x) => x !== root)
+            : [...s.calculatedObjects, root],
+        });
+      return;
+    }
     set({
       selected:
         !s.openedObject && hasObjects(s.project)
@@ -58,6 +72,7 @@ export const useStore = create<State>((set, get) => ({
   openObject: (id) =>
     set((s) => ({
       openedObject: id,
+      calculatorOpen: false,
       selected: id ? null : s.openedObject,
       hidden: [],
       isolated: null,
@@ -75,6 +90,8 @@ export const useStore = create<State>((set, get) => ({
       project,
       selected: null,
       openedObject: null,
+      calculatorOpen: false,
+      calculatedObjects: [],
       hidden: [],
       isolated: null,
       offsets: {},

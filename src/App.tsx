@@ -18,8 +18,10 @@ import {
   Maximize,
   Move3D,
   FileBox,
+  Calculator,
 } from "lucide-react";
 import Viewer from "./Viewer";
+import SelectionCalculator from "./SelectionCalculator";
 import { useStore } from "./store";
 import {
   demo,
@@ -228,7 +230,7 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.3.1</span>
+          <span>0.4</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -357,7 +359,13 @@ export default function App() {
       <div className="workspace">
         <aside className="tree-panel">
           <div className="panel-heading">
-            <span>{opened ? "Части объекта" : "Конструкции"}</span>
+            <span>
+              {s.calculatorOpen
+                ? "Объекты для расчёта"
+                : opened
+                  ? "Части объекта"
+                  : "Конструкции"}
+            </span>
             <span className="muted">{treeItems.length}</span>
           </div>
           <label className="search">
@@ -401,8 +409,18 @@ export default function App() {
                       return (
                         <div
                           key={item.id}
-                          className={`tree-row ${s.selected === item.id ? "selected" : ""} ${s.hidden.includes(item.id) ? "hidden-row" : ""}`}
+                          className={`tree-row ${s.calculatorOpen && s.calculatedObjects.includes(item.id) ? "in-calculation" : ""} ${s.selected === item.id ? "selected" : ""} ${s.hidden.includes(item.id) ? "hidden-row" : ""}`}
                         >
+                          {s.calculatorOpen && !opened && (
+                            <label className="calculation-check">
+                              <input
+                                type="checkbox"
+                                aria-label={`В расчёт ${item.label}`}
+                                checked={s.calculatedObjects.includes(item.id)}
+                                onChange={() => s.select(item.id)}
+                              />
+                            </label>
+                          )}
                           <button
                             className="element-button"
                             onClick={() => {
@@ -604,6 +622,53 @@ export default function App() {
             </div>
           </div>
           <div className="view-controls">
+            {!opened && hasObjects(s.project) && (
+              <button
+                className={
+                  s.calculatorOpen
+                    ? "active calculator-toggle"
+                    : "calculator-toggle"
+                }
+                aria-label="Калькулятор материалов"
+                aria-pressed={s.calculatorOpen}
+                onClick={() => {
+                  s.set({
+                    calculatorOpen: !s.calculatorOpen,
+                    measure: false,
+                    points: [],
+                    selected: null,
+                    calculatedObjects:
+                      !s.calculatorOpen && selectedObject
+                        ? [
+                            ...new Set([
+                              ...s.calculatedObjects,
+                              selectedObject.id,
+                            ]),
+                          ]
+                        : s.calculatedObjects,
+                  });
+                  setTab("model");
+                }}
+              >
+                <Calculator size={16} />
+                Калькулятор
+                {s.calculatedObjects.length > 0 && (
+                  <span>{s.calculatedObjects.length}</span>
+                )}
+              </button>
+            )}
+            {s.calculatorOpen && (
+              <button
+                className="calculator-result-link"
+                onClick={() =>
+                  document
+                    .querySelector(".inspector")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+              >
+                К итогам ↓
+              </button>
+            )}
             <label>
               <input
                 type="checkbox"
@@ -661,6 +726,12 @@ export default function App() {
                 <Viewer />
                 <div className="viewport-heading">
                   <span>{opened ? opened.root.name : s.project.name}</span>
+                  {s.calculatorOpen && (
+                    <strong className="calculation-hint">
+                      В расчёте: {s.calculatedObjects.length} · нажимайте
+                      объекты для выбора
+                    </strong>
+                  )}
                   <small>
                     {s.ortho ? "Ортографическая" : "Перспективная"} проекция ·
                     метры
@@ -819,7 +890,8 @@ export default function App() {
               / {items.length} {opened ? "частей" : "элементов"}
             </span>
             <span title="Итог геометрии, включая номинальные тела. Схемы исключены.">
-              Σ геом. {hasQuantities ? fmt(volume) : "—"} м³
+              {s.calculatorOpen ? "Вся модель:" : "Σ геом."}{" "}
+              {hasQuantities ? fmt(volume) : "—"} м³
             </span>
             <button
               onClick={() => {
@@ -836,14 +908,18 @@ export default function App() {
         </main>
         <aside className="inspector">
           <div className="panel-heading">
-            {selectedObject
-              ? "Свойства объекта"
-              : opened
-                ? "Свойства части"
-                : "Свойства элемента"}
+            {s.calculatorOpen
+              ? "Калькулятор материалов"
+              : selectedObject
+                ? "Свойства объекта"
+                : opened
+                  ? "Свойства части"
+                  : "Свойства элемента"}
             <Box size={16} />
           </div>
-          {selectedObject ? (
+          {s.calculatorOpen ? (
+            <SelectionCalculator />
+          ) : selectedObject ? (
             <ObjectInspector
               object={selectedObject}
               onOpen={() => {
