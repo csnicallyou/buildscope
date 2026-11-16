@@ -2,6 +2,8 @@
 
 Дата: 2026-11-16. MVP 0.1 реализован. Прочитать AGENTS, PROJECT_STATE и DATA_MODEL.
 
+Проверенный код: **d99ce57** — feat: finalize verified Windows MVP and engineering handoff. Код интегрирован в main; следующий коммит обновляет только документы. Локально: typecheck/lint/build успешно, 14 unit и 5 E2E успешно, npm ci воспроизводится, npm audit 0 уязвимостей. start.ps1 проверен реальным запуском с HTTP 200. Скриншоты сохранены в docs/screenshots.
+
 Последнее: viewer, платформа, количества, DXF, JSON/CSV/GLB, проверки, Windows launcher, документы. Все демо-размеры условные.
 
 ## Следующая задача
