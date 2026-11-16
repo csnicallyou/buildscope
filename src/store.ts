@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import { demo, type Project, type Vec3 } from "./model";
+import { hasObjects, objectFor } from "./objects";
 type State = {
   project: Project;
   selected: string | null;
+  openedObject: string | null;
   hidden: string[];
   isolated: string | null;
   offsets: Record<string, Vec3>;
@@ -21,10 +23,13 @@ type State = {
   set: (patch: Partial<Omit<State, "set" | "load" | "reset">>) => void;
   load: (p: Project) => void;
   reset: () => void;
+  select: (id: string) => void;
+  openObject: (id: string | null) => void;
 };
-export const useStore = create<State>((set) => ({
+export const useStore = create<State>((set, get) => ({
   project: demo(),
   selected: null,
+  openedObject: null,
   hidden: [],
   isolated: null,
   offsets: {},
@@ -41,10 +46,35 @@ export const useStore = create<State>((set) => ({
   cameraRevision: 0,
   rebar: false,
   set,
+  select: (id) => {
+    const s = get();
+    set({
+      selected:
+        !s.openedObject && hasObjects(s.project)
+          ? (objectFor(s.project, id)?.id ?? id)
+          : id,
+    });
+  },
+  openObject: (id) =>
+    set((s) => ({
+      openedObject: id,
+      selected: id ? null : s.openedObject,
+      hidden: [],
+      isolated: null,
+      offsets: {},
+      exploded: false,
+      measure: false,
+      points: [],
+      section: false,
+      rebar: !!id,
+      opacity: id ? 0.35 : 1,
+      cameraRevision: s.cameraRevision + 1,
+    })),
   load: (project) =>
     set({
       project,
       selected: null,
+      openedObject: null,
       hidden: [],
       isolated: null,
       offsets: {},

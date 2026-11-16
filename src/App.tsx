@@ -25,7 +25,6 @@ import {
   demo,
   parseProject,
   elementQuantities,
-  elementBounds,
   totals,
   toCSV,
   toSourceCSV,
@@ -36,6 +35,15 @@ import { dxfImporter, type Drawing } from "./importers";
 import { createKzh, type Assembly } from "./kzh";
 import { ReinforcementPanel, SourcePanel } from "./DocumentPanels";
 import { createKzhDetails } from "./details";
+import {
+  hasObjects,
+  modelObjects,
+  objectFor,
+  sceneItems,
+  itemBounds,
+  visibleItems,
+} from "./objects";
+import { Materials, ObjectInspector, SteelInspector } from "./ObjectInspector";
 const fmt = (n: number) =>
   n.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
 const confidence = {
@@ -109,14 +117,51 @@ export default function App() {
   const [length, setLength] = useState(36);
   const file = useRef<HTMLInputElement>(null),
     dxf = useRef<HTMLInputElement>(null);
-  const selected = s.project.elements.find((e) => e.id === s.selected);
+  const objects = useMemo(() => modelObjects(s.project), [s.project]);
+  const opened = objects.find((o) => o.id === s.openedObject);
+  const items = useMemo(
+    () => sceneItems(s.project, s.openedObject),
+    [s.project, s.openedObject],
+  );
+  const selectedItem = items.find((item) => item.id === s.selected);
+  const selected = selectedItem?.element;
+  const selectedObject =
+    !opened && hasObjects(s.project) && selected
+      ? objectFor(s.project, selected.id)
+      : null;
+  const treeItems = opened
+    ? items
+    : hasObjects(s.project)
+      ? objects.map((o) => ({
+          id: o.id,
+          element: o.root,
+          label: o.root.name,
+          kind: "body" as const,
+          layer: 0,
+        }))
+      : items;
+  const scopeElements = opened?.members ?? s.project.elements;
+  const scopeProject = opened
+    ? {
+        ...s.project,
+        name: opened.root.name,
+        elements: scopeElements,
+        document: s.project.document
+          ? {
+              ...s.project.document,
+              materials: [],
+              additionalReinforcement: [],
+            }
+          : undefined,
+      }
+    : s.project;
   const q = useMemo(
     () => (selected ? elementQuantities(selected) : null),
     [selected],
   );
-  const summary = useMemo(() => totals(s.project.elements), [s.project]);
+  const summary = useMemo(() => totals(scopeElements), [scopeElements]);
   const hasQuantities = Object.keys(summary).length > 0 || !s.project.document;
-  const selectedBounds = selected ? elementBounds(selected) : null;
+  const selectedBounds = selectedItem ? itemBounds(selectedItem) : null;
   const quantitiesExcluded =
     selected?.evidence?.representation === "diagram" ||
     selected?.evidence?.representation === "envelope";
@@ -138,9 +183,11 @@ export default function App() {
           )
         ? "Есть непроверенные данные"
         : "Проверяйте источники";
-  const groups = [...new Set(s.project.elements.map((e) => e.category))];
+  const groups = [...new Set(treeItems.map((item) => item.element.category))];
   const volume = Object.values(summary).reduce((a, b) => a + b, 0);
-  const offset = selected ? (s.offsets[selected.id] ?? [0, 0, 0]) : [0, 0, 0];
+  const offset = selected
+    ? (s.offsets[selectedItem!.id] ?? [0, 0, 0])
+    : [0, 0, 0];
   function hide(id: string) {
     s.set({
       hidden: s.hidden.includes(id)
@@ -181,7 +228,7 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.2</span>
+          <span>0.3</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -200,7 +247,7 @@ export default function App() {
             className="primary"
             onClick={() => {
               download(
-                toCSV(s.project),
+                toCSV(scopeProject),
                 "buildscope.csv",
                 "text/csv;charset=utf-8",
               );
@@ -310,8 +357,8 @@ export default function App() {
       <div className="workspace">
         <aside className="tree-panel">
           <div className="panel-heading">
-            <span>Конструкции</span>
-            <span className="muted">{s.project.elements.length}</span>
+            <span>{opened ? "Части объекта" : "Конструкции"}</span>
+            <span className="muted">{treeItems.length}</span>
           </div>
           <label className="search">
             <Search size={15} />
@@ -328,10 +375,16 @@ export default function App() {
           </div>
           <div className="tree-scroll">
             {groups.map((group) => {
-              const elements = s.project.elements.filter(
-                (e) =>
-                  e.category === group &&
-                  `${e.name} ${e.mark}`
+              const elements = treeItems.filter(
+                (item) =>
+                  item.element.category === group &&
+                  `${item.element.mark} ${item.label} ${
+                    !opened
+                      ? (objectFor(s.project, item.id)
+                          ?.members.map((m) => m.name)
+                          .join(" ") ?? "")
+                      : ""
+                  }`
                     .toLowerCase()
                     .includes(search.toLowerCase()),
               );
@@ -343,41 +396,44 @@ export default function App() {
                       {group}
                       <span>{elements.length}</span>
                     </summary>
-                    {elements.map((e) => (
-                      <div
-                        key={e.id}
-                        className={`tree-row ${s.selected === e.id ? "selected" : ""} ${s.hidden.includes(e.id) ? "hidden-row" : ""}`}
-                      >
-                        <button
-                          className="element-button"
-                          onClick={() => {
-                            s.set({ selected: e.id });
-                            setTab("model");
-                          }}
+                    {elements.map((item) => {
+                      const e = item.element;
+                      return (
+                        <div
+                          key={item.id}
+                          className={`tree-row ${s.selected === item.id ? "selected" : ""} ${s.hidden.includes(item.id) ? "hidden-row" : ""}`}
                         >
-                          <span
-                            className="swatch"
-                            style={{ background: e.color }}
-                          />
-                          <span>
-                            {e.mark}
-                            <small>{e.name}</small>
-                          </span>
-                        </button>
-                        <button
-                          className="visibility"
-                          aria-label={`Видимость ${e.mark}`}
-                          aria-pressed={!s.hidden.includes(e.id)}
-                          onClick={() => hide(e.id)}
-                        >
-                          {s.hidden.includes(e.id) ? (
-                            <EyeOff size={14} />
-                          ) : (
-                            <Eye size={14} />
-                          )}
-                        </button>
-                      </div>
-                    ))}
+                          <button
+                            className="element-button"
+                            onClick={() => {
+                              s.select(item.id);
+                              setTab("model");
+                            }}
+                          >
+                            <span
+                              className="swatch"
+                              style={{ background: e.color }}
+                            />
+                            <span>
+                              {item.kind === "steel" ? "Арматура" : e.mark}
+                              <small>{item.label}</small>
+                            </span>
+                          </button>
+                          <button
+                            className="visibility"
+                            aria-label={`Видимость ${item.kind === "steel" ? item.label : e.mark}`}
+                            aria-pressed={!s.hidden.includes(item.id)}
+                            onClick={() => hide(item.id)}
+                          >
+                            {s.hidden.includes(item.id) ? (
+                              <EyeOff size={14} />
+                            ) : (
+                              <Eye size={14} />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </details>
                 )
               );
@@ -460,6 +516,35 @@ export default function App() {
             )}
             <span className="demo-badge">{projectNotice}</span>
           </nav>
+          {opened && (
+            <div className="object-navigation">
+              <button
+                onClick={() => {
+                  s.openObject(null);
+                  setSearch("");
+                }}
+              >
+                ← Ко всем объектам
+              </button>
+              <span>
+                {opened.root.mark} · {opened.root.name}
+              </span>
+              <small>Отдельный вид · {items.length} частей</small>
+              <button
+                onClick={() => {
+                  s.set({
+                    selected: null,
+                    isolated: null,
+                    hidden: [],
+                    offsets: {},
+                    cameraRevision: s.cameraRevision + 1,
+                  });
+                }}
+              >
+                Показать все части
+              </button>
+            </div>
+          )}
           <div className="toolbar">
             <div className="tool-group">
               {(["iso", "top", "front", "side"] as const).map((v, i) => (
@@ -527,7 +612,7 @@ export default function App() {
               />
               Каркас
             </label>
-            {s.project.document && (
+            {s.project.document && !opened && (
               <label>
                 <input
                   type="checkbox"
@@ -575,7 +660,7 @@ export default function App() {
               <>
                 <Viewer />
                 <div className="viewport-heading">
-                  <span>{s.project.name}</span>
+                  <span>{opened ? opened.root.name : s.project.name}</span>
                   <small>
                     {s.ortho ? "Ортографическая" : "Перспективная"} проекция ·
                     метры
@@ -601,7 +686,7 @@ export default function App() {
                 </div>
               </>
             ) : tab === "reinforcement" ? (
-              <ReinforcementPanel project={s.project} selected={selected} />
+              <ReinforcementPanel project={scopeProject} selected={selected} />
             ) : tab === "source" ? (
               <SourcePanel
                 project={s.project}
@@ -619,7 +704,7 @@ export default function App() {
                   <button
                     onClick={() =>
                       download(
-                        toSourceCSV(s.project),
+                        toSourceCSV(scopeProject),
                         "kzh-source-schedules.csv",
                         "text/csv;charset=utf-8",
                       )
@@ -628,7 +713,11 @@ export default function App() {
                     Экспорт ведомостей PDF в CSV
                   </button>
                 )}
-                <p>Весь проект · исходная геометрия · {projectNotice}</p>
+                <p>
+                  {opened ? opened.root.name : "Весь проект"} · исходная
+                  геометрия · {projectNotice}
+                </p>
+                {opened && <Materials elements={scopeElements} />}
                 {s.project.document && (
                   <p>
                     Объёмы геометрии, включая номинальные ФЛ/ФБС. Схемы и
@@ -650,9 +739,8 @@ export default function App() {
                         <td>{material}</td>
                         <td>
                           {
-                            s.project.elements.filter(
-                              (e) => e.material === material,
-                            ).length
+                            scopeElements.filter((e) => e.material === material)
+                              .length
                           }
                         </td>
                         <td>{fmt(v)}</td>
@@ -662,7 +750,7 @@ export default function App() {
                   <tfoot>
                     <tr>
                       <th>Всего</th>
-                      <td>{s.project.elements.length}</td>
+                      <td>{scopeElements.length}</td>
                       <td data-testid="total-volume">
                         {hasQuantities ? fmt(volume) : "—"}
                       </td>
@@ -673,7 +761,7 @@ export default function App() {
                   Объёмы пересекающихся частей одного элемента объединяются.
                   Пересечения разных элементов не вычитаются.
                 </p>
-                {s.project.document && (
+                {s.project.document && !opened && (
                   <>
                     <h2>По ведомостям исходного PDF</h2>
                     <table>
@@ -686,7 +774,7 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {s.project.document.materials.map((r, i) => (
+                        {scopeProject.document!.materials.map((r, i) => (
                           <tr key={i}>
                             <td>{r.name}</td>
                             <td>{r.unit}</td>
@@ -706,7 +794,7 @@ export default function App() {
                 <button
                   onClick={() =>
                     download(
-                      toCSV(s.project),
+                      toCSV(scopeProject),
                       "buildscope.csv",
                       "text/csv;charset=utf-8",
                     )
@@ -725,20 +813,17 @@ export default function App() {
             </span>
             <span>
               {
-                s.project.elements.filter(
-                  (e) =>
-                    !s.hidden.includes(e.id) &&
-                    (!s.isolated || s.isolated === e.id),
-                ).length
+                visibleItems(s.project, s.openedObject, s.hidden, s.isolated)
+                  .length
               }{" "}
-              / {s.project.elements.length} элементов
+              / {items.length} {opened ? "частей" : "элементов"}
             </span>
             <span title="Итог геометрии, включая номинальные тела. Схемы исключены.">
               Σ геом. {hasQuantities ? fmt(volume) : "—"} м³
             </span>
             <button
               onClick={() => {
-                void exportGLB(s.project)
+                void exportGLB(scopeProject)
                   .then(() =>
                     setMessage("Исходная модель экспортирована в GLB"),
                   )
@@ -751,10 +836,57 @@ export default function App() {
         </main>
         <aside className="inspector">
           <div className="panel-heading">
-            Свойства элемента
+            {selectedObject
+              ? "Свойства объекта"
+              : opened
+                ? "Свойства части"
+                : "Свойства элемента"}
             <Box size={16} />
           </div>
-          {selected && q ? (
+          {selectedObject ? (
+            <ObjectInspector
+              object={selectedObject}
+              onOpen={() => {
+                s.openObject(selectedObject.id);
+                setSearch("");
+                setTab("model");
+              }}
+              onHide={() => hide(selectedObject.id)}
+              hidden={s.hidden.includes(selectedObject.id)}
+              onIsolate={() =>
+                s.set({
+                  isolated: s.isolated ? null : selectedObject.id,
+                  cameraRevision: s.cameraRevision + 1,
+                })
+              }
+              isolated={!!s.isolated}
+              onSource={() => {
+                setPdfPage(selectedObject.root.evidence?.pages[0] ?? 1);
+                setTab("source");
+              }}
+            />
+          ) : selectedItem?.kind === "steel" ? (
+            <>
+              <SteelInspector item={selectedItem} />
+              <div className="selection-actions">
+                <button onClick={() => hide(selectedItem.id)}>
+                  {s.hidden.includes(selectedItem.id)
+                    ? "Показать часть"
+                    : "Скрыть часть"}
+                </button>
+                <button
+                  onClick={() =>
+                    s.set({
+                      isolated: s.isolated ? null : selectedItem.id,
+                      cameraRevision: s.cameraRevision + 1,
+                    })
+                  }
+                >
+                  Изолировать
+                </button>
+              </div>
+            </>
+          ) : selected && q ? (
             <>
               <div className="selected-heading">
                 <span className="category">{selected.category}</span>
@@ -762,14 +894,17 @@ export default function App() {
                 <p>{selected.name}</p>
               </div>
               <div className="selection-actions">
-                <button onClick={() => hide(selected.id)}>
+                <button onClick={() => hide(selectedItem!.id)}>
                   <EyeOff size={15} />
-                  {s.hidden.includes(selected.id) ? "Показать" : "Скрыть"}
+                  {s.hidden.includes(selectedItem!.id) ? "Показать" : "Скрыть"}
                 </button>
                 <button
                   className={s.isolated ? "active" : ""}
                   onClick={() =>
-                    s.set({ isolated: s.isolated ? null : selected.id })
+                    s.set({
+                      isolated: s.isolated ? null : selectedItem!.id,
+                      cameraRevision: s.cameraRevision + 1,
+                    })
                   }
                 >
                   <Focus size={15} />
@@ -807,6 +942,7 @@ export default function App() {
                   <dd>{selected.id}</dd>
                 </dl>
               </section>
+              {opened && <Materials elements={[selected]} partsOnly />}
               <section className="property-section">
                 <h3>Проектные координаты, м</h3>
                 <div className="xyz">
@@ -868,7 +1004,7 @@ export default function App() {
                           if (!Number.isFinite(n)) return;
                           next[i] = n;
                           s.set({
-                            offsets: { ...s.offsets, [selected.id]: next },
+                            offsets: { ...s.offsets, [selectedItem!.id]: next },
                           });
                         }}
                       />
@@ -926,10 +1062,13 @@ export default function App() {
           ) : (
             <div className="empty-selection">
               <Box size={42} strokeWidth={1} />
-              <h2>Исследуйте конструкцию</h2>
+              <h2>
+                {opened ? "Исследуйте части объекта" : "Исследуйте конструкцию"}
+              </h2>
               <p>
-                Выберите элемент в 3D-модели или дереве, чтобы увидеть его
-                размеры, материал и отметки.
+                {opened
+                  ? "Выберите часть в модели или списке. Кнопка «Разобрать» раздвигает тело, подготовку и схемы арматуры; количества сохраняются."
+                  : "Выберите объект целиком, посмотрите материалы и нажмите «Открыть отдельно», чтобы исследовать его части."}
               </p>
               <div className="legend">
                 {[

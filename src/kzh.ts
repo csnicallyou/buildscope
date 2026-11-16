@@ -492,7 +492,7 @@ export function createKzh(
     const long =
       assembly === "pavilion" ? item.mark === "ФЛ1" : item.mark === "ФЛ2";
     const length = long ? 2.38 : 1.18;
-    add(
+    const footing = add(
       item.mark,
       `ФЛ6.${long ? "24" : "12"}-4`,
       "ФЛ",
@@ -510,7 +510,7 @@ export function createKzh(
       item.direction === "x" ? [length, 0.1, 0.6] : [0.6, 0.1, length];
     const pos = [...item.position] as Vec3;
     pos[1] -= 0.2;
-    add(
+    const sand = add(
       "ПП",
       "Песчаная подготовка под ФЛ",
       "Подготовка",
@@ -524,6 +524,7 @@ export function createKzh(
         "Толщина 100 мм задана. Показан след подошвы; полный контур подготовки не задан, объём см. ведомость листа 1.",
       ],
     );
+    sand.parentId = footing.id;
   }
   if (assembly === "pavilion") {
     let x = -0.145;
@@ -603,7 +604,7 @@ export function createKzh(
               [-3.675, 1.5875],
             ]
           : undefined;
-      add(
+      const blinding = add(
         "БП",
         `Бетонная подготовка ${type} · ${axis}`,
         "Подготовка",
@@ -617,7 +618,7 @@ export function createKzh(
         "dimensioned",
         ["Выступ 100 мм в каждую сторону."],
       );
-      add(
+      const gravel = add(
         "ЩП",
         `Щебёночная подготовка ${type} · ${axis}`,
         "Подготовка",
@@ -631,6 +632,8 @@ export function createKzh(
           "Толщина 300 мм. Показан огибающий объём; откосы/стыковка слоёв не выданы за расчётное тело. Ведомость: 39,8 м³.",
         ],
       );
+      blinding.parentId = e.id;
+      gravel.parentId = e.id;
       if (type !== "Фм2") {
         const boltCenters =
           type === "Фм3"

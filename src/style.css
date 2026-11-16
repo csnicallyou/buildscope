@@ -964,3 +964,70 @@ tfoot {
   top: 22px;
   pointer-events: none;
 }
+
+.object-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--accent-bg);
+  font-size: 11px;
+}
+.object-navigation span {
+  font-weight: 600;
+}
+.object-navigation small {
+  color: var(--muted);
+}
+.object-navigation button {
+  min-height: 36px;
+}
+.selection-actions .open-object {
+  width: 100%;
+  justify-content: center;
+  background: var(--accent-bg);
+  min-height: 44px;
+  font-size: 12px;
+}
+.material-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.material-card strong {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--accent);
+}
+.material-card small,
+.quantity-note {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.property-section p {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 560px) {
+  .object-navigation {
+    gap: 7px;
+  }
+  .object-navigation span {
+    flex-basis: 100%;
+    order: -1;
+  }
+  .object-navigation small {
+    display: none;
+  }
+  .object-navigation button {
+    flex: 1;
+  }
+  .element-button {
+    min-height: 44px;
+  }
+}

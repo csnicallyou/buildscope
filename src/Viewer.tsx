@@ -12,7 +12,7 @@ import {
 import { Box3, Plane, Vector3, CanvasTexture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import { useStore, displayPosition } from "./store";
-import { elementBounds, type Element } from "./model";
+import { itemBounds, objectFor, visibleItems, type SceneItem } from "./objects";
 import { elementGeometries, barsGeometry } from "./geometry";
 const layers = [
   "Основание",
@@ -30,25 +30,29 @@ const layers = [
   "Фундаменты Фм",
 ];
 function Camera() {
-  const { view, ortho, project, cameraRevision } = useStore();
+  const { view, ortho, project, cameraRevision, openedObject, exploded } =
+    useStore();
   const controls = useRef<Controls>(null);
   const { camera, size } = useThree();
   useEffect(() => {
     const bounds = new Box3();
     const state = useStore.getState();
-    for (const e of project.elements) {
-      if (
-        state.hidden.includes(e.id) ||
-        (state.isolated && e.id !== state.isolated)
-      )
-        continue;
+    for (const item of visibleItems(
+      project,
+      openedObject,
+      state.hidden,
+      state.isolated,
+    )) {
+      const e = item.element;
       const position = displayPosition(
         e.position,
-        state.offsets[e.id],
+        state.offsets[item.id],
         state.exploded,
-        Math.max(0, layers.indexOf(e.category)),
+        openedObject
+          ? item.layer * 0.45
+          : Math.max(0, layers.indexOf(e.category)),
       );
-      const b = elementBounds(e);
+      const b = itemBounds(item);
       for (const corner of [b.min, b.max])
         bounds.expandByPoint(
           new Vector3(
@@ -87,7 +91,16 @@ function Camera() {
     }
     controls.current?.target.copy(center);
     controls.current?.update();
-  }, [view, ortho, camera, project, size, cameraRevision]);
+  }, [
+    view,
+    ortho,
+    camera,
+    project,
+    size,
+    cameraRevision,
+    openedObject,
+    exploded,
+  ]);
   return (
     <OrbitControls
       ref={controls}
@@ -97,12 +110,21 @@ function Camera() {
     />
   );
 }
-function Part({ element: e }: { element: Element }) {
+function Part({ item }: { item: SceneItem }) {
+  const e = item.element;
   const s = useStore();
-  const geometries = useMemo(() => elementGeometries(e), [e]);
+  const geometries = useMemo(
+    () => (item.kind === "steel" ? [] : elementGeometries(e)),
+    [e, item.kind],
+  );
   const steel = useMemo(
-    () => (s.rebar && e.evidence?.bars ? barsGeometry(e.evidence.bars) : null),
-    [e, s.rebar],
+    () =>
+      item.kind === "steel"
+        ? barsGeometry(item.bars ?? [])
+        : !s.openedObject && s.rebar && e.evidence?.bars
+          ? barsGeometry(e.evidence.bars)
+          : null,
+    [e, item, s.rebar, s.openedObject],
   );
   useEffect(
     () => () => {
@@ -118,16 +140,19 @@ function Part({ element: e }: { element: Element }) {
   );
   const pos = displayPosition(
     e.position,
-    s.offsets[e.id],
+    s.offsets[item.id],
     s.exploded,
-    Math.max(0, layers.indexOf(e.category)),
+    s.openedObject
+      ? item.layer * 0.45
+      : Math.max(0, layers.indexOf(e.category)),
   );
   const planes = useMemo(
     () => (s.section ? [new Plane(new Vector3(-1, 0, 0), s.cut)] : []),
     [s.section, s.cut],
   );
-  if (s.hidden.includes(e.id) || (s.isolated && s.isolated !== e.id))
-    return null;
+  const highlighted =
+    s.selected === item.id ||
+    (!s.openedObject && s.selected === objectFor(s.project, e.id)?.id);
   function click(event: ThreeEvent<MouseEvent>) {
     if (s.section && event.point.x > s.cut) return;
     event.stopPropagation();
@@ -136,7 +161,7 @@ function Part({ element: e }: { element: Element }) {
       s.set({
         points: [...(s.points.length === 2 ? [] : s.points), [p.x, p.y, p.z]],
       });
-    } else s.set({ selected: e.id });
+    } else s.select(item.id);
   }
   return (
     <group position={pos}>
@@ -153,7 +178,7 @@ function Part({ element: e }: { element: Element }) {
             onUpdate={(material) => {
               material.needsUpdate = true;
             }}
-            color={s.selected === e.id ? "#f4b85d" : e.color}
+            color={highlighted ? "#f4b85d" : e.color}
             roughness={0.82}
             metalness={e.material === "Сталь" ? 0.35 : 0}
             transparent={s.opacity < 1}
@@ -163,17 +188,14 @@ function Part({ element: e }: { element: Element }) {
             clippingPlanes={planes}
           />
           {!s.section && !s.wire && (
-            <Edges
-              threshold={20}
-              color={s.selected === e.id ? "#fff0c5" : "#3e5558"}
-            />
+            <Edges threshold={20} color={highlighted ? "#fff0c5" : "#3e5558"} />
           )}
         </mesh>
       ))}
       {steel && (
         <mesh geometry={steel} onClick={click}>
           <meshStandardMaterial
-            color={s.selected === e.id ? "#ffcf76" : "#dba45b"}
+            color={highlighted ? "#ffcf76" : "#dba45b"}
             roughness={0.5}
             metalness={0.3}
             clippingPlanes={planes}
@@ -185,15 +207,19 @@ function Part({ element: e }: { element: Element }) {
 }
 function Scene() {
   const s = useStore();
+  const items = useMemo(
+    () => visibleItems(s.project, s.openedObject, s.hidden, s.isolated),
+    [s.project, s.openedObject, s.hidden, s.isolated],
+  );
   const gridY = useMemo(
     () =>
       Math.min(
         -0.85,
-        ...s.project.elements.map(
-          (e) => elementBounds(e).min[1] + e.position[1] - 0.15,
+        ...items.map(
+          (item) => itemBounds(item).min[1] + item.element.position[1] - 0.15,
         ),
       ),
-    [s.project],
+    [items],
   );
   return (
     <>
@@ -225,9 +251,11 @@ function Scene() {
         ]}
         position={[0, gridY, 0]}
       />
-      {s.project.document && !s.isolated && <EngineeringAxes />}
-      {s.project.elements.map((e) => (
-        <Part key={e.id} element={e} />
+      {s.project.document && !s.isolated && !s.openedObject && (
+        <EngineeringAxes />
+      )}
+      {items.map((item) => (
+        <Part key={item.id} item={item} />
       ))}
       {s.points.map((p, i) => (
         <mesh key={i} position={p}>
