@@ -1,4 +1,18 @@
-# Передача BuildScope 0.10
+# Передача BuildScope 0.11
+
+## Сначала: 0.11 — общая база на Yandex
+
+Читать верх PROJECT_STATE 0.11 и docs/SHARED_WORKSPACE.md. Production: https://buildscope.158.160.161.138.sslip.io:8443, release 20261116T195738. SSH vpnadmin с существующим `.ssh/hostkey_vpn`; приватный ключ и пароли не читать в вывод/не коммитить. Новые реквизиты сохранены только в закрытом локальном `.deploy/access.json`. Сайт уже переключён на личную авторизацию. Не возвращать Basic Auth поверх страницы входа и не перезапускать bootstrap на рабочей БД.
+
+Архитектура: workspaceTypes/workspaceClient/useWorkspace; server/database/http/index (SQLite отдельно от Project), workProgress (операции/остаток/назначения), DailyWorkOrders/OrderWorkflow (сдача/приёмка/история/перенос), ObjectNotes (фото), WorkspacePanel (пользователи/backup). Обычный локальный запуск и браузерный архив остаются совместимы; deploy-пакет требует API. Сервер слушает только loopback. Модели общие для вошедших; права бригад распространяются на наряды/замечания/фото.
+
+Сначала проверять версии! submitWorkOrder должен сохранить transient serverRevision, но локальный JSON не обязан его хранить. После 409 форма остаётся со старой версией и предлагает загрузить новую, не перезаписывая поля. Неизвестный сданный факт блокирует автоматический остаток/повторное назначение, а не равен 0. Не суммировать разные единицы/основания и пересекающиеся области произвольно. Исторический импорт не чистит браузерный архив. Сохранение в другом браузере проверять двумя отдельными browser contexts, не одной localStorage.
+
+Проверки этапа: typecheck/lint, 91 unit, build и build:deploy, 35 E2E +2 e2e:workspace, внешний вход/выход всех ролей, закрытые API/статика, download и integrity_check backup прошли. Скриншоты .deploy/screenshots осмотрены. GitHub CI не объявлять успешным без фактического запуска (раньше блокировался биллингом). Node24 обязателен для server/node:sqlite. `npm run e2e:workspace` требует предварительного build:deploy, сам создаёт закрытую тестовую БД с синтетическими пользователями; production не использует.
+
+На ВМ service buildscope и buildscope-backup.timer enabled, Caddy reverse_proxy на127.0.0.1:8780. Runtime/release root-owned, данные принадлежат buildscope: `/var/lib/buildscope/workspace.sqlite`; backup через SQLite API, не сырое копирование WAL. Автоматический backup 03:15 UTC, 30 snapshots; одна внешняя копия на ПК .deploy/backups. Откат статики: сохранённый Caddyfile из /var/backups/buildscope-before-20261116T195738, reload; данные не удалять. Точная инструкция восстановления в docs/SHARED_WORKSPACE.md. VPN/warp-svc и SSH не менять. При следующем релизе переиспользовать существующую БД и обновить systemd пути сервиса/backup, не запускать первичную установку вслепую.
+
+Пользователю нужно вручную импортировать свои прежние записи в «Команда и доступ» из того же браузера/адреса. Полные чертежи всех объектов, изготовительная арматура, распределение доступа к самим моделям и постоянные внешние backups ещё не реализованы. Учитывать прежние незавершённые untracked share-server.mjs/test и share-start/stop.ps1, не включать их в этот выпуск. Пользовательские PDF/XLSX/исходные персональные записи не публиковать.
 
 ## Сначала: 0.10
 

@@ -6,7 +6,14 @@ import {
   submitWorkOrder,
 } from "./workOrderArchive";
 import { download } from "./export";
-import { reportErrors, crewHours } from "./workOrders";
+import {
+  reportErrors,
+  crewHours,
+  type WorkDraft,
+  type WorkRow,
+} from "./workOrders";
+import type { SharedOrder, WorkspaceUser } from "./workspaceTypes";
+import OrderWorkflow from "./OrderWorkflow";
 const f = (n: number | null) =>
   n === null
     ? "Не определён"
@@ -17,25 +24,54 @@ export default function DailyWorkOrders({
   error,
   onSave,
   onNew,
+  user = null,
+  shared,
+  onAction,
+  onCarry,
+  onEvidence,
 }: {
   orders: SavedWorkOrder[];
   error: string;
-  onSave: (order: SavedWorkOrder) => boolean;
+  onSave: (order: SavedWorkOrder) => Promise<SavedWorkOrder | null>;
   onNew: () => void;
+  user?: WorkspaceUser | null;
+  shared?: SharedOrder[];
+  onAction: (
+    id: string,
+    action: "accept" | "reopen" | "replan",
+    reason?: string,
+    order?: SavedWorkOrder,
+  ) => Promise<SavedWorkOrder | null>;
+  onCarry: (draft: WorkDraft) => void;
+  onEvidence: (order: SavedWorkOrder, row: WorkRow) => void;
 }) {
   const [editing, setEditing] = useState<SavedWorkOrder | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const dates = [...new Set(orders.map((o) => o.draft.date))].sort().reverse();
+
   const errors = editing ? handoffErrors(editing) : [];
-  const save = (submit: boolean) => {
+  const canIssue = !user || user.role === "admin",
+    canEdit = !user || user.role !== "viewer";
+  const [brigadeFilter, setBrigadeFilter] = useState(""),
+    [shiftFilter, setShiftFilter] = useState("");
+  const filteredOrders = orders.filter(
+    (o) =>
+      (!brigadeFilter || o.draft.brigade === brigadeFilter) &&
+      (!shiftFilter || o.draft.shift === shiftFilter),
+  );
+  const dates = [...new Set(filteredOrders.map((o) => o.draft.date))]
+    .sort()
+    .reverse();
+  const save = async (submit: boolean) => {
     if (!editing) return;
+    setBusy(true);
     try {
       const invalid = reportErrors(editing.draft);
       if (invalid.length) throw Error(invalid.join("; "));
       const order = submit ? submitWorkOrder(editing) : editing;
-      if (onSave(order)) {
-        setEditing(order);
+      const saved = await onSave(order);
+      if (saved) {
+        setEditing(saved);
         setMessage(
           submit
             ? "Наряд сдан и сохранён"
@@ -44,6 +80,8 @@ export default function DailyWorkOrders({
       }
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Не удалось сохранить наряд");
+    } finally {
+      setBusy(false);
     }
   };
   const exportReport = async () => {
@@ -78,8 +116,10 @@ export default function DailyWorkOrders({
         </div>
         <button
           className="primary"
-          onClick={() => {
-            if (!editing || editing.submittedAt || onSave(editing)) onNew();
+          disabled={!canIssue || busy}
+          onClick={async () => {
+            if (!editing || editing.submittedAt || (await onSave(editing)))
+              onNew();
           }}
         >
           <Plus size={17} />
@@ -87,16 +127,17 @@ export default function DailyWorkOrders({
         </button>
       </header>
       <p className="storage-note">
-        Хранится в этом браузере. Между устройствами наряды автоматически не
-        синхронизируются.
+        {shared
+          ? "Общая база бригады: наряды доступны на компьютере и телефоне. Изменения проверяются по версии записи."
+          : "Хранится в этом браузере. Между устройствами наряды автоматически не синхронизируются."}
       </p>
       {error && <p role="alert">{error}</p>}
       {message && <p role="status">{message}</p>}
       {editing ? (
         <>
           <button
-            onClick={() => {
-              if (editing.submittedAt || onSave(editing)) {
+            onClick={async () => {
+              if (editing.submittedAt || !canEdit || (await onSave(editing))) {
                 setEditing(null);
                 setMessage("");
               }
@@ -104,6 +145,40 @@ export default function DailyWorkOrders({
           >
             <ArrowLeft size={16} />К списку дней
           </button>
+          {shared && user && shared.find((e) => e.order.id === editing.id) && (
+            <OrderWorkflow
+              key={`${editing.id}:${shared.find((e) => e.order.id === editing.id)!.revision}`}
+              entry={shared.find((e) => e.order.id === editing.id)!}
+              user={user}
+              onAction={async (...args) => {
+                const saved = await onAction(...args);
+                if (saved) setEditing(saved);
+                return saved;
+              }}
+              onCarry={onCarry}
+            />
+          )}
+          {shared &&
+            shared.find((e) => e.order.id === editing.id)?.revision !==
+              editing.serverRevision && (
+              <p className="workspace-error">
+                Запись обновлена на сервере.{" "}
+                <button
+                  onClick={() => {
+                    const latest = shared.find(
+                      (e) => e.order.id === editing.id,
+                    );
+                    if (latest)
+                      setEditing({
+                        ...latest.order,
+                        serverRevision: latest.revision,
+                      });
+                  }}
+                >
+                  Загрузить актуальную версию вместо несохранённых полей
+                </button>
+              </p>
+            )}
           <div className="handoff-heading">
             <h2>
               {editing.draft.date} · {editing.draft.shift} ·{" "}
@@ -126,6 +201,11 @@ export default function DailyWorkOrders({
                 {index + 1}. {row.work}
               </h3>
               <p>{row.target}</p>
+              {user && (
+                <button onClick={() => onEvidence(editing, row)}>
+                  Фото и замечания
+                </button>
+              )}
               <div className="handoff-values">
                 <span>
                   План
@@ -149,7 +229,7 @@ export default function DailyWorkOrders({
                     step="any"
                     aria-label={`Факт работы ${index + 1}`}
                     value={row.actual ?? ""}
-                    disabled={!!editing.submittedAt}
+                    disabled={!!editing.submittedAt || !canEdit || busy}
                     placeholder="Не введён"
                     onChange={(e) => {
                       const value =
@@ -174,7 +254,7 @@ export default function DailyWorkOrders({
                     type="checkbox"
                     aria-label={`Выполнена работа ${index + 1}`}
                     checked={!!row.completed}
-                    disabled={!!editing.submittedAt}
+                    disabled={!!editing.submittedAt || !canEdit || busy}
                     onChange={(e) => {
                       const completed = e.target.checked;
                       setEditing(
@@ -221,7 +301,7 @@ export default function DailyWorkOrders({
                         aria-label={`${label} ${i + 1}`}
                         type={key === "breakMinutes" ? "number" : "time"}
                         min={key === "breakMinutes" ? 0 : undefined}
-                        disabled={!!editing.submittedAt}
+                        disabled={!!editing.submittedAt || !canEdit || busy}
                         value={person[key]}
                         onChange={(e) => {
                           const value =
@@ -259,15 +339,15 @@ export default function DailyWorkOrders({
             </ul>
           )}
           <div className="handoff-actions">
-            {!editing.submittedAt && (
+            {!editing.submittedAt && canEdit && (
               <>
-                <button onClick={() => save(false)}>
+                <button disabled={busy} onClick={() => void save(false)}>
                   Сохранить выполнение
                 </button>
                 <button
                   className="primary"
                   onClick={() => save(true)}
-                  disabled={errors.length > 0}
+                  disabled={busy || errors.length > 0}
                 >
                   <Check size={17} />
                   Сдать наряд
@@ -282,7 +362,7 @@ export default function DailyWorkOrders({
               Скачать Excel
             </button>
           </div>
-          {!editing.submittedAt && (
+          {!editing.submittedAt && canEdit && (
             <small>
               Изменения сохраняются кнопками. Невыполненные позиции могут
               остаться без факта; ноль вводите только как действительное
@@ -301,10 +381,35 @@ export default function DailyWorkOrders({
               </p>
             </div>
           )}
+          <div className="daily-filters">
+            <label>
+              Бригада
+              <select
+                value={brigadeFilter}
+                onChange={(e) => setBrigadeFilter(e.target.value)}
+              >
+                <option value="">Все доступные</option>
+                {[...new Set(orders.map((o) => o.draft.brigade))].map((b) => (
+                  <option key={b}>{b}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Смена
+              <select
+                value={shiftFilter}
+                onChange={(e) => setShiftFilter(e.target.value)}
+              >
+                <option value="">Все смены</option>
+                <option>День</option>
+                <option>Ночь</option>
+              </select>
+            </label>
+          </div>
           {dates.map((date) => (
             <section className="work-order-day" key={date}>
               <h2>{date}</h2>
-              {orders
+              {filteredOrders
                 .filter((o) => o.draft.date === date)
                 .map((order) => (
                   <button

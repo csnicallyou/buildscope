@@ -28,17 +28,22 @@ import {
   PanelLeft,
   PanelRight,
   SlidersHorizontal,
+  UserRound,
 } from "lucide-react";
 import Viewer from "./Viewer";
 import WorkOrderPanel from "./WorkOrderPanel";
 import DailyWorkOrders from "./DailyWorkOrders";
+import { useWorkspace } from "./useWorkspace";
+import ProgressPanel from "./ProgressPanel";
+import WorkspacePanel from "./WorkspacePanel";
+import ObjectNotes, { type EvidenceContext } from "./ObjectNotes";
 import {
-  parseWorkOrders,
-  serializeWorkOrders,
-  workOrdersStorageKey,
-  issueWorkOrder,
-  type SavedWorkOrder,
-} from "./workOrderArchive";
+  modelKeyForRow,
+  objectWorkStatuses,
+  projectModelKey,
+} from "./workProgress";
+import { statusColors, statusLabels, type WorkStatus } from "./workspaceTypes";
+import { issueWorkOrder } from "./workOrderArchive";
 import { initialWorkDraft } from "./workOrders";
 import InstallationPlayer from "./InstallationPlayer";
 import { installationPlan } from "./installation";
@@ -141,73 +146,16 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [workDraft, setWorkDraft] = useState(initialWorkDraft);
   const [workIssueError, setWorkIssueError] = useState("");
-  const [workArchive, setWorkArchive] = useState<{
-    orders: SavedWorkOrder[];
-    error: string;
-  }>(() => {
-    try {
-      return {
-        orders: parseWorkOrders(localStorage.getItem(workOrdersStorageKey)),
-        error: "",
-      };
-    } catch {
-      return {
-        orders: [],
-        error:
-          "Не удалось прочитать сохранённые наряды. Данные в браузере не изменены.",
-      };
-    }
-  });
-  const persistWorkOrder = (order: SavedWorkOrder) => {
-    try {
-      const current = parseWorkOrders(
-        localStorage.getItem(workOrdersStorageKey),
-      );
-      if (
-        current.some(
-          (o) =>
-            o.id === order.id &&
-            o.submittedAt &&
-            o.submittedAt !== order.submittedAt,
-        )
-      ) {
-        setWorkArchive({
-          orders: current,
-          error:
-            "Этот наряд уже сдан в другой вкладке. Вернитесь к списку и откройте актуальную запись.",
-        });
-        return false;
-      }
-      const orders = [order, ...current.filter((o) => o.id !== order.id)];
-      localStorage.setItem(workOrdersStorageKey, serializeWorkOrders(orders));
-      setWorkArchive({ orders, error: "" });
-      return true;
-    } catch {
-      setWorkArchive((a) => ({
-        ...a,
-        error:
-          "Не удалось сохранить наряд в этом браузере. Проверьте доступ к хранилищу и свободное место; прежние данные не удалены.",
-      }));
-      return false;
-    }
-  };
+  const workspace = useWorkspace(workDraft, setWorkDraft);
+  const workArchive = { orders: workspace.orders, error: workspace.error };
+  const persistWorkOrder = workspace.save;
   const [mobileTools, setMobileTools] = useState(false);
+  const [evidence, setEvidence] = useState<EvidenceContext | null>(null);
   useEffect(() => {
-    const refresh = (event: StorageEvent) => {
-      if (event.key !== workOrdersStorageKey) return;
-      try {
-        setWorkArchive({ orders: parseWorkOrders(event.newValue), error: "" });
-      } catch {
-        setWorkArchive((a) => ({
-          ...a,
-          error:
-            "Не удалось прочитать обновлённые наряды. Прежние данные не удалены.",
-        }));
-      }
-    };
-    window.addEventListener("storage", refresh);
-    return () => window.removeEventListener("storage", refresh);
-  }, []);
+    useStore
+      .getState()
+      .set({ workStatuses: objectWorkStatuses(s.project, workspace.shared) });
+  }, [s.project, workspace.shared]);
   const [tab, setTab] = useState<
     | "model"
     | "schedule"
@@ -217,6 +165,8 @@ export default function App() {
     | "audit"
     | "workorder"
     | "workdays"
+    | "progress"
+    | "workspace"
   >("model");
   useEffect(() => {
     if (tab !== "model") useStore.getState().set({ mobilePanel: "none" });
@@ -382,6 +332,10 @@ export default function App() {
     s.set({ mobilePanel: "none" });
   };
   const openWorkOrder = () => {
+    if (workspace.mode === "server" && workspace.user?.role !== "admin") {
+      setTab("workdays");
+      return;
+    }
     s.set({
       mobilePanel: "none",
       filters: emptyFilters,
@@ -557,13 +511,23 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.10</span>
+          <span>0.11</span>
         </div>
         <div className="project-name">
           {s.project.name}
           <small>Инженерная модель</small>
         </div>
         <div className="file-actions">
+          {workspace.user && (
+            <button
+              aria-label={workspace.user.name}
+              title="Мой доступ и команда"
+              onClick={() => setTab("workspace")}
+            >
+              <UserRound size={16} />
+              {workspace.user.name}
+            </button>
+          )}
           <button onClick={() => file.current?.click()}>
             <FolderOpen size={16} />
             Открыть
@@ -658,6 +622,9 @@ export default function App() {
         </button>
         <button
           className={tab === "workorder" ? "active" : ""}
+          disabled={
+            workspace.mode === "server" && workspace.user?.role !== "admin"
+          }
           onClick={openWorkOrder}
         >
           <ClipboardList size={17} /> Наряд
@@ -689,6 +656,20 @@ export default function App() {
               <BookOpen size={17} /> Источник
             </button>
           </>
+        )}
+        <button
+          className={tab === "progress" ? "active" : ""}
+          onClick={() => setTab("progress")}
+        >
+          Ход работ
+        </button>
+        {workspace.user && (
+          <button
+            className={tab === "workspace" ? "active" : ""}
+            onClick={() => setTab("workspace")}
+          >
+            Команда и доступ
+          </button>
         )}
         <button
           className={tab === "audit" ? "active" : ""}
@@ -724,6 +705,35 @@ export default function App() {
         </div>
         <span className="demo-badge">{projectNotice}</span>
       </nav>
+      {(workspace.mode === "error" ||
+        (workspace.mode === "server" && workspace.error)) && (
+        <div className="workspace-error" role="alert">
+          {workspace.error}
+          <button onClick={() => window.location.reload()}>
+            Повторить подключение
+          </button>
+        </div>
+      )}
+      {workspace.mode === "server" && workspace.user?.role === "admin" && (
+        <div className="workspace-sync">
+          <span>
+            Общая база ·{" "}
+            {tab === "workorder"
+              ? workspace.draftStatus
+              : "Данные синхронизируются между устройствами"}
+          </span>
+          {workspace.recovery && (
+            <button onClick={workspace.restoreRecovery}>
+              Восстановить локальный черновик
+            </button>
+          )}
+          {tab === "workorder" && (
+            <button onClick={() => void workspace.reloadDraft()}>
+              Загрузить серверный черновик
+            </button>
+          )}
+        </div>
+      )}
       <input
         hidden
         type="file"
@@ -1189,6 +1199,16 @@ export default function App() {
             </div>
             {!opened && hasObjects(s.project) && (
               <div className="multi-selection-bar">
+                <label className="work-status-toggle">
+                  <input
+                    type="checkbox"
+                    checked={s.workStatusColors}
+                    onChange={(e) =>
+                      s.set({ workStatusColors: e.target.checked })
+                    }
+                  />
+                  Статусы работ
+                </label>
                 <button
                   className={
                     s.multipleSelection
@@ -1365,10 +1385,11 @@ export default function App() {
                   </div>
                 </div>
                 <WorkOrderPanel
-                  onIssue={(draft) => {
+                  shared={workspace.mode === "server"}
+                  onIssue={async (draft) => {
                     try {
                       const order = issueWorkOrder(draft);
-                      if (persistWorkOrder(order)) {
+                      if (await persistWorkOrder(order)) {
                         setWorkIssueError("");
                         setWorkDraft(initialWorkDraft());
                         setTab("workdays");
@@ -1411,10 +1432,35 @@ export default function App() {
               </div>
             ) : tab === "workdays" ? (
               <DailyWorkOrders
+                user={workspace.user}
+                shared={
+                  workspace.mode === "server" ? workspace.shared : undefined
+                }
+                onAction={workspace.action}
+                onCarry={(draft) => {
+                  setWorkDraft(draft);
+                  openWorkOrder();
+                }}
+                onEvidence={(order, row) =>
+                  setEvidence({
+                    model: modelKeyForRow(row),
+                    elementId: row.quantityElementIds?.[0] ?? row.elementIds[0],
+                    label: row.target,
+                    orderId: order.id,
+                    brigade: order.draft.brigade,
+                  })
+                }
                 orders={workArchive.orders}
                 error={workArchive.error}
                 onSave={persistWorkOrder}
                 onNew={openWorkOrder}
+              />
+            ) : tab === "progress" ? (
+              <ProgressPanel orders={workspace.shared} />
+            ) : tab === "workspace" && workspace.user ? (
+              <WorkspacePanel
+                user={workspace.user}
+                onImport={workspace.importLocal}
               />
             ) : tab === "audit" ? (
               <InspectionPanel
@@ -1622,6 +1668,24 @@ export default function App() {
           {s.selected && !s.calculatorOpen && (
             <button className="object-work-order" onClick={openWorkOrder}>
               <ClipboardList size={16} /> Работы по выбранному объекту
+            </button>
+          )}
+          {selectedItem && workspace.user && (
+            <button
+              className="object-work-order"
+              onClick={() =>
+                setEvidence({
+                  model: projectModelKey(s.project),
+                  elementId: selectedItem.id,
+                  label:
+                    selectedItem.kind === "steel"
+                      ? selectedItem.label
+                      : selectedItem.element.name,
+                  brigade: workspace.user?.brigade ?? workDraft.brigade,
+                })
+              }
+            >
+              Фото и замечания объекта
             </button>
           )}
           {s.calculatorOpen ? (
@@ -1908,6 +1972,26 @@ export default function App() {
           )}
         </aside>
       </div>
+      {s.workStatusColors && tab === "model" && (
+        <div className="work-status-legend">
+          {(Object.keys(statusLabels) as WorkStatus[]).map((k) => (
+            <span key={k}>
+              <i style={{ background: statusColors[k] }} />
+              {statusLabels[k]}
+            </span>
+          ))}
+          <small>
+            Статусы назначенных работ, не готовность всей конструкции
+          </small>
+        </div>
+      )}
+      {evidence && workspace.user && (
+        <ObjectNotes
+          context={evidence}
+          user={workspace.user}
+          onClose={() => setEvidence(null)}
+        />
+      )}
       <MobileControls
         onModel={() => setTab("model")}
         onWorkOrder={() => setTab("workdays")}

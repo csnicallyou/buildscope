@@ -9,9 +9,26 @@ export default ts.config(
       "test-results/**",
       "drawings/**",
       ".sites/**",
+      ".deploy/**",
+      ".local-share/**",
+      "data/**",
       "tmp/spreadsheets/**",
     ],
   },
   js.configs.recommended,
   ...ts.configs.recommended,
+  {
+    files: ["scripts/**/*.mjs", "deploy/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        URL: "readonly",
+        fetch: "readonly",
+        process: "readonly",
+        console: "readonly",
+        Buffer: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+      },
+    },
+  },
 );

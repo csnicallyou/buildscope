@@ -1085,6 +1085,251 @@
 .orders-empty {
   padding: 30px 0;
 }
+.workspace-sync,
+.workspace-error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 6px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.workspace-sync {
+  color: var(--muted);
+}
+.workspace-sync > span {
+  margin-right: auto;
+}
+.workspace-sync button {
+  padding: 5px 9px;
+  font-size: 11px;
+}
+.workspace-error {
+  color: #efb598;
+}
+.workspace-account {
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+.workspace-account h2 {
+  margin-top: 30px;
+  font-size: 19px;
+}
+.workspace-account p,
+.order-workflow p {
+  color: var(--muted);
+  line-height: 1.65;
+}
+.account-section,
+.order-workflow > details {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 14px;
+  margin: 14px 0;
+}
+.account-section summary,
+.order-workflow summary {
+  cursor: pointer;
+  line-height: 1.6;
+}
+.account-section form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.account-section form label,
+.order-workflow label,
+.workspace-modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+}
+.account-section form button {
+  align-self: end;
+}
+.account-section input,
+.account-section select,
+.order-workflow input,
+.order-workflow select,
+.order-workflow textarea,
+.workspace-modal textarea,
+.workspace-modal input {
+  box-sizing: border-box;
+  width: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  font: inherit;
+}
+.team-users {
+  display: grid;
+  gap: 8px;
+}
+.team-users > div {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.team-users span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.workspace-account a {
+  color: var(--accent);
+  line-height: 2;
+}
+.order-workflow {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.order-workflow > details label {
+  margin-top: 14px;
+  max-width: 500px;
+}
+.order-workflow > details button {
+  margin-top: 14px;
+}
+.order-history {
+  border-left: 2px solid var(--accent);
+  padding: 0 16px;
+  margin-top: 18px;
+}
+.order-history details {
+  padding: 8px 0;
+}
+.work-status-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 8px 18px;
+  font-size: 11px;
+  background: var(--panel);
+}
+.work-status-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.work-status-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.work-status-legend small {
+  color: var(--muted);
+}
+.workspace-modal-backdrop {
+  position: fixed;
+  z-index: 1100;
+  inset: 0;
+  background: #08141cba;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.workspace-modal {
+  box-sizing: border-box;
+  width: min(700px, 100%);
+  max-height: 90dvh;
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: 0 20px 80px #0008;
+}
+.workspace-modal header {
+  display: flex;
+  gap: 20px;
+  align-items: start;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.workspace-modal h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+.workspace-modal p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.workspace-modal form {
+  display: grid;
+  gap: 15px;
+}
+.workspace-modal textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+.workspace-modal form button {
+  justify-self: start;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.object-note {
+  border-top: 1px solid var(--border);
+  margin-top: 22px;
+  padding-top: 14px;
+}
+.object-note img {
+  max-height: 260px;
+  max-width: 100%;
+  border-radius: 6px;
+  display: block;
+  margin: 12px 0;
+}
+.object-note small {
+  color: var(--muted);
+}
+@media (max-width: 850px) {
+  .workspace-sync {
+    padding: 5px 12px;
+    font-size: 10px;
+  }
+  .account-section form {
+    grid-template-columns: 1fr;
+  }
+  .team-users > div {
+    grid-template-columns: 1fr auto;
+  }
+  .team-users span {
+    grid-column: 1;
+  }
+  .team-users button {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .workspace-modal-backdrop {
+    padding: 10px;
+  }
+  .workspace-modal {
+    padding: 18px;
+    max-height: 95dvh;
+  }
+  .work-status-legend {
+    font-size: 10px;
+    padding-bottom: 66px;
+    gap: 8px;
+  }
+}
 @media (max-width: 850px) {
   .daily-orders-heading {
     flex-wrap: wrap;

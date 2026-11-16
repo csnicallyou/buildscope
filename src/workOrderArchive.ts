@@ -39,6 +39,7 @@ const workRow = z.object({
     .nullable()
     .optional(),
   completed: z.boolean().optional(),
+  quantityElementIds: z.array(text).optional(),
 });
 const draftSchema = z.object({
   brigade: text,
@@ -65,7 +66,7 @@ const draftSchema = z.object({
     )
     .max(200),
 });
-const savedSchema = z.object({
+export const savedSchema = z.object({
   id: z.string().min(1),
   createdAt: text,
   submittedAt: text.nullable(),
@@ -75,7 +76,9 @@ const archiveSchema = z.object({
   version: z.literal(1),
   orders: z.array(savedSchema),
 });
-export type SavedWorkOrder = z.infer<typeof savedSchema>;
+export type SavedWorkOrder = z.infer<typeof savedSchema> & {
+  serverRevision?: number;
+};
 export function parseWorkOrders(raw: string | null): SavedWorkOrder[] {
   return raw ? archiveSchema.parse(JSON.parse(raw) as unknown).orders : [];
 }
@@ -123,5 +126,9 @@ export function handoffErrors(order: SavedWorkOrder): string[] {
 export function submitWorkOrder(order: SavedWorkOrder): SavedWorkOrder {
   const errors = handoffErrors(order);
   if (errors.length) throw Error(errors.join("; "));
-  return savedSchema.parse({ ...order, submittedAt: new Date().toISOString() });
+  const submitted = savedSchema.parse({
+    ...order,
+    submittedAt: new Date().toISOString(),
+  });
+  return { ...submitted, serverRevision: order.serverRevision };
 }

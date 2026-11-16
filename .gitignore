@@ -9,6 +9,8 @@ drawings/
 __pycache__/
 *.pyc
 .sites/
+.deploy/
+/data/
 
 output/pdf/
 tmp/pdfs/

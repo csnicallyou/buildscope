@@ -23,6 +23,7 @@ import { sceneOptions, isConcrete, filteredBars } from "./viewRules";
 import Dimensions from "./Dimensions";
 import { dimensionData } from "./dimensionData";
 import SectionCap from "./SectionCap";
+import { statusColors } from "./workspaceTypes";
 import { Fragment } from "react";
 import { elementGeometries, barsGeometry } from "./geometry";
 function Camera({ paused }: { paused: boolean }) {
@@ -316,7 +317,7 @@ function Part({ item, index }: { item: SceneItem; index: number }) {
                       ? "#5ccbb7"
                       : highlighted
                         ? "#f4b85d"
-                        : e.color
+                        : s.workStatusColors && s.workStatuses[objectId] ? statusColors[s.workStatuses[objectId]] : e.color
                 }
                 roughness={0.82}
                 metalness={e.material === "Сталь" ? 0.35 : 0}

@@ -32,7 +32,7 @@ const sourceRules: Record<string, ModelWorkId> = {
   "Устройство подстилающего слоя из песка с уплотнением": "sand",
   "Устройство подстилающего слоя из щебня с уплотнением": "gravel",
 };
-const operationKey = (id: WorkId): WorkId => {
+export const operationKey = (id: WorkId): WorkId => {
   const source = sourceWorkTypes.find((w) => w.id === id);
   return source && source.unit === "м3"
     ? (sourceRules[source.label] ?? id)
@@ -228,6 +228,7 @@ export type WorkRow = {
   modelPlan: number | null;
   modelNeed?: { value: number | null; unit: string; basis: string } | null;
   completed?: boolean;
+  quantityElementIds?: string[];
 };
 export function workMaterialNeed(target: WorkTarget, id: WorkId) {
   const type = workTypes.find((w) => w.id === id)!;
@@ -254,6 +255,26 @@ export function workMaterialNeed(target: WorkTarget, id: WorkId) {
         basis: `Справочная потребность выбранных тел, без запаса и потерь. ${ref.basis}`,
       }
     : null;
+}
+export function workQuantityElementIds(target: WorkTarget, id: WorkId) {
+  const type = workTypes.find((w) => w.id === id)!;
+  const key = operationKey(id);
+  const rule = [
+    "prep",
+    "concrete",
+    "sand",
+    "gravel",
+    "steel",
+    "anchors",
+    "install",
+  ].includes(key)
+    ? key
+    : /^Бетонирование\s/i.test(type.label)
+      ? "concrete"
+      : null;
+  return rule
+    ? workReference(target, rule as WorkId).elements.map((e) => e.id)
+    : target.elements.map((e) => e.id);
 }
 export type CrewRow = {
   id: string;
@@ -345,6 +366,7 @@ export function addWork(
     modelPlan: ref.value,
     modelNeed: workMaterialNeed(target, kind),
     completed: false,
+    quantityElementIds: workQuantityElementIds(target, kind),
   };
 }
 export function crewHours(r: CrewRow): number | null {

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { demo, type Project, type Vec3 } from "./model";
 import { hasObjects, objectFor } from "./objects";
+import type { WorkStatus } from "./workspaceTypes";
 import {
   emptyFilters,
   allBarKinds,
@@ -39,6 +40,8 @@ type State = {
   measure: boolean;
   points: Vec3[];
   theme: "dark" | "light";
+  workStatusColors: boolean;
+  workStatuses: Record<string,WorkStatus>;
   view: "iso" | "top" | "front" | "side";
   ortho: boolean;
   cameraRevision: number;
@@ -77,6 +80,8 @@ export const useStore = create<State>((set, get) => ({
   measure: false,
   points: [],
   theme: "dark",
+  workStatusColors: false,
+  workStatuses: {},
   view: "iso",
   ortho: false,
   cameraRevision: 0,

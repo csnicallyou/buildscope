@@ -73,7 +73,9 @@ describe("Наряды по дням и сменам", () => {
     expect(handoffErrors(order)).toHaveLength(1);
     expect(() => submitWorkOrder(order)).toThrow();
     order.draft.rows[0].actual = 0;
+    order.serverRevision = 7;
     const submitted = submitWorkOrder(order);
+    expect(submitted.serverRevision).toBe(7);
     expect(submitted.submittedAt).not.toBeNull();
     const read = parseWorkOrders(serializeWorkOrders([submitted]))[0];
     expect(read.draft.rows[0].actual).toBe(0);

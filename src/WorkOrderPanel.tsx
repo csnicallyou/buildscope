@@ -35,6 +35,7 @@ export default function WorkOrderPanel({
   onFocus,
   onIssue,
   archiveError,
+  shared = false,
 }: {
   project: Project;
   opened: string | null;
@@ -43,8 +44,9 @@ export default function WorkOrderPanel({
   draft: WorkDraft;
   onDraft: Dispatch<SetStateAction<WorkDraft>>;
   onFocus: (id: string) => void;
-  onIssue: (draft: WorkDraft) => void;
+  onIssue: (draft: WorkDraft) => void | Promise<void>;
   archiveError: string;
+  shared?: boolean;
 }) {
   const targets = useMemo(
     () => workTargets(project, opened),
@@ -155,7 +157,10 @@ export default function WorkOrderPanel({
           <p>
             Составьте план работ по модели, затем выдайте наряд на выбранный
             день. Факт и выполнение заполняются при сдаче во вкладке «Наряды по
-            дням». До выдачи черновик хранится только в открытой странице.
+            дням».{" "}
+            {shared
+              ? "Черновик сохраняется в общей базе."
+              : "До выдачи черновик хранится только в открытой странице."}
           </p>
         </div>
         <button
@@ -176,8 +181,15 @@ export default function WorkOrderPanel({
       {archiveError && <p role="alert">{archiveError}</p>}
       <button
         className="issue-work-order primary"
-        disabled={!draft.rows.length || errors.length > 0}
-        onClick={() => onIssue(draft)}
+        disabled={busy || !draft.rows.length || errors.length > 0}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await onIssue(draft);
+          } finally {
+            setBusy(false);
+          }
+        }}
       >
         Выдать наряд
       </button>
