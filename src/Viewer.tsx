@@ -469,15 +469,17 @@ function EngineeringAxes() {
   const doc = useStore((s) => s.project.document)!;
   const xs = doc.axes.x,
     zs = doc.axes.z;
-  const xmax = xs[xs.length - 1].value,
-    zmax = zs[zs.length - 1].value;
+  const xmin = Math.min(...xs.map((a) => a.value)),
+    xmax = Math.max(...xs.map((a) => a.value)),
+    zmin = Math.min(...zs.map((a) => a.value)),
+    zmax = Math.max(...zs.map((a) => a.value));
   return (
     <group>
       {xs.map(({ label, value }) => (
         <group key={"x" + label}>
           <Line
             points={[
-              [value, 0.08, -2],
+              [value, 0.08, zmin - 2],
               [value, 0.08, zmax + 2],
             ]}
             color="#63919b"
@@ -486,14 +488,14 @@ function EngineeringAxes() {
             dashSize={0.4}
             gapSize={0.2}
           />
-          <AxisLabel position={[value, 0.08, -2]} label={label} />
+          <AxisLabel position={[value, 0.08, zmax + 2]} label={label} />
         </group>
       ))}
       {zs.map(({ label, value }) => (
         <group key={"z" + label}>
           <Line
             points={[
-              [-2, 0.08, value],
+              [xmin - 2, 0.08, value],
               [xmax + 2, 0.08, value],
             ]}
             color="#63919b"
@@ -502,7 +504,7 @@ function EngineeringAxes() {
             dashSize={0.4}
             gapSize={0.2}
           />
-          <AxisLabel position={[-2, 0.08, value]} label={label} />
+          <AxisLabel position={[xmin - 2, 0.08, value]} label={label} />
         </group>
       ))}
     </group>

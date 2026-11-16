@@ -432,7 +432,7 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.7</span>
+          <span>0.7.1</span>
         </div>
         <div className="project-name">
           {s.project.name}

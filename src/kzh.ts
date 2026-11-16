@@ -1,3 +1,4 @@
+import { drawingPlanToWorld } from "./drawingCoordinates";
 import layout from "./data/kzh-layout.json";
 import {
   type Element,
@@ -987,11 +988,11 @@ export function createKzh(
     );
     stair.evidence!.reinforcement = canopyRebar.Лм1;
   }
-  return {
+  return drawingPlanToWorld({
     version: 2,
     name: `Маленковская · ${document.assembly}${assembly === "canopy" ? " · " + (variant === "plan" ? "по плану" : "по разрезам") : ""}`,
     units: "m",
     elements,
     document,
-  };
+  });
 }
