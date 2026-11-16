@@ -2,7 +2,7 @@
 
 Дата: 2026-11-16. Прочитать AGENTS, PROJECT_STATE, DATA_MODEL и docs/RECONSTRUCTION. История чата не требуется.
 
-Кодовый checkpoint: 2aac7fb, отправлен в main; 29 unit + 12 E2E, typecheck/lint/build успешны. Приватный Sites обновлён до 0.3.1. Готовые JSON/CSV/GLB — output/projects.
+Кодовый checkpoint: 31175a7, отправлен в main; 34 unit + 15 E2E, typecheck/lint/build успешны. Приватный Sites обновлён до 0.4. Готовые JSON/CSV/GLB — output/projects.
 
 Последнее: по 30-страничному пользовательскому КЖ созданы павильон (168), навес (234; два варианта) и 22 образца гнутых деталей. Project v2, профили/меши/стержни, схемы арматуры, исходные ведомости и реестр противоречий. Исходный PDF, растры и тексты исключены из Git. Готовые проекты — output/projects; генераторы — src/kzh.ts, details.ts, data/kzh-layout.json, data/kzh-schedules.ts.
 
