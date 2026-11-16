@@ -5,11 +5,12 @@ import { modelObjects } from "./objects";
 import { useStore } from "./store";
 
 describe("Калькулятор выбранных объектов", () => {
-  it("два разных объекта накапливаются сразу, без открытия калькулятора; отдельный вид остаётся одиночным", () => {
+  it("накопление объектов включается явно, отдельный вид остаётся одиночным", () => {
     const p = createKzh("canopy");
     const objects = modelObjects(p).filter((o) => o.root.mark === "Фм4");
     const s = useStore;
     s.getState().load(p);
+    s.getState().setMultipleSelection(true);
     expect(s.getState().calculatorOpen).toBe(false);
     s.getState().select(objects[0].id);
     s.getState().select(objects[1].members[1].id);
@@ -90,6 +91,7 @@ describe("Калькулятор выбранных объектов", () => {
     const o = modelObjects(p).find((o) => o.root.mark === "Фм4")!;
     const s = useStore;
     s.getState().load(p);
+    s.getState().setMultipleSelection(true);
     s.getState().set({ calculatorOpen: true });
     s.getState().select(o.members[1].id);
     expect(s.getState().calculatedObjects).toEqual([o.id]);

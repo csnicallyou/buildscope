@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { enableMultiple } from "./mobile-helpers";
 
 test("Телефон: выдвижной список, группа, нижние панели, статусы и PDF", async ({
   page,
@@ -8,6 +9,7 @@ test("Телефон: выдвижной список, группа, нижни�
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/?assembly=canopy");
+  await enableMultiple(page);
   const dock = page.getByRole("navigation", { name: "Панели просмотра" });
   await expect(dock).toBeVisible();
   await expect(page.getByLabel("Поиск конструкций")).not.toBeVisible();

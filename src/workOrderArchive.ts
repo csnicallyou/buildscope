@@ -1,0 +1,127 @@
+import { z } from "zod";
+import {
+  reportErrors,
+  workTypes,
+  type WorkDraft,
+  type WorkId,
+} from "./workOrders";
+
+export const workOrdersStorageKey = "buildscope.work-orders.v1";
+const quantity = z.number().finite().nonnegative().nullable();
+const text = z.string().max(20000);
+const workRow = z.object({
+  id: text,
+  date: text,
+  site: text,
+  shift: text,
+  contractor: text,
+  zone: text,
+  axes: text,
+  workId: z
+    .string()
+    .refine((id) => workTypes.some((w) => w.id === id))
+    .transform((id) => id as WorkId),
+  work: text,
+  plan: quantity,
+  unit: text,
+  actual: quantity,
+  equipment: text,
+  brand: text,
+  plate: text,
+  note: text,
+  target: text,
+  elementIds: z.array(text),
+  project: text,
+  basis: text,
+  modelPlan: quantity,
+  modelNeed: z
+    .object({ value: quantity, unit: text, basis: text })
+    .nullable()
+    .optional(),
+  completed: z.boolean().optional(),
+});
+const draftSchema = z.object({
+  brigade: text,
+  date: text,
+  site: text,
+  shift: text,
+  contractor: text,
+  zone: text,
+  rows: z.array(workRow).max(500),
+  crew: z
+    .array(
+      z.object({
+        id: text,
+        date: text,
+        site: text,
+        contractor: text,
+        shift: text,
+        name: text,
+        start: text,
+        end: text,
+        breakMinutes: z.number().finite().nonnegative(),
+        note: text,
+      }),
+    )
+    .max(200),
+});
+const savedSchema = z.object({
+  id: z.string().min(1),
+  createdAt: text,
+  submittedAt: text.nullable(),
+  draft: draftSchema,
+});
+const archiveSchema = z.object({
+  version: z.literal(1),
+  orders: z.array(savedSchema),
+});
+export type SavedWorkOrder = z.infer<typeof savedSchema>;
+export function parseWorkOrders(raw: string | null): SavedWorkOrder[] {
+  return raw ? archiveSchema.parse(JSON.parse(raw) as unknown).orders : [];
+}
+export function serializeWorkOrders(orders: SavedWorkOrder[]) {
+  return JSON.stringify(archiveSchema.parse({ version: 1, orders }));
+}
+export function issueWorkOrder(draft: WorkDraft): SavedWorkOrder {
+  const errors = reportErrors(draft);
+  if (errors.length) throw Error(errors.join("; "));
+  if (!draft.rows.length) throw Error("Добавьте хотя бы одну работу в наряд");
+  if (draft.rows.some((r) => r.date !== draft.date || r.shift !== draft.shift))
+    throw Error(
+      "Один наряд относится к одной дате и смене. Уточните параметры строк.",
+    );
+  return savedSchema.parse({
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    submittedAt: null,
+    draft: {
+      ...structuredClone(draft),
+      crew: draft.crew.map((r) => ({
+        ...structuredClone(r),
+        start: "",
+        end: "",
+        breakMinutes: 0,
+      })),
+      rows: draft.rows.map((r) => ({
+        ...structuredClone(r),
+        actual: null,
+        completed: false,
+      })),
+    },
+  });
+}
+export function handoffErrors(order: SavedWorkOrder): string[] {
+  return [
+    ...reportErrors(order.draft),
+    ...order.draft.rows.flatMap((row, i) =>
+      row.completed && row.actual === null
+        ? [`Работа ${i + 1}: укажите факт выполненной работы`]
+        : [],
+    ),
+  ];
+}
+export function submitWorkOrder(order: SavedWorkOrder): SavedWorkOrder {
+  const errors = handoffErrors(order);
+  if (errors.length) throw Error(errors.join("; "));
+  return savedSchema.parse({ ...order, submittedAt: new Date().toISOString() });
+}

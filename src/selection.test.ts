@@ -1,0 +1,53 @@
+import { describe, it, expect } from "vitest";
+import { useStore } from "./store";
+import { createKzh } from "./kzh";
+import { modelObjects } from "./objects";
+const project = createKzh("canopy");
+const [a, b] = modelObjects(project).filter((o) => o.root.mark === "Фм4");
+const state = () => useStore.getState();
+describe("Явный режим выбора", () => {
+  it("обычный клик заменяет выбор, повторный сохраняет свойства, калькулятор не включает накопление", () => {
+    state().load(project);
+    state().select(a.id);
+    state().select(b.id);
+    state().select(b.id);
+    expect(state().multipleSelection).toBe(false);
+    expect(state().calculatedObjects).toEqual([b.id]);
+    expect(state().selected).toBe(b.id);
+    state().set({ calculatorOpen: true });
+    state().select(a.id);
+    expect(state().calculatedObjects).toEqual([a.id]);
+    expect(state().multipleSelection).toBe(false);
+  });
+  it("снятие любого из двух объектов оставляет свойства другого", () => {
+    state().load(project);
+    state().setMultipleSelection(true);
+    state().select(a.id);
+    state().select(b.id);
+    state().select(b.id);
+    expect(state().selected).toBe(a.id);
+    state().select(b.id);
+    state().select(a.id);
+    expect(state().selected).toBe(b.id);
+    expect(state().calculatedObjects).toEqual([b.id]);
+    state().removeFromSelection(b.id);
+    expect(state().selected).toBeNull();
+    expect(state().calculatedObjects).toEqual([]);
+  });
+  it("завершение режима оставляет один объект, загрузка и отдельный вид выключают режим", () => {
+    const before = JSON.stringify(project);
+    state().load(project);
+    state().setMultipleSelection(true);
+    state().select(a.id);
+    state().select(b.id);
+    state().setMultipleSelection(false);
+    expect(state().calculatedObjects).toEqual([b.id]);
+    expect(state().selected).toBe(b.id);
+    state().setMultipleSelection(true);
+    state().openObject(b.id);
+    expect(state().multipleSelection).toBe(false);
+    state().load(project);
+    expect(state().multipleSelection).toBe(false);
+    expect(JSON.stringify(project)).toBe(before);
+  });
+});

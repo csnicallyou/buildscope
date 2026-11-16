@@ -72,11 +72,11 @@ export default function MobileControls({
         Модель
       </button>
       <button
-        aria-label="Открыть наряд"
+        aria-label="Открыть наряды"
         aria-pressed={workOrderActive}
         onClick={onWorkOrder}
       >
-        <ClipboardList size={19} /> Наряд
+        <ClipboardList size={19} /> Наряды
       </button>
       <button
         aria-pressed={s.mobilePanel === "tree"}

@@ -1,11 +1,17 @@
-import { showTools, modelView, openTree } from "./mobile-helpers";
+import {
+  showTools,
+  modelView,
+  openTree,
+  enableMultiple,
+  openProperties,
+} from "./mobile-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { elementBounds, type Project } from "../src/model";
 
 test.use({ hasTouch: true });
 for (const mobile of [false, true])
-  test(`Два объекта выбираются подряд в 3D без включения калькулятора${mobile ? " касаниями на телефоне" : ""}`, async ({
+  test(`Одиночный выбор и отдельная кнопка нескольких объектов${mobile ? " касаниями на телефоне" : ""}`, async ({
     page,
   }) => {
     if (mobile) await page.setViewportSize({ width: 390, height: 844 });
@@ -71,6 +77,10 @@ for (const mobile of [false, true])
     await tap("Фм4 · оси 8/А");
     await expect(page.getByTestId("selection-count")).toHaveText("Выбрано: 1");
     await tap("Фм4 · оси 9/А");
+    await expect(page.getByTestId("selection-count")).toHaveText("Выбрано: 1");
+    await tap("Фм4 · оси 8/А");
+    await enableMultiple(page);
+    await tap("Фм4 · оси 9/А");
     await expect(page.getByTestId("selection-count")).toHaveText("Выбрано: 2");
     await openTree(page);
     await expect(
@@ -100,6 +110,9 @@ for (const mobile of [false, true])
       .click();
     await tap("Фм4 · оси 8/А");
     await expect(page.getByTestId("selection-count")).toHaveText("Выбрано: 1");
+    await openProperties(page);
+    await expect(page.locator(".inspector")).toContainText("Фм4 · оси 9/А");
+    await modelView(page);
     await page
       .getByRole("button", { name: "Снять весь выбор", exact: true })
       .click();

@@ -7,8 +7,9 @@ const cell = (xml: string, ref: string) =>
     .replace(/<(\/?)\w+:/g, "<$1")
     .match(new RegExp(`<c[^>]*\\br="${ref}"[^>]*>([\\s\\S]*?)<\\/c>`))?.[1] ??
   "";
+
 for (const mobile of [false, true])
-  test(`Наряд: части из 3D, план/факт, табель, Excel${mobile ? " телефон" : ""}`, async ({
+  test(`Наряд: выдача по дням, сдача, факт и Excel${mobile ? " телефон" : ""}`, async ({
     page,
   }) => {
     if (mobile) await page.setViewportSize({ width: 390, height: 844 });
@@ -27,34 +28,29 @@ for (const mobile of [false, true])
     await modelView(page);
     await page.getByRole("button", { name: "Наряд", exact: true }).click();
     await expect(page.locator(".work-order-map canvas")).toBeVisible();
-    await expect(page.getByLabel("Конструкция для наряда")).toHaveValue(
-      /object:/,
-    );
-    await expect(page.getByLabel("Тип работы наряда")).toHaveValue("excel:13");
+    const target = await page.getByLabel("Конструкция для наряда").inputValue();
     await expect(page.locator(".work-origin")).toContainText("ваш наряд");
     await page.getByLabel("Тип работы наряда").selectOption("excel:7");
     await expect(page.locator(".work-order-add")).toContainText(
       "введите вручную",
     );
-    const map = await page.locator(".work-order-map canvas").boundingBox();
-    expect(map!.height).toBeGreaterThan(mobile ? 140 : 400);
     await page.locator(".work-order-shift summary").click();
+    await page.getByLabel("Дата наряда").fill("2026-11-16");
     await page.getByLabel("Подрядчик наряда").fill("=2+2");
+    await page.getByLabel("Бригада наряда").fill("Тестовая бригада");
     await page.getByLabel("Тип работы наряда").selectOption("prep");
-    await expect(page.locator(".work-origin")).toContainText(
-      "Предложение BuildScope",
-    );
     await page
       .getByRole("button", { name: "Добавить работу", exact: true })
       .click();
-    await expect(page.getByTestId("work-order-row")).toHaveCount(1);
     await expect(page.getByLabel("План работы 1")).toHaveValue("0.676");
-    await expect(page.getByLabel("Факт работы 1")).toHaveValue("");
+    await expect(page.getByTestId("work-model-need").first()).toContainText(
+      "0,676 м³",
+    );
+    await expect(page.getByLabel("Факт работы 1")).toHaveCount(0);
     await page
       .getByRole("button", { name: "Добавить работу", exact: true })
       .click();
     await expect(page.getByTestId("work-order-row")).toHaveCount(1);
-    await page.getByLabel("Факт работы 1").fill("0");
     await page.getByLabel("Тип работы наряда").selectOption("concrete");
     await page
       .getByRole("button", { name: "Добавить работу", exact: true })
@@ -66,16 +62,64 @@ for (const mobile of [false, true])
       .getByRole("button", { name: "Добавить сотрудника", exact: true })
       .click();
     await page.getByLabel("ФИО 1", { exact: true }).fill("Тестовый сотрудник");
+    await expect(page.getByLabel("Начало смены 1")).toHaveCount(0);
+    await page
+      .getByTestId("work-order-row")
+      .first()
+      .getByRole("button", { name: "Показать в 3D" })
+      .click();
+    await expect(page.locator(".model-stage canvas")).toBeVisible();
+    await expect(page.getByLabel("План работы 1")).toHaveValue("0.676");
+    await page.locator(".work-order-shift summary").click();
+    await page.locator(".work-order-panel").evaluate((el) => {
+      el.scrollTop = 0;
+    });
+    await page.screenshot({
+      path: `docs/screenshots/work-order${mobile ? "-mobile" : ""}.png`,
+    });
+    await page
+      .getByRole("button", { name: "Выдать наряд", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Наряды по дням", exact: true }),
+    ).toHaveClass(/active/);
+    await expect(page.locator(".daily-order-card")).toContainText("Ночь");
+    await expect(page.locator(".daily-order-card")).toContainText(
+      "Тестовая бригада",
+    );
+    await page.locator(".daily-order-card").click();
+    await page.locator(".handoff-crew summary").click();
     await page.getByLabel("Начало смены 1").fill("20:00");
     await page.getByLabel("Конец смены 1").fill("08:00");
     await page.getByLabel("Перерыв 1").fill("60");
     await expect(page.locator(".work-crew-row")).toContainText("11 ч");
+    await expect(page.getByLabel("Факт работы 1")).toHaveValue("");
+    await page.getByLabel("Выполнена работа 1").check();
+    await expect(
+      page.getByRole("button", { name: "Сдать наряд", exact: true }),
+    ).toBeDisabled();
+    await page.getByLabel("Факт работы 1").fill("0");
     await page
-      .locator(".work-order-panel")
-      .evaluate((el) => (el.scrollTop = 0));
+      .getByRole("button", { name: "Сохранить выполнение", exact: true })
+      .click();
+    await page.reload();
+    await page
+      .getByRole("button", {
+        name: mobile ? "Открыть наряды" : "Наряды по дням",
+        exact: true,
+      })
+      .click();
+    await page.locator(".daily-order-card").click();
+    await expect(page.getByLabel("Факт работы 1")).toHaveValue("0");
+    await expect(page.getByLabel("Выполнена работа 1")).toBeChecked();
+    await expect(page.getByLabel("Факт работы 2")).toHaveValue("");
+    await expect(page.getByLabel("Выполнена работа 2")).not.toBeChecked();
+    await page
+      .getByRole("button", { name: "Сдать наряд", exact: true })
+      .click();
+    await expect(page.getByLabel("Факт работы 1")).toBeDisabled();
     await page.screenshot({
-      path: `docs/screenshots/work-order${mobile ? "-mobile" : ""}.png`,
-      fullPage: true,
+      path: `docs/screenshots/work-order-handoff${mobile ? "-mobile" : ""}.png`,
     });
     const pending = page.waitForEvent("download");
     await page
@@ -95,21 +139,36 @@ for (const mobile of [false, true])
     expect(cell(vol, "E2")).toContain("=2+2");
     expect(cell(vol, "E2")).not.toContain("<f>");
     expect(cell(vol, "Q2")).toContain("canopy-БП-167");
+    expect(cell(vol, "S2")).toContain("<v>0.676</v>");
+    expect(cell(vol, "V2")).toContain("Да");
+    expect(cell(vol, "V3")).toContain("Не отмечено");
+    expect(cell(vol, "W2")).toContain("Тестовая бригада");
     expect(cell(crew, "I2")).toContain("<v>11</v>");
     expect(cell(crew, "I2")).toContain("MOD(");
     expect(cell(summary, "D2")).toContain("<v>0</v>");
     expect(cell(summary, "D3")).not.toMatch(/<v>[0-9.]+<\/v>/);
     expect(cell(summary, "F3")).toContain("<v>1</v>");
-    expect(strFromU8(files["xl/tables/table1.xml"])).toContain('ref="A1:R3"');
+    expect(strFromU8(files["xl/tables/table1.xml"])).toContain('ref="A1:W3"');
     await page
-      .getByTestId("work-order-row")
-      .first()
-      .getByRole("button", { name: "Показать в 3D" })
+      .getByRole("button", { name: "Новый наряд", exact: true })
       .click();
-    await expect(page.locator(".model-stage canvas")).toBeVisible();
-    await page.getByRole("button", { name: "Наряд", exact: true }).click();
-    await expect(page.getByTestId("work-order-row")).toHaveCount(2);
-    await expect(page.getByLabel("Факт работы 1")).toHaveValue("0");
+    await page.getByLabel("Конструкция для наряда").selectOption(target);
+    await page.getByLabel("Тип работы наряда").selectOption("concrete");
+    await page
+      .getByRole("button", { name: "Добавить работу", exact: true })
+      .click();
+    await page.locator(".work-order-shift summary").click();
+    await page.getByLabel("Дата наряда").fill("2026-11-17");
+    await page
+      .getByRole("button", { name: "Выдать наряд", exact: true })
+      .click();
+    await expect(page.locator(".work-order-day")).toHaveCount(2);
+    await expect(page.locator(".daily-order-card")).toHaveCount(2);
+    await expect(page.locator(".work-order-day").first()).toContainText("День");
+    await expect(page.locator(".work-order-day").last()).toContainText("Ночь");
+    await page.screenshot({
+      path: `docs/screenshots/work-orders-days${mobile ? "-mobile" : ""}.png`,
+    });
     expect(posts).toEqual([]);
     expect(errors).toEqual([]);
   });

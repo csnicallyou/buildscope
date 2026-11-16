@@ -46,6 +46,7 @@ export async function openProperties(page: Page) {
   }
 }
 export async function openCalculator(page: Page) {
+  await enableMultiple(page);
   if (mobile(page)) {
     await page
       .getByRole("navigation", { name: "Панели просмотра" })
@@ -61,5 +62,15 @@ export async function openCalculator(page: Page) {
     });
     if ((await toggle.getAttribute("aria-pressed")) !== "true")
       await toggle.click();
+  }
+}
+export async function enableMultiple(page: Page) {
+  const toggle = page.getByRole("button", {
+    name: "Выбрать несколько",
+    exact: true,
+  });
+  if ((await toggle.getAttribute("aria-pressed")) !== "true") {
+    await modelView(page);
+    await toggle.click();
   }
 }

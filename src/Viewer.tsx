@@ -575,7 +575,12 @@ export default function Viewer({ paused = false }: { paused?: boolean }) {
         }}
         dpr={[1, 2]}
         style={{ background: theme === "dark" ? "#142832" : "#e5edef" }}
-        onPointerMissed={() => useStore.getState().set({ selected: null })}
+        onPointerMissed={() => {
+          const current = useStore.getState();
+          if (!current.openedObject && !current.multipleSelection)
+            current.clearSelection();
+          else if (current.openedObject) current.set({ selected: null });
+        }}
       >
         <Scene paused={paused} />
       </Canvas>

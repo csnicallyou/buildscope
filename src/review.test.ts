@@ -12,6 +12,7 @@ describe("Группа выбора и основания количеств", (
     const [a, b] = modelObjects(p).filter((o) => o.root.mark === "Фм4");
     const s = useStore;
     s.getState().load(p);
+    s.getState().setMultipleSelection(true);
     s.getState().select(a.id);
     s.getState().select(b.id);
     s.getState().set({ hidden: [a.id], isolated: b.id });
@@ -38,6 +39,7 @@ describe("Группа выбора и основания количеств", (
     const a = modelObjects(p).find((o) => o.root.mark === "Фм4")!;
     const s = useStore;
     s.getState().load(p);
+    s.getState().setMultipleSelection(true);
     s.getState().select(a.id);
     s.getState().toggleOnlySelected();
     s.getState().select(a.id);

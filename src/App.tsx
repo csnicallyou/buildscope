@@ -31,6 +31,14 @@ import {
 } from "lucide-react";
 import Viewer from "./Viewer";
 import WorkOrderPanel from "./WorkOrderPanel";
+import DailyWorkOrders from "./DailyWorkOrders";
+import {
+  parseWorkOrders,
+  serializeWorkOrders,
+  workOrdersStorageKey,
+  issueWorkOrder,
+  type SavedWorkOrder,
+} from "./workOrderArchive";
 import { initialWorkDraft } from "./workOrders";
 import InstallationPlayer from "./InstallationPlayer";
 import { installationPlan } from "./installation";
@@ -132,7 +140,74 @@ export default function App() {
   const s = useStore();
   const [search, setSearch] = useState("");
   const [workDraft, setWorkDraft] = useState(initialWorkDraft);
+  const [workIssueError, setWorkIssueError] = useState("");
+  const [workArchive, setWorkArchive] = useState<{
+    orders: SavedWorkOrder[];
+    error: string;
+  }>(() => {
+    try {
+      return {
+        orders: parseWorkOrders(localStorage.getItem(workOrdersStorageKey)),
+        error: "",
+      };
+    } catch {
+      return {
+        orders: [],
+        error:
+          "Не удалось прочитать сохранённые наряды. Данные в браузере не изменены.",
+      };
+    }
+  });
+  const persistWorkOrder = (order: SavedWorkOrder) => {
+    try {
+      const current = parseWorkOrders(
+        localStorage.getItem(workOrdersStorageKey),
+      );
+      if (
+        current.some(
+          (o) =>
+            o.id === order.id &&
+            o.submittedAt &&
+            o.submittedAt !== order.submittedAt,
+        )
+      ) {
+        setWorkArchive({
+          orders: current,
+          error:
+            "Этот наряд уже сдан в другой вкладке. Вернитесь к списку и откройте актуальную запись.",
+        });
+        return false;
+      }
+      const orders = [order, ...current.filter((o) => o.id !== order.id)];
+      localStorage.setItem(workOrdersStorageKey, serializeWorkOrders(orders));
+      setWorkArchive({ orders, error: "" });
+      return true;
+    } catch {
+      setWorkArchive((a) => ({
+        ...a,
+        error:
+          "Не удалось сохранить наряд в этом браузере. Проверьте доступ к хранилищу и свободное место; прежние данные не удалены.",
+      }));
+      return false;
+    }
+  };
   const [mobileTools, setMobileTools] = useState(false);
+  useEffect(() => {
+    const refresh = (event: StorageEvent) => {
+      if (event.key !== workOrdersStorageKey) return;
+      try {
+        setWorkArchive({ orders: parseWorkOrders(event.newValue), error: "" });
+      } catch {
+        setWorkArchive((a) => ({
+          ...a,
+          error:
+            "Не удалось прочитать обновлённые наряды. Прежние данные не удалены.",
+        }));
+      }
+    };
+    window.addEventListener("storage", refresh);
+    return () => window.removeEventListener("storage", refresh);
+  }, []);
   const [tab, setTab] = useState<
     | "model"
     | "schedule"
@@ -141,9 +216,13 @@ export default function App() {
     | "source"
     | "audit"
     | "workorder"
+    | "workdays"
   >("model");
   useEffect(() => {
     if (tab !== "model") useStore.getState().set({ mobilePanel: "none" });
+    document
+      .querySelector<HTMLButtonElement>(".workspace-modes button.active")
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [tab]);
   useEffect(() => {
     if (tab === "workorder" && s.mobilePanel !== "none") setTab("model");
@@ -478,7 +557,7 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.9</span>
+          <span>0.10</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -582,6 +661,12 @@ export default function App() {
           onClick={openWorkOrder}
         >
           <ClipboardList size={17} /> Наряд
+        </button>
+        <button
+          className={tab === "workdays" ? "active" : ""}
+          onClick={() => setTab("workdays")}
+        >
+          <ClipboardList size={17} /> Наряды по дням
         </button>
         <button
           className={tab === "schedule" ? "active" : ""}
@@ -742,16 +827,20 @@ export default function App() {
                           key={item.id}
                           className={`tree-row ${!opened && s.calculatedObjects.includes(item.id) ? "in-calculation" : ""} ${s.selected === item.id ? "selected" : ""} ${s.hidden.includes(item.id) ? "hidden-row" : ""}`}
                         >
-                          {!opened && hasObjects(s.project) && (
-                            <label className="calculation-check">
-                              <input
-                                type="checkbox"
-                                aria-label={`В расчёт ${item.label}`}
-                                checked={s.calculatedObjects.includes(item.id)}
-                                onChange={() => s.select(item.id)}
-                              />
-                            </label>
-                          )}
+                          {!opened &&
+                            hasObjects(s.project) &&
+                            s.multipleSelection && (
+                              <label className="calculation-check">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`В расчёт ${item.label}`}
+                                  checked={s.calculatedObjects.includes(
+                                    item.id,
+                                  )}
+                                  onChange={() => s.select(item.id)}
+                                />
+                              </label>
+                            )}
                           <button
                             className="element-button"
                             onClick={() => {
@@ -995,7 +1084,6 @@ export default function App() {
                       mobileExpanded: false,
                       measure: false,
                       points: [],
-                      selected: null,
                       calculatedObjects:
                         !s.calculatorOpen && selectedObject
                           ? [
@@ -1101,6 +1189,21 @@ export default function App() {
             </div>
             {!opened && hasObjects(s.project) && (
               <div className="multi-selection-bar">
+                <button
+                  className={
+                    s.multipleSelection
+                      ? "active multiple-selection-toggle"
+                      : "multiple-selection-toggle"
+                  }
+                  aria-label="Выбрать несколько"
+                  aria-pressed={s.multipleSelection}
+                  onClick={() => s.setMultipleSelection(!s.multipleSelection)}
+                >
+                  <Layers3 size={15} />{" "}
+                  {s.multipleSelection
+                    ? "Завершить выбор"
+                    : "Выбрать несколько"}
+                </button>
                 <strong data-testid="selection-count" aria-live="polite">
                   Выбрано: {s.calculatedObjects.length}
                 </strong>
@@ -1204,6 +1307,20 @@ export default function App() {
               <div className="work-order-layout">
                 <div className="work-order-map">
                   <div className="work-order-map-heading">
+                    {!opened && hasObjects(s.project) && (
+                      <button
+                        aria-label="Выбрать несколько"
+                        aria-pressed={s.multipleSelection}
+                        className={s.multipleSelection ? "active" : ""}
+                        onClick={() =>
+                          s.setMultipleSelection(!s.multipleSelection)
+                        }
+                      >
+                        {s.multipleSelection
+                          ? "Завершить выбор"
+                          : "Выбрать несколько"}
+                      </button>
+                    )}
                     <strong>
                       {selectedItem
                         ? selectedItem.kind === "steel"
@@ -1248,6 +1365,24 @@ export default function App() {
                   </div>
                 </div>
                 <WorkOrderPanel
+                  onIssue={(draft) => {
+                    try {
+                      const order = issueWorkOrder(draft);
+                      if (persistWorkOrder(order)) {
+                        setWorkIssueError("");
+                        setWorkDraft(initialWorkDraft());
+                        setTab("workdays");
+                        setMessage("Наряд выдан и добавлен в список по дням");
+                      }
+                    } catch (e) {
+                      setWorkIssueError(
+                        e instanceof Error
+                          ? e.message
+                          : "Не удалось выдать наряд",
+                      );
+                    }
+                  }}
+                  archiveError={workIssueError || workArchive.error}
                   project={s.project}
                   opened={s.openedObject}
                   selected={s.selected}
@@ -1262,6 +1397,7 @@ export default function App() {
                       s.openObject(whole ? null : object.id);
                       useStore.getState().set({
                         selected: id,
+                        ...(whole ? { calculatedObjects: [id] } : {}),
                         filters: emptyFilters,
                         hideConcrete: false,
                         rebarKinds: allBarKinds,
@@ -1273,6 +1409,13 @@ export default function App() {
                   }}
                 />
               </div>
+            ) : tab === "workdays" ? (
+              <DailyWorkOrders
+                orders={workArchive.orders}
+                error={workArchive.error}
+                onSave={persistWorkOrder}
+                onNew={openWorkOrder}
+              />
             ) : tab === "audit" ? (
               <InspectionPanel
                 project={s.project}
@@ -1767,9 +1910,9 @@ export default function App() {
       </div>
       <MobileControls
         onModel={() => setTab("model")}
-        onWorkOrder={openWorkOrder}
+        onWorkOrder={() => setTab("workdays")}
         modelActive={tab === "model"}
-        workOrderActive={tab === "workorder"}
+        workOrderActive={tab === "workorder" || tab === "workdays"}
       />
       <footer
         className={`status ${message.startsWith("Ошибка") ? "error" : ""}`}

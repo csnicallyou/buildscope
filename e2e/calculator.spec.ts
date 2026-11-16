@@ -1,4 +1,4 @@
-import { openTree, openCalculator } from "./mobile-helpers";
+import { openTree, openCalculator, enableMultiple } from "./mobile-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
@@ -6,6 +6,7 @@ test("Калькулятор выбирает весь объект прямым
   page,
 }) => {
   await page.goto("/?assembly=canopy");
+  await enableMultiple(page);
   await page.getByLabel("Поиск конструкций").fill("Фм1 · оси 1/А");
   await page
     .getByRole("button", { name: "Фм1 Фм1 · оси 1/А", exact: true })

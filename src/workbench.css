@@ -565,6 +565,15 @@
 .multi-selection-bar button:disabled {
   display: none;
 }
+.multi-selection-bar .multiple-selection-toggle {
+  margin-left: 0;
+  border: 1px solid var(--border);
+  min-height: 32px;
+}
+.multi-selection-bar .multiple-selection-toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .installation-player {
   z-index: 200;
 }
@@ -901,5 +910,200 @@
 @media (prefers-reduced-motion: reduce) {
   .tree-panel {
     transition: none;
+  }
+}
+.multi-selection-bar button.multiple-selection-toggle {
+  margin-left: 0;
+}
+@media (min-width: 851px) {
+  .multi-selection-bar button.multiple-selection-toggle {
+    min-height: 28px;
+  }
+}
+.model-need-preview,
+.model-need {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-left: 2px solid var(--accent);
+  padding: 8px 12px;
+  background: var(--bg);
+}
+.model-need-preview strong,
+.model-need strong {
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 600;
+}
+.model-need-preview small,
+.model-need small {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.issue-work-order {
+  margin: 12px 0 0;
+  min-height: 38px;
+  width: 100%;
+  border: 1px solid var(--accent);
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.work-order-panel .work-crew-row {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+.shift-date-note {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.daily-work-orders {
+  overflow: auto;
+  height: 100%;
+}
+.daily-orders-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: start;
+}
+.daily-orders-heading h1 {
+  margin: 0 0 10px;
+}
+.daily-orders-heading p,
+.storage-note {
+  color: var(--muted);
+  max-width: 80ch;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.daily-orders-heading > button,
+.handoff-actions > button {
+  border: 1px solid var(--border);
+  min-height: 38px;
+}
+.daily-orders-heading .primary,
+.handoff-actions .primary {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.work-order-day {
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+.work-order-day h2 {
+  font-size: 16px;
+}
+.daily-order-card {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: 12px 24px;
+  justify-content: flex-start;
+  text-align: left;
+  white-space: normal;
+  padding: 18px;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+.daily-order-card strong {
+  min-width: 170px;
+  font-size: 14px;
+}
+.daily-order-card .order-issued,
+.daily-order-card .order-submitted {
+  margin-left: auto;
+  color: var(--accent);
+}
+.handoff-heading {
+  margin: 20px 0;
+  border-top: 1px solid var(--border);
+  padding-top: 5px;
+}
+.handoff-heading p,
+.handoff-row > p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.handoff-heading > span {
+  color: var(--accent);
+}
+.handoff-row {
+  padding: 18px;
+  margin: 14px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+.handoff-row h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+.handoff-values {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+  align-items: center;
+}
+.handoff-values > span,
+.handoff-values > label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+}
+.handoff-values strong {
+  font-size: 17px;
+  font-weight: 500;
+}
+.handoff-values input[type="number"] {
+  width: 100%;
+  min-height: 38px;
+}
+.handoff-values .completion-check {
+  flex-direction: row;
+  align-items: center;
+}
+.completion-check input {
+  width: 20px;
+  height: 20px;
+}
+.handoff-row > small {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.handoff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0 12px;
+}
+.orders-empty {
+  padding: 30px 0;
+}
+@media (max-width: 850px) {
+  .daily-orders-heading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .daily-order-card {
+    flex-direction: column;
+    gap: 7px;
+    padding: 14px;
+  }
+  .daily-order-card .order-issued,
+  .daily-order-card .order-submitted {
+    margin-left: 0;
+  }
+  .handoff-values {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 12px;
+  }
+  .handoff-row {
+    padding: 14px;
   }
 }

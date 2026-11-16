@@ -60,8 +60,8 @@ export default function SelectionCalculator() {
       </div>
       <section className="property-section calculator-actions">
         <p>
-          Нажимайте объекты в 3D или отмечайте их в списке. Повторное нажатие
-          убирает объект из расчёта.
+          Для набора объектов включите «Выбрать несколько» над моделью.
+          Повторное нажатие в этом режиме убирает объект из расчёта.
         </p>
         <button
           onClick={() => {
@@ -169,7 +169,7 @@ export default function SelectionCalculator() {
                 </span>
                 <button
                   aria-label={`Убрать из расчёта ${o.root.name}`}
-                  onClick={() => s.select(o.id)}
+                  onClick={() => s.removeFromSelection(o.id)}
                 >
                   <X size={16} />
                 </button>

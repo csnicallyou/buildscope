@@ -74,9 +74,9 @@ for (const mobile of [false, true])
         throw Error("No highlighted surface");
       });
       await page.locator("canvas").click({ position: { x: 3, y: 3 } });
-      await page
-        .getByLabel("В расчёт Фм1 · оси 1/А", { exact: true })
-        .uncheck();
+      await expect(page.getByTestId("selection-count")).toHaveText(
+        "Выбрано: 0",
+      );
       await page.locator("canvas").click({ position: hit });
       await expect(inspector).toContainText("Объект целиком");
       await expect(materials).toContainText("339,4 кг");

@@ -226,7 +226,35 @@ export type WorkRow = {
   project: string;
   basis: string;
   modelPlan: number | null;
+  modelNeed?: { value: number | null; unit: string; basis: string } | null;
+  completed?: boolean;
 };
+export function workMaterialNeed(target: WorkTarget, id: WorkId) {
+  const type = workTypes.find((w) => w.id === id)!;
+  const key = operationKey(id);
+  const rule = [
+    "prep",
+    "concrete",
+    "sand",
+    "gravel",
+    "steel",
+    "anchors",
+    "install",
+  ].includes(key)
+    ? key
+    : /^Бетонирование\s/i.test(type.label)
+      ? "concrete"
+      : null;
+  if (!rule) return null;
+  const ref = workReference(target, rule as WorkId);
+  return ref.elements.length
+    ? {
+        value: ref.value,
+        unit: ref.unit,
+        basis: `Справочная потребность выбранных тел, без запаса и потерь. ${ref.basis}`,
+      }
+    : null;
+}
 export type CrewRow = {
   id: string;
   date: string;
@@ -240,6 +268,7 @@ export type CrewRow = {
   note: string;
 };
 export type WorkDraft = {
+  brigade: string;
   date: string;
   site: string;
   shift: string;
@@ -256,6 +285,7 @@ export const today = () =>
     day: "2-digit",
   }).format(new Date());
 export const initialWorkDraft = (): WorkDraft => ({
+  brigade: "Наша бригада",
   date: today(),
   site: "Маленковская",
   shift: "День",
@@ -313,6 +343,8 @@ export function addWork(
     project: p.name,
     basis: ref.basis,
     modelPlan: ref.value,
+    modelNeed: workMaterialNeed(target, kind),
+    completed: false,
   };
 }
 export function crewHours(r: CrewRow): number | null {

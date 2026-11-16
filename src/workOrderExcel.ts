@@ -36,10 +36,10 @@ function updateSheet(bytes: Uint8Array, rows: Cell[][], columns: number) {
     const row = doc.createElementNS(NS, "row");
     row.setAttribute("r", String(i + 2));
     const widths =
-      columns === 18
+      columns === 23
         ? [
             6, 13, 24, 11, 24, 24, 14, 48, 13, 12, 13, 24, 19, 17, 45, 32, 28,
-            52,
+            52, 20, 18, 58, 18, 26,
           ]
         : columns === 11
           ? [6, 13, 24, 24, 11, 30, 20, 23, 20, 44, 18]
@@ -142,6 +142,11 @@ export async function createWorkOrder(draft: WorkDraft) {
     r.plan === r.modelPlan
       ? r.basis
       : `План введён вручную. ${r.basis}${r.modelPlan === null ? "" : `; модель: ${r.modelPlan} ${r.unit}`}`,
+    r.modelNeed?.value ?? null,
+    r.modelNeed?.unit ?? "",
+    r.modelNeed?.basis ?? "Потребность не определена",
+    r.completed ? "Да" : "Не отмечено",
+    draft.brigade,
   ]);
   const crew: Cell[][] = draft.crew.map((r, i) => [
     i + 1,
@@ -199,7 +204,7 @@ export async function createWorkOrder(draft: WorkDraft) {
     ];
   });
   for (const [index, data, columns] of [
-    [1, rows, 18],
+    [1, rows, 23],
     [2, crew, 11],
     [3, summary, 6],
   ] as const) {

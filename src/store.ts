@@ -13,6 +13,9 @@ type State = {
   openedObject: string | null;
   calculatorOpen: boolean;
   calculatedObjects: string[];
+  multipleSelection: boolean;
+  setMultipleSelection: (enabled: boolean) => void;
+  removeFromSelection: (id: string) => void;
   onlySelected: boolean;
   mobilePanel: "none" | "tree" | "inspector";
   mobileExpanded: boolean;
@@ -52,6 +55,7 @@ export const useStore = create<State>((set, get) => ({
   openedObject: null,
   calculatorOpen: false,
   calculatedObjects: [],
+  multipleSelection: false,
   onlySelected: false,
   mobilePanel: "none",
   mobileExpanded: false,
@@ -111,26 +115,61 @@ export const useStore = create<State>((set, get) => ({
       cameraRevision: s.cameraRevision + 1,
     });
   },
+  setMultipleSelection: (enabled) => {
+    const s = get();
+    if (s.openedObject) return;
+    const focus =
+      s.selected && s.calculatedObjects.includes(s.selected)
+        ? s.selected
+        : (s.calculatedObjects.at(-1) ?? null);
+    set(
+      enabled
+        ? { multipleSelection: true, measure: false, points: [] }
+        : {
+            multipleSelection: false,
+            selected: focus,
+            calculatedObjects: focus ? [focus] : [],
+            calculatorOpen: false,
+            onlySelected: false,
+            groupVisibility: null,
+            hidden: s.groupVisibility?.hidden ?? s.hidden,
+            isolated: s.groupVisibility?.isolated ?? s.isolated,
+          },
+    );
+  },
+  removeFromSelection: (id) => {
+    const s = get();
+    const remaining = s.calculatedObjects.filter((x) => x !== id);
+    set({
+      calculatedObjects: remaining,
+      selected:
+        s.selected && remaining.includes(s.selected)
+          ? s.selected
+          : (remaining.at(-1) ?? null),
+      ...(!remaining.length && s.onlySelected
+        ? {
+            onlySelected: false,
+            groupVisibility: null,
+            hidden: s.groupVisibility?.hidden ?? [],
+            isolated: s.groupVisibility?.isolated ?? null,
+          }
+        : {}),
+    });
+  },
   select: (id) => {
     const s = get();
     if (hasObjects(s.project) && !s.openedObject) {
       const root = objectFor(s.project, id)?.id;
       if (root) {
-        const removing = s.calculatedObjects.includes(root);
-        set({
-          selected: removing ? null : root,
-          ...(removing && s.calculatedObjects.length === 1 && s.onlySelected
-            ? {
-                onlySelected: false,
-                groupVisibility: null,
-                hidden: s.groupVisibility?.hidden ?? [],
-                isolated: s.groupVisibility?.isolated ?? null,
-              }
-            : {}),
-          calculatedObjects: removing
-            ? s.calculatedObjects.filter((x) => x !== root)
-            : [...s.calculatedObjects, root],
-        });
+        if (!s.multipleSelection)
+          set({ selected: root, calculatedObjects: [root] });
+        else if (s.calculatedObjects.includes(root))
+          s.removeFromSelection(root);
+        else
+          set({
+            selected: root,
+            calculatedObjects: [...s.calculatedObjects, root],
+          });
       }
       return;
     }
@@ -144,11 +183,13 @@ export const useStore = create<State>((set, get) => ({
   openObject: (id) =>
     set((s) => ({
       openedObject: id,
+      multipleSelection: false,
       calculatorOpen: false,
       onlySelected: false,
       groupVisibility: null,
       mobilePanel: "none",
       selected: id ? null : s.openedObject,
+      ...(!id && s.openedObject ? { calculatedObjects: [s.openedObject] } : {}),
       hidden: [],
       isolated: null,
       offsets: {},
@@ -168,6 +209,7 @@ export const useStore = create<State>((set, get) => ({
       openedObject: null,
       calculatorOpen: false,
       calculatedObjects: [],
+      multipleSelection: false,
       onlySelected: false,
       groupVisibility: null,
       mobilePanel: "none",

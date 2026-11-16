@@ -12,8 +12,8 @@ import {
   sourceWorkTypes,
   workTargets,
   workReference,
+  workMaterialNeed,
   addWork,
-  crewHours,
   reportErrors,
   type WorkDraft,
   type WorkId,
@@ -33,6 +33,8 @@ export default function WorkOrderPanel({
   draft,
   onDraft,
   onFocus,
+  onIssue,
+  archiveError,
 }: {
   project: Project;
   opened: string | null;
@@ -41,6 +43,8 @@ export default function WorkOrderPanel({
   draft: WorkDraft;
   onDraft: Dispatch<SetStateAction<WorkDraft>>;
   onFocus: (id: string) => void;
+  onIssue: (draft: WorkDraft) => void;
+  archiveError: string;
 }) {
   const targets = useMemo(
     () => workTargets(project, opened),
@@ -59,6 +63,30 @@ export default function WorkOrderPanel({
   const target = targets.find((t) => t.id === targetId),
     ref = target ? workReference(target, workId) : null,
     errors = reportErrors(draft);
+  const needTargets =
+    !opened && selectedRoots.length > 1
+      ? targets.filter((t) =>
+          selectedRoots.some((id) => t.id === `object:${id}`),
+        )
+      : target
+        ? [target]
+        : [];
+  const need = needTargets.length
+    ? workMaterialNeed(
+        needTargets.length === 1
+          ? needTargets[0]
+          : {
+              id: "selection",
+              label: "Выбранные объекты",
+              elements: [
+                ...new Map(
+                  needTargets.flatMap((t) => t.elements).map((e) => [e.id, e]),
+                ).values(),
+              ],
+            },
+        workId,
+      )
+    : null;
   const updateRow = (id: string, patch: Partial<WorkRow>) =>
     onDraft((d) => ({
       ...d,
@@ -125,8 +153,9 @@ export default function WorkOrderPanel({
         <div>
           <h1>Наряд</h1>
           <p>
-            Работы по объектам и частям 3D-модели. Факт вводится вручную.
-            Черновик хранится до закрытия этой страницы.
+            Составьте план работ по модели, затем выдайте наряд на выбранный
+            день. Факт и выполнение заполняются при сдаче во вкладке «Наряды по
+            дням». До выдачи черновик хранится только в открытой странице.
           </p>
         </div>
         <button
@@ -144,6 +173,14 @@ export default function WorkOrderPanel({
           )}
         </button>
       </div>
+      {archiveError && <p role="alert">{archiveError}</p>}
+      <button
+        className="issue-work-order primary"
+        disabled={!draft.rows.length || errors.length > 0}
+        onClick={() => onIssue(draft)}
+      >
+        Выдать наряд
+      </button>
       <details className="work-order-shift">
         <summary>
           Параметры смены{" "}
@@ -152,14 +189,36 @@ export default function WorkOrderPanel({
           </span>
         </summary>
         <fieldset className="work-order-metadata">
-          <legend>Параметры новых строк</legend>
+          <legend>Параметры наряда</legend>
+          <label>
+            Бригада
+            <input
+              aria-label="Бригада наряда"
+              value={draft.brigade}
+              onChange={(e) =>
+                onDraft((d) => ({ ...d, brigade: e.target.value }))
+              }
+            />
+          </label>
+          <small className="shift-date-note">
+            Дата наряда — дата начала смены. Для ночной смены окончание может
+            быть на следующий день.
+          </small>
           <label>
             Дата
             <input
               aria-label="Дата наряда"
               type="date"
               value={draft.date}
-              onChange={(e) => onDraft((d) => ({ ...d, date: e.target.value }))}
+              onChange={(e) => {
+                const date = e.target.value;
+                onDraft((d) => ({
+                  ...d,
+                  date,
+                  rows: d.rows.map((r) => ({ ...r, date })),
+                  crew: d.crew.map((r) => ({ ...r, date })),
+                }));
+              }}
             />
           </label>
           <label>
@@ -175,9 +234,15 @@ export default function WorkOrderPanel({
             <select
               aria-label="Смена наряда"
               value={draft.shift}
-              onChange={(e) =>
-                onDraft((d) => ({ ...d, shift: e.target.value }))
-              }
+              onChange={(e) => {
+                const shift = e.target.value;
+                onDraft((d) => ({
+                  ...d,
+                  shift,
+                  rows: d.rows.map((r) => ({ ...r, shift })),
+                  crew: d.crew.map((r) => ({ ...r, shift })),
+                }));
+              }}
             >
               <option>День</option>
               <option>Ночь</option>
@@ -266,6 +331,21 @@ export default function WorkOrderPanel({
             "Эта работа не соответствует выбранной части. Выберите другой тип или «Другая работа»."
           )}
         </p>
+        <div className="model-need-preview">
+          <span>
+            Нужно по модели
+            {needTargets.length > 1 ? ` · ${needTargets.length} объектов` : ""}
+          </span>
+          <strong>
+            {need
+              ? `${f(need.value)} ${need.unit}`
+              : "Не определено для этой работы"}
+          </strong>
+          <small>
+            {need?.basis ??
+              "Количество материала выбранных тел будет показано, если определены материал и геометрия этой операции."}
+          </small>
+        </div>
         <button onClick={() => add()} disabled={!ref?.elements.length}>
           <Plus size={16} />
           Добавить работу
@@ -344,26 +424,22 @@ export default function WorkOrderPanel({
                   }
                 />
               </label>
-              <label>
-                Факт, {r.unit}
-                <input
-                  aria-label={`Факт работы ${index + 1}`}
-                  type="number"
-                  min={0}
-                  step="any"
-                  value={r.actual ?? ""}
-                  placeholder="Не введён"
-                  onChange={(e) =>
-                    updateRow(r.id, {
-                      actual: e.target.value === "" ? null : +e.target.value,
-                    })
-                  }
-                />
-              </label>
+              <div className="model-need" data-testid="work-model-need">
+                <span>Нужно по модели</span>
+                <strong>
+                  {r.modelNeed
+                    ? `${f(r.modelNeed.value)} ${r.modelNeed.unit}`
+                    : "Не определено"}
+                </strong>
+                <small>Без запаса и потерь</small>
+              </div>
               <span>
                 {r.date} · {r.shift} · {r.axes || "Оси не заданы"}
               </span>
             </div>
+            <small>
+              Факт и отметка выполнения — при сдаче сохранённого наряда.
+            </small>
             <small>
               {r.plan === r.modelPlan
                 ? r.basis
@@ -417,8 +493,8 @@ export default function WorkOrderPanel({
       <details className="work-crew">
         <summary>Табель ({draft.crew.length})</summary>
         <p>
-          ФИО и фактическое время вводятся вручную. Ночная смена может
-          переходить через полночь.
+          Добавьте сотрудников бригады. Фактическое время и часы заполняются при
+          сдаче наряда.
         </p>
         <button
           onClick={() =>
@@ -455,37 +531,7 @@ export default function WorkOrderPanel({
                 onChange={(e) => updateCrew(r.id, { name: e.target.value })}
               />
             </label>
-            <label>
-              Начало
-              <input
-                aria-label={`Начало смены ${i + 1}`}
-                type="time"
-                value={r.start}
-                onChange={(e) => updateCrew(r.id, { start: e.target.value })}
-              />
-            </label>
-            <label>
-              Окончание
-              <input
-                aria-label={`Конец смены ${i + 1}`}
-                type="time"
-                value={r.end}
-                onChange={(e) => updateCrew(r.id, { end: e.target.value })}
-              />
-            </label>
-            <label>
-              Перерыв, мин
-              <input
-                aria-label={`Перерыв ${i + 1}`}
-                type="number"
-                min={0}
-                value={r.breakMinutes}
-                onChange={(e) =>
-                  updateCrew(r.id, { breakMinutes: +e.target.value })
-                }
-              />
-            </label>
-            <span>{f(crewHours(r))} ч</span>
+            <span>Время — при сдаче</span>
             <button
               aria-label={`Удалить сотрудника ${i + 1}`}
               onClick={() =>
