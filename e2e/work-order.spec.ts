@@ -26,8 +26,24 @@ for (const mobile of [false, true])
       .click();
     await modelView(page);
     await page.getByRole("button", { name: "Наряд", exact: true }).click();
+    await expect(page.locator(".work-order-map canvas")).toBeVisible();
+    await expect(page.getByLabel("Конструкция для наряда")).toHaveValue(
+      /object:/,
+    );
+    await expect(page.getByLabel("Тип работы наряда")).toHaveValue("excel:13");
+    await expect(page.locator(".work-origin")).toContainText("ваш наряд");
+    await page.getByLabel("Тип работы наряда").selectOption("excel:7");
+    await expect(page.locator(".work-order-add")).toContainText(
+      "введите вручную",
+    );
+    const map = await page.locator(".work-order-map canvas").boundingBox();
+    expect(map!.height).toBeGreaterThan(mobile ? 140 : 400);
+    await page.locator(".work-order-shift summary").click();
     await page.getByLabel("Подрядчик наряда").fill("=2+2");
     await page.getByLabel("Тип работы наряда").selectOption("prep");
+    await expect(page.locator(".work-origin")).toContainText(
+      "Предложение BuildScope",
+    );
     await page
       .getByRole("button", { name: "Добавить работу", exact: true })
       .click();

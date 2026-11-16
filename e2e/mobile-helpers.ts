@@ -24,6 +24,15 @@ export async function showTools(page: Page) {
     if ((await tools.getAttribute("aria-pressed")) !== "true")
       await tools.click();
   }
+  const display = page.getByRole("button", {
+    name: "Отображение",
+    exact: true,
+  });
+  if (
+    (await display.isVisible()) &&
+    (await display.getAttribute("aria-expanded")) !== "true"
+  )
+    await display.click();
 }
 export async function openProperties(page: Page) {
   if (mobile(page)) {

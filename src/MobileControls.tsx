@@ -6,6 +6,7 @@ import {
   ChevronUp,
   ChevronDown,
   GripHorizontal,
+  ClipboardList,
 } from "lucide-react";
 import { useRef } from "react";
 import { useStore } from "./store";
@@ -46,12 +47,22 @@ export function MobilePanelHandle() {
     </div>
   );
 }
-export default function MobileControls({ onModel }: { onModel: () => void }) {
+export default function MobileControls({
+  onModel,
+  onWorkOrder,
+  modelActive,
+  workOrderActive,
+}: {
+  onModel: () => void;
+  onWorkOrder: () => void;
+  modelActive: boolean;
+  workOrderActive: boolean;
+}) {
   const s = useStore();
   return (
     <nav className="mobile-dock" aria-label="Панели просмотра">
       <button
-        aria-pressed={s.mobilePanel === "none"}
+        aria-pressed={modelActive && s.mobilePanel === "none"}
         onClick={() => {
           s.set({ mobilePanel: "none" });
           onModel();
@@ -59,6 +70,13 @@ export default function MobileControls({ onModel }: { onModel: () => void }) {
       >
         <Box size={19} />
         Модель
+      </button>
+      <button
+        aria-label="Открыть наряд"
+        aria-pressed={workOrderActive}
+        onClick={onWorkOrder}
+      >
+        <ClipboardList size={19} /> Наряд
       </button>
       <button
         aria-pressed={s.mobilePanel === "tree"}

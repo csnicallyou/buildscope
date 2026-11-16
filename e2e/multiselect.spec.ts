@@ -33,7 +33,6 @@ for (const mobile of [false, true])
         max[a] = Math.max(max[a], b.max[a] + e.position[a]);
       }
     }
-    const diameter = Math.hypot(...max.map((v, a) => v - min[a]));
     const canvas = page.locator("canvas");
     await page.waitForLoadState("networkidle");
     await page.evaluate(
@@ -55,7 +54,10 @@ for (const mobile of [false, true])
       );
       const rect = await canvas.boundingBox();
       if (!rect) throw Error("Canvas unavailable");
-      const zoom = Math.min(rect.width, rect.height) / (diameter * 1.15);
+      const zoom = Math.min(
+        rect.width / ((max[0] - min[0]) * 1.15),
+        rect.height / ((max[2] - min[2]) * 1.15),
+      );
       const e = project.elements.find((e) => e.name === name)!;
       return {
         x: rect.width / 2 + (e.position[0] - (min[0] + max[0]) / 2) * zoom,

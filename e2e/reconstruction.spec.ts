@@ -55,6 +55,7 @@ test("Павильон: исходная сборка, свойства, арм�
     fullPage: true,
   });
   await page.locator("canvas").click({ position: { x: 10, y: 10 } });
+  await page.getByRole("button", { name: "Отображение", exact: true }).click();
   await page.getByLabel("Схема арматуры", { exact: true }).check();
   await expect(page.getByLabel("Непрозрачность")).toHaveValue("0.2");
   // Assert the rendered steel is actually visible, beyond the checkbox state.

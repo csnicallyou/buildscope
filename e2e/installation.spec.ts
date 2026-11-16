@@ -85,6 +85,9 @@ for (const mobile of [false, true])
     await page.getByTestId("start-installation").click();
     const player = page.getByTestId("installation-player");
     await expect(player).toBeVisible();
+    const stage = await player.locator(".installation-stage").boundingBox();
+    expect(stage!.height).toBeGreaterThan(page.viewportSize()!.height * 0.5);
+    expect(stage!.width).toBeGreaterThan(page.viewportSize()!.width * 0.9);
     await page
       .getByRole("button", { name: "Пауза анимации", exact: true })
       .click();
@@ -148,7 +151,9 @@ for (const mobile of [false, true])
         0,
       ) /
       (96 * 96 * 3);
-    expect(meanDifference).toBeLessThan(5);
+    // Closer framing magnifies subpixel edges in the 96px downsample.
+    // <6 is <2.4% of the RGB range, and still rejects a camera reset.
+    expect(meanDifference).toBeLessThan(6);
     if (mobile) {
       await page.getByTestId("start-installation").click();
       await expect(player).toBeVisible();
@@ -183,6 +188,7 @@ test("Щебень, анкеры, смена части и reduced motion", asyn
   await expect(page.getByTestId("installation-player")).toContainText(
     "стержней",
   );
+  await page.getByRole("button", { name: "Завершить анимацию" }).click();
   await page
     .getByRole("button", {
       name: "БП Бетонная подготовка Фм1 · 1/А",

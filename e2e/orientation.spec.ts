@@ -30,7 +30,7 @@ for (const mobile of [false, true])
       ...(min.map((v, a) => (v + max[a]) / 2) as [number, number, number]),
     );
     const diameter = Math.hypot(...max.map((v, a) => v - min[a]));
-    const distance = (diameter * 1.5) / Math.min(1, box!.width / box!.height);
+    const distance = (diameter * 1.25) / Math.min(1, box!.width / box!.height);
     const cam = new PerspectiveCamera(
       42,
       box!.width / box!.height,

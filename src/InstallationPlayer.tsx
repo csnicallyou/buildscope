@@ -99,10 +99,29 @@ export default function InstallationPlayer({
   return (
     <section
       className="installation-player"
+      role="dialog"
+      aria-modal="true"
       aria-label="Устройство выбранной части"
       data-testid="installation-player"
       data-phase={frame.step.phase}
       data-playing={playing}
+      onKeyDown={(e) => {
+        if (e.key !== "Tab") return;
+        const controls = [
+          ...e.currentTarget.querySelectorAll<HTMLElement>(
+            "button:not(:disabled), select, input, summary, a[href]",
+          ),
+        ].filter((n) => n.getClientRects().length > 0);
+        const first = controls[0],
+          last = controls[controls.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }}
     >
       <header className="installation-heading">
         <div>
@@ -146,19 +165,22 @@ export default function InstallationPlayer({
             </select>
           </label>
         </div>
-        <p
-          className="installation-explanation"
-          data-testid="installation-explanation"
-        >
-          {frame.step.description}
-        </p>
-        <p className="installation-tool-list">
-          Инструменты:{" "}
-          {(frame.step.phase === "tie" && /анкер/i.test(item.label)
-            ? ["Монтажный шаблон (схема)", "Ключ"]
-            : (toolNames[frame.step.phase] ?? [])
-          ).join(", ")}
-        </p>
+        <details className="installation-description">
+          <summary>Пояснение этапа и инструменты</summary>
+          <p
+            className="installation-explanation"
+            data-testid="installation-explanation"
+          >
+            {frame.step.description}
+          </p>
+          <p className="installation-tool-list">
+            Инструменты:{" "}
+            {(frame.step.phase === "tie" && /анкер/i.test(item.label)
+              ? ["Монтажный шаблон (схема)", "Ключ"]
+              : (toolNames[frame.step.phase] ?? [])
+            ).join(", ")}
+          </p>
+        </details>
         <div className="installation-transport">
           <button
             aria-label="Предыдущий этап"

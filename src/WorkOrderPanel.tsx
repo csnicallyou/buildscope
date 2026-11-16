@@ -8,7 +8,8 @@ import {
 import { Download, Plus, Trash2, LocateFixed } from "lucide-react";
 import type { Project } from "./model";
 import {
-  workTypes,
+  proposedWorkTypes,
+  sourceWorkTypes,
   workTargets,
   workReference,
   addWork,
@@ -46,18 +47,14 @@ export default function WorkOrderPanel({
     [project, opened],
   );
   const [targetId, setTarget] = useState(""),
-    [workId, setWork] = useState<WorkId>("concrete"),
+    [workId, setWork] = useState<WorkId>("excel:13"),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false);
   useEffect(() => {
     const preferred = selected
       ? `${opened ? "part" : "object"}:${selected}`
       : "";
-    setTarget(
-      targets.some((t) => t.id === preferred)
-        ? preferred
-        : (targets[0]?.id ?? ""),
-    );
+    setTarget(targets.some((t) => t.id === preferred) ? preferred : "");
   }, [targets, selected, opened]);
   const target = targets.find((t) => t.id === targetId),
     ref = target ? workReference(target, workId) : null,
@@ -147,65 +144,79 @@ export default function WorkOrderPanel({
           )}
         </button>
       </div>
-      <fieldset className="work-order-metadata">
-        <legend>Параметры новых строк</legend>
-        <label>
-          Дата
-          <input
-            aria-label="Дата наряда"
-            type="date"
-            value={draft.date}
-            onChange={(e) => onDraft((d) => ({ ...d, date: e.target.value }))}
-          />
-        </label>
-        <label>
-          Объект / станция
-          <input
-            aria-label="Объект наряда"
-            value={draft.site}
-            onChange={(e) => onDraft((d) => ({ ...d, site: e.target.value }))}
-          />
-        </label>
-        <label>
-          Смена
-          <select
-            aria-label="Смена наряда"
-            value={draft.shift}
-            onChange={(e) => onDraft((d) => ({ ...d, shift: e.target.value }))}
-          >
-            <option>День</option>
-            <option>Ночь</option>
-          </select>
-        </label>
-        <label>
-          Подрядчик
-          <input
-            aria-label="Подрядчик наряда"
-            placeholder="Введите название"
-            value={draft.contractor}
-            onChange={(e) =>
-              onDraft((d) => ({ ...d, contractor: e.target.value }))
-            }
-          />
-        </label>
-        <label>
-          Платформа / участок
-          <input
-            aria-label="Участок наряда"
-            placeholder={project.document?.assembly ?? project.name}
-            value={draft.zone}
-            onChange={(e) => onDraft((d) => ({ ...d, zone: e.target.value }))}
-          />
-        </label>
-      </fieldset>
+      <details className="work-order-shift">
+        <summary>
+          Параметры смены{" "}
+          <span>
+            {draft.date} · {draft.shift} · {draft.site}
+          </span>
+        </summary>
+        <fieldset className="work-order-metadata">
+          <legend>Параметры новых строк</legend>
+          <label>
+            Дата
+            <input
+              aria-label="Дата наряда"
+              type="date"
+              value={draft.date}
+              onChange={(e) => onDraft((d) => ({ ...d, date: e.target.value }))}
+            />
+          </label>
+          <label>
+            Объект / станция
+            <input
+              aria-label="Объект наряда"
+              value={draft.site}
+              onChange={(e) => onDraft((d) => ({ ...d, site: e.target.value }))}
+            />
+          </label>
+          <label>
+            Смена
+            <select
+              aria-label="Смена наряда"
+              value={draft.shift}
+              onChange={(e) =>
+                onDraft((d) => ({ ...d, shift: e.target.value }))
+              }
+            >
+              <option>День</option>
+              <option>Ночь</option>
+            </select>
+          </label>
+          <label>
+            Подрядчик
+            <input
+              aria-label="Подрядчик наряда"
+              placeholder="Введите название"
+              value={draft.contractor}
+              onChange={(e) =>
+                onDraft((d) => ({ ...d, contractor: e.target.value }))
+              }
+            />
+          </label>
+          <label>
+            Платформа / участок
+            <input
+              aria-label="Участок наряда"
+              placeholder={project.document?.assembly ?? project.name}
+              value={draft.zone}
+              onChange={(e) => onDraft((d) => ({ ...d, zone: e.target.value }))}
+            />
+          </label>
+        </fieldset>
+      </details>
       <div className="work-order-add">
         <label>
           Объект или часть
           <select
             aria-label="Конструкция для наряда"
             value={targetId}
-            onChange={(e) => setTarget(e.target.value)}
+            onChange={(e) => {
+              setTarget(e.target.value);
+              onFocus(e.target.value);
+            }}
           >
+            <option value="">Выберите на 3D-модели или из списка</option>
             {targets.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.label}
@@ -220,12 +231,26 @@ export default function WorkOrderPanel({
             value={workId}
             onChange={(e) => setWork(e.target.value as WorkId)}
           >
-            {workTypes.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.label}
-              </option>
-            ))}
+            <optgroup label="Из вашего Excel · ОБЪЕМ, H/J">
+              {sourceWorkTypes.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.label} · {w.unit || "единица не задана"}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Предложенные BuildScope · не из Excel">
+              {proposedWorkTypes.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.label} · {w.unit}
+                </option>
+              ))}
+            </optgroup>
           </select>
+          <small className="work-origin">
+            {workId.startsWith("excel:")
+              ? "Источник названия и единицы: ваш наряд, лист ОБЪЕМ, колонки H/J. Применимость к конструкции проверяется отдельно."
+              : "Предложение BuildScope по модели. Этого справочника не было в вашем Excel."}
+          </small>
         </label>
         <p>
           {ref?.elements.length ? (

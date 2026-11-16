@@ -21,6 +21,13 @@ import {
   FileBox,
   Calculator,
   X,
+  ClipboardList,
+  TableProperties,
+  ScanSearch,
+  BookOpen,
+  PanelLeft,
+  PanelRight,
+  SlidersHorizontal,
 } from "lucide-react";
 import Viewer from "./Viewer";
 import WorkOrderPanel from "./WorkOrderPanel";
@@ -36,7 +43,13 @@ import QuickFilters from "./QuickFilters";
 import DrawingComparison from "./DrawingComparison";
 import InspectionPanel from "./InspectionPanel";
 import { type InspectionResult, type Finding } from "./inspection";
-import { sceneOptions, matchesFilters, isConcrete } from "./viewRules";
+import {
+  sceneOptions,
+  matchesFilters,
+  isConcrete,
+  emptyFilters,
+  allBarKinds,
+} from "./viewRules";
 import {
   demo,
   parseProject,
@@ -113,6 +126,9 @@ function DrawingView({ drawing: d }: { drawing: Drawing }) {
   );
 }
 export default function App() {
+  const [treeCollapsed, setTreeCollapsed] = useState(false);
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(false);
+  const [displayOpen, setDisplayOpen] = useState(false);
   const s = useStore();
   const [search, setSearch] = useState("");
   const [workDraft, setWorkDraft] = useState(initialWorkDraft);
@@ -286,6 +302,24 @@ export default function App() {
     setTab("model");
     s.set({ mobilePanel: "none" });
   };
+  const openWorkOrder = () => {
+    s.set({
+      mobilePanel: "none",
+      filters: emptyFilters,
+      hideConcrete: false,
+      rebarKinds: allBarKinds,
+      measure: false,
+      section: false,
+      auditIds: null,
+      hidden: [],
+      isolated: null,
+      onlySelected: false,
+      exploded: false,
+      view: "top",
+      ortho: true,
+    });
+    setTab("workorder");
+  };
   useEffect(() => {
     if (compareOpen && selected?.evidence)
       setPdfPage(
@@ -438,17 +472,17 @@ export default function App() {
   }
   return (
     <div
-      className={`app ${tab === "workorder" ? "work-order-active" : ""} ${workActive ? "installation-active" : ""} ${s.theme} mobile-${s.mobilePanel} ${s.mobileExpanded ? "mobile-expanded" : ""} ${mobileTools ? "mobile-tools-open" : ""}`}
+      className={`app mode-${tab} ${treeCollapsed ? "tree-collapsed" : ""} ${inspectorCollapsed ? "inspector-collapsed" : ""} ${displayOpen || s.section ? "display-options-open" : ""} ${tab === "workorder" ? "work-order-active" : ""} ${workActive ? "installation-active" : ""} ${s.theme} mobile-${s.mobilePanel} ${s.mobileExpanded ? "mobile-expanded" : ""} ${mobileTools ? "mobile-tools-open" : ""}`}
     >
       <header className="header">
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.8</span>
+          <span>0.9</span>
         </div>
         <div className="project-name">
           {s.project.name}
-          <small>Локальный проект / исходная геометрия</small>
+          <small>Инженерная модель</small>
         </div>
         <div className="file-actions">
           <button onClick={() => file.current?.click()}>
@@ -536,6 +570,75 @@ export default function App() {
           Источники и расхождения
         </button>
       </div>
+      <nav className="tabs workspace-modes" aria-label="Режимы работы">
+        <button
+          className={tab === "model" ? "active" : ""}
+          onClick={() => setTab("model")}
+        >
+          <Box size={17} /> 3D-модель
+        </button>
+        <button
+          className={tab === "workorder" ? "active" : ""}
+          onClick={openWorkOrder}
+        >
+          <ClipboardList size={17} /> Наряд
+        </button>
+        <button
+          className={tab === "schedule" ? "active" : ""}
+          onClick={() => setTab("schedule")}
+        >
+          <TableProperties size={17} /> Ведомость материалов
+        </button>
+        {s.project.document && (
+          <>
+            <button
+              className={tab === "reinforcement" ? "active" : ""}
+              onClick={() => setTab("reinforcement")}
+            >
+              <Layers3 size={17} /> Армирование
+            </button>
+            <button
+              className={tab === "source" ? "active" : ""}
+              onClick={() => setTab("source")}
+            >
+              <BookOpen size={17} /> Источник
+            </button>
+          </>
+        )}
+        <button
+          className={tab === "audit" ? "active" : ""}
+          onClick={() => setTab("audit")}
+        >
+          <ScanSearch size={17} /> Проверка модели
+        </button>
+        {drawing && (
+          <button
+            className={tab === "drawing" ? "active" : ""}
+            onClick={() => setTab("drawing")}
+          >
+            Чертёж DXF
+          </button>
+        )}
+        <div className="layout-actions">
+          <button
+            aria-label={treeCollapsed ? "Показать дерево" : "Свернуть дерево"}
+            aria-pressed={!treeCollapsed}
+            onClick={() => setTreeCollapsed(!treeCollapsed)}
+          >
+            <PanelLeft size={17} />
+          </button>
+          <button
+            aria-label={
+              inspectorCollapsed ? "Показать свойства" : "Свернуть свойства"
+            }
+            aria-pressed={!inspectorCollapsed}
+            onClick={() => setInspectorCollapsed(!inspectorCollapsed)}
+          >
+            <PanelRight size={17} />
+          </button>
+        </div>
+        <span className="demo-badge">{projectNotice}</span>
+      </nav>
       <input
         hidden
         type="file"
@@ -685,399 +788,358 @@ export default function App() {
               );
             })}
           </div>
-          <div className="model-params">
-            <label>
-              Длина демо, м{" "}
-              <input
-                aria-label="Длина платформы"
-                type="number"
-                min={12}
-                max={120}
-                step={6}
-                value={length}
-                onChange={(e) => setLength(Number(e.target.value))}
-              />
-            </label>
+          <details className="project-utilities">
+            <summary>Инструменты проекта</summary>
+            <div className="model-params">
+              <label>
+                Длина демо, м{" "}
+                <input
+                  aria-label="Длина платформы"
+                  type="number"
+                  min={12}
+                  max={120}
+                  step={6}
+                  value={length}
+                  onChange={(e) => setLength(Number(e.target.value))}
+                />
+              </label>
+              <button
+                onClick={() => {
+                  try {
+                    s.load(demo(length));
+                    setMessage("Создана новая условная модель");
+                  } catch (e) {
+                    setMessage((e as Error).message);
+                  }
+                }}
+              >
+                Создать демо
+              </button>
+              <small>
+                Создаёт новый проект. Сохраните текущий JSON перед заменой.
+              </small>
+            </div>
             <button
-              onClick={() => {
-                try {
-                  s.load(demo(length));
-                  setMessage("Создана новая условная модель");
-                } catch (e) {
-                  setMessage((e as Error).message);
-                }
-              }}
+              className="import-button"
+              onClick={() => dxf.current?.click()}
             >
-              Создать демо
+              <FileBox size={17} />
+              Импорт чертежа DXF
             </button>
-            <small>
-              Создаёт новый проект. Сохраните текущий JSON перед заменой.
-            </small>
-          </div>
-          <button
-            className="import-button"
-            onClick={() => dxf.current?.click()}
-          >
-            <FileBox size={17} />
-            Импорт чертежа DXF
-          </button>
+          </details>
         </aside>
         <main className="main">
-          <nav className="tabs">
-            <button
-              className={tab === "workorder" ? "active" : ""}
-              onClick={() => {
-                s.set({ mobilePanel: "none" });
-                setTab("workorder");
-              }}
-            >
-              Наряд
-            </button>
-            <button
-              className={tab === "model" ? "active" : ""}
-              onClick={() => setTab("model")}
-            >
-              3D-модель
-            </button>
-            <button
-              className={tab === "schedule" ? "active" : ""}
-              onClick={() => setTab("schedule")}
-            >
-              Ведомость материалов
-            </button>
-            {s.project.document && (
-              <>
-                <button
-                  className={tab === "reinforcement" ? "active" : ""}
-                  onClick={() => setTab("reinforcement")}
-                >
-                  Армирование
-                </button>
-                <button
-                  className={tab === "source" ? "active" : ""}
-                  onClick={() => setTab("source")}
-                >
-                  Источник
-                </button>
-              </>
-            )}
-            <button
-              className={tab === "audit" ? "active" : ""}
-              onClick={() => setTab("audit")}
-            >
-              Проверка модели
-            </button>
-            {drawing && (
-              <button
-                className={tab === "drawing" ? "active" : ""}
-                onClick={() => setTab("drawing")}
-              >
-                Чертёж DXF
-              </button>
-            )}
-            <span className="demo-badge">{projectNotice}</span>
-          </nav>
-          {tab === "model" && (
-            <QuickFilters
-              project={s.project}
-              onCompare={openComparison}
-              canCompare={!!selected?.evidence}
-            />
-          )}
-          {s.auditIds && tab === "model" && (
-            <div className="audit-focus">
-              <strong>Проверка · {s.auditIds.length} тел</strong>
-              <button
-                onClick={() =>
-                  s.set({
-                    auditIds: null,
-                    cameraRevision: s.cameraRevision + 1,
-                  })
-                }
-              >
-                Вернуться к обычному виду
-              </button>
-              <button onClick={() => setTab("audit")}>К замечаниям</button>
-            </div>
-          )}
-          {opened && (
-            <div className="object-navigation">
-              <button
-                onClick={() => {
-                  s.openObject(null);
-                  setSearch("");
-                }}
-              >
-                ← Ко всем объектам
-              </button>
-              <span>
-                {opened.root.mark} · {opened.root.name}
-              </span>
-              <small>Отдельный вид · {items.length} частей</small>
-              <button
-                onClick={() => {
-                  s.set({
-                    selected: null,
-                    isolated: null,
-                    hidden: [],
-                    offsets: {},
-                    cameraRevision: s.cameraRevision + 1,
-                  });
-                }}
-              >
-                Показать все части
-              </button>
-            </div>
-          )}
-          <div className="mobile-model-tools">
-            <label>
-              Вид{" "}
-              <select
-                aria-label="Вид модели"
-                value={s.view}
-                onChange={(e) =>
-                  s.set({
-                    view: e.target.value as typeof s.view,
-                    cameraRevision: s.cameraRevision + 1,
-                  })
-                }
-              >
-                <option value="iso">Изометрия</option>
-                <option value="top">Сверху</option>
-                <option value="front">Спереди</option>
-                <option value="side">Сбоку</option>
-              </select>
-            </label>
-            <button
-              aria-pressed={mobileTools}
-              onClick={() => setMobileTools(!mobileTools)}
-            >
-              Инструменты
-            </button>
-          </div>
-          <div className="toolbar">
-            <div className="tool-group">
-              {(["iso", "top", "front", "side"] as const).map((v, i) => (
-                <button
-                  key={v}
-                  className={s.view === v ? "active" : ""}
-                  onClick={() => {
-                    s.set({ view: v, cameraRevision: s.cameraRevision + 1 });
-                    setTab("model");
-                  }}
-                >
-                  {["Изометрия", "Сверху", "Спереди", "Сбоку"][i]}
-                </button>
-              ))}
-              <button
-                className={s.ortho ? "active" : ""}
-                onClick={() => s.set({ ortho: !s.ortho })}
-              >
-                {s.ortho ? "Орто" : "Перспектива"}
-              </button>
-            </div>
-            <div className="tool-group">
-              <button
-                aria-pressed={s.measure}
-                className={s.measure ? "active" : ""}
-                onClick={() => s.set({ measure: !s.measure, points: [] })}
-              >
-                <Ruler size={16} />
-                Замер
-              </button>
-              <button
-                aria-pressed={s.section}
-                className={s.section ? "active" : ""}
-                onClick={() =>
-                  s.set({
-                    section: !s.section,
-                    cut: !s.section ? centerForCut(cutIndex) : s.cut,
-                  })
-                }
-              >
-                <Scissors size={16} />
-                Разрез
-              </button>
-              <button
-                aria-pressed={s.exploded}
-                className={s.exploded ? "active" : ""}
-                onClick={() => s.set({ exploded: !s.exploded })}
-              >
-                <Layers3 size={16} />
-                Разобрать
-              </button>
-              <button
-                title="Сбросить перемещения и видимость"
-                aria-label="Сбросить перемещения"
-                onClick={() => {
-                  s.reset();
-                  setMessage("Перемещения и видимость сброшены");
-                }}
-              >
-                <RotateCcw size={16} />
-              </button>
-            </div>
-          </div>
-          <div className="view-controls">
-            {!opened && hasObjects(s.project) && (
-              <button
-                className={
-                  s.calculatorOpen
-                    ? "active calculator-toggle"
-                    : "calculator-toggle"
-                }
-                aria-label="Калькулятор материалов"
-                aria-pressed={s.calculatorOpen}
-                onClick={() => {
-                  s.set({
-                    calculatorOpen: !s.calculatorOpen,
-                    mobilePanel: !s.calculatorOpen ? "inspector" : "none",
-                    mobileExpanded: false,
-                    measure: false,
-                    points: [],
-                    selected: null,
-                    calculatedObjects:
-                      !s.calculatorOpen && selectedObject
-                        ? [
-                            ...new Set([
-                              ...s.calculatedObjects,
-                              selectedObject.id,
-                            ]),
-                          ]
-                        : s.calculatedObjects,
-                  });
-                  setTab("model");
-                }}
-              >
-                <Calculator size={16} />
-                Калькулятор
-                {s.calculatedObjects.length > 0 && (
-                  <span>{s.calculatedObjects.length}</span>
-                )}
-              </button>
-            )}
-            {s.calculatorOpen && (
-              <button
-                className="calculator-result-link"
-                onClick={() => {
-                  s.set({ mobilePanel: "inspector" });
-                  if (window.innerWidth > 850)
-                    document
-                      .querySelector(".inspector")
-                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-              >
-                К итогам ↓
-              </button>
-            )}
-            <label>
-              <input
-                type="checkbox"
-                checked={s.wire}
-                onChange={(e) => s.set({ wire: e.target.checked })}
+          <div className="model-work-tools">
+            {tab === "model" && (
+              <QuickFilters
+                project={s.project}
+                onCompare={openComparison}
+                canCompare={!!selected?.evidence}
               />
-              Каркас
-            </label>
-            {s.project.document && !opened && (
-              <label>
-                <input
-                  type="checkbox"
-                  checked={s.rebar}
-                  onChange={(e) =>
+            )}
+            {s.auditIds && tab === "model" && (
+              <div className="audit-focus">
+                <strong>Проверка · {s.auditIds.length} тел</strong>
+                <button
+                  onClick={() =>
                     s.set({
-                      rebar: e.target.checked,
-                      hideConcrete: e.target.checked ? s.hideConcrete : false,
-                      opacity: e.target.checked ? 0.2 : 1,
+                      auditIds: null,
+                      cameraRevision: s.cameraRevision + 1,
                     })
                   }
-                />
-                Схема арматуры
-              </label>
+                >
+                  Вернуться к обычному виду
+                </button>
+                <button onClick={() => setTab("audit")}>К замечаниям</button>
+              </div>
             )}
-            <label>
-              Непрозрачность{" "}
-              <input
-                aria-label="Непрозрачность"
-                type="range"
-                min={0.1}
-                max={1}
-                step={0.05}
-                value={s.opacity}
-                onChange={(e) => s.set({ opacity: +e.target.value })}
-              />
-            </label>
-            {s.section && (
-              <label>
-                <select
-                  aria-label="Ось разреза"
-                  value={s.cutAxis}
-                  onChange={(e) => {
-                    const axis = e.target.value as "x" | "y" | "z",
-                      k = axis === "x" ? 0 : axis === "y" ? 1 : 2;
+            {opened && (
+              <div className="object-navigation">
+                <button
+                  onClick={() => {
+                    s.openObject(null);
+                    setSearch("");
+                  }}
+                >
+                  ← Ко всем объектам
+                </button>
+                <span>
+                  {opened.root.mark} · {opened.root.name}
+                </span>
+                <small>Отдельный вид · {items.length} частей</small>
+                <button
+                  onClick={() => {
                     s.set({
-                      cutAxis: axis,
-                      cut: centerForCut(k),
+                      selected: null,
+                      isolated: null,
+                      hidden: [],
+                      offsets: {},
+                      cameraRevision: s.cameraRevision + 1,
                     });
                   }}
                 >
-                  <option value="x">X</option>
-                  <option value="y">Y</option>
-                  <option value="z">Z</option>
-                </select>{" "}
-                Сечение, м{" "}
-                <input
-                  aria-label="Положение разреза"
-                  type="range"
-                  min={cutMin}
-                  max={cutMax}
-                  step={0.01}
-                  value={s.cut}
-                  onChange={(e) => s.set({ cut: +e.target.value })}
-                />
-                {fmt(s.cut)}
-              </label>
+                  Показать все части
+                </button>
+              </div>
             )}
-          </div>
-          {!opened && hasObjects(s.project) && (
-            <div className="multi-selection-bar">
-              <strong data-testid="selection-count" aria-live="polite">
-                Выбрано: {s.calculatedObjects.length}
-              </strong>
-              <span>
-                Нажимайте объекты подряд. Повторное нажатие снимает выбор.
-              </span>
+            <div className="mobile-model-tools">
+              <label>
+                Вид{" "}
+                <select
+                  aria-label="Вид модели"
+                  value={s.view}
+                  onChange={(e) =>
+                    s.set({
+                      view: e.target.value as typeof s.view,
+                      cameraRevision: s.cameraRevision + 1,
+                    })
+                  }
+                >
+                  <option value="iso">Изометрия</option>
+                  <option value="top">Сверху</option>
+                  <option value="front">Спереди</option>
+                  <option value="side">Сбоку</option>
+                </select>
+              </label>
               <button
-                disabled={!s.calculatedObjects.length}
-                onClick={() => {
-                  s.set({
-                    calculatorOpen: true,
-                    mobilePanel: "inspector",
-                    mobileExpanded: false,
-                    measure: false,
-                    points: [],
-                  });
-                  setTab("model");
-                }}
+                aria-pressed={mobileTools}
+                onClick={() => setMobileTools(!mobileTools)}
               >
-                Рассчитать выбранные
-              </button>
-              <button
-                disabled={!s.calculatedObjects.length && !s.onlySelected}
-                aria-pressed={s.onlySelected}
-                onClick={s.toggleOnlySelected}
-              >
-                {s.onlySelected
-                  ? "Вернуть весь проект"
-                  : "Показать только выбранные"}
-              </button>
-              <button
-                disabled={!s.calculatedObjects.length}
-                onClick={() => s.clearSelection()}
-              >
-                Снять весь выбор
+                Инструменты
               </button>
             </div>
-          )}
+            <div className="toolbar">
+              <div className="tool-group">
+                {(["iso", "top", "front", "side"] as const).map((v, i) => (
+                  <button
+                    key={v}
+                    className={s.view === v ? "active" : ""}
+                    onClick={() => {
+                      s.set({ view: v, cameraRevision: s.cameraRevision + 1 });
+                      setTab("model");
+                    }}
+                  >
+                    {["Изометрия", "Сверху", "Спереди", "Сбоку"][i]}
+                  </button>
+                ))}
+                <button
+                  className={s.ortho ? "active" : ""}
+                  onClick={() => s.set({ ortho: !s.ortho })}
+                >
+                  {s.ortho ? "Орто" : "Перспектива"}
+                </button>
+              </div>
+              <div className="tool-group">
+                <button
+                  aria-pressed={s.measure}
+                  className={s.measure ? "active" : ""}
+                  onClick={() => s.set({ measure: !s.measure, points: [] })}
+                >
+                  <Ruler size={16} />
+                  Замер
+                </button>
+                <button
+                  aria-pressed={s.section}
+                  className={s.section ? "active" : ""}
+                  onClick={() =>
+                    s.set({
+                      section: !s.section,
+                      cut: !s.section ? centerForCut(cutIndex) : s.cut,
+                    })
+                  }
+                >
+                  <Scissors size={16} />
+                  Разрез
+                </button>
+                <button
+                  aria-pressed={s.exploded}
+                  className={s.exploded ? "active" : ""}
+                  onClick={() => s.set({ exploded: !s.exploded })}
+                >
+                  <Layers3 size={16} />
+                  Разобрать
+                </button>
+                <button
+                  title="Сбросить перемещения и видимость"
+                  aria-label="Сбросить перемещения"
+                  onClick={() => {
+                    s.reset();
+                    setMessage("Перемещения и видимость сброшены");
+                  }}
+                >
+                  <RotateCcw size={16} />
+                </button>
+              </div>
+            </div>
+            <div className="view-controls">
+              <button
+                className="display-options-toggle"
+                aria-expanded={displayOpen || s.section}
+                onClick={() => setDisplayOpen(!displayOpen)}
+              >
+                <SlidersHorizontal size={16} /> Отображение
+              </button>
+              {!opened && hasObjects(s.project) && (
+                <button
+                  className={
+                    s.calculatorOpen
+                      ? "active calculator-toggle"
+                      : "calculator-toggle"
+                  }
+                  aria-label="Калькулятор материалов"
+                  aria-pressed={s.calculatorOpen}
+                  onClick={() => {
+                    s.set({
+                      calculatorOpen: !s.calculatorOpen,
+                      mobilePanel: !s.calculatorOpen ? "inspector" : "none",
+                      mobileExpanded: false,
+                      measure: false,
+                      points: [],
+                      selected: null,
+                      calculatedObjects:
+                        !s.calculatorOpen && selectedObject
+                          ? [
+                              ...new Set([
+                                ...s.calculatedObjects,
+                                selectedObject.id,
+                              ]),
+                            ]
+                          : s.calculatedObjects,
+                    });
+                    setTab("model");
+                  }}
+                >
+                  <Calculator size={16} />
+                  Калькулятор
+                  {s.calculatedObjects.length > 0 && (
+                    <span>{s.calculatedObjects.length}</span>
+                  )}
+                </button>
+              )}
+              {s.calculatorOpen && (
+                <button
+                  className="calculator-result-link"
+                  onClick={() => {
+                    s.set({ mobilePanel: "inspector" });
+                    if (window.innerWidth > 850)
+                      document.querySelector(".inspector")?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                  }}
+                >
+                  К итогам ↓
+                </button>
+              )}
+              <label>
+                <input
+                  type="checkbox"
+                  checked={s.wire}
+                  onChange={(e) => s.set({ wire: e.target.checked })}
+                />
+                Каркас
+              </label>
+              {s.project.document && !opened && (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={s.rebar}
+                    onChange={(e) =>
+                      s.set({
+                        rebar: e.target.checked,
+                        hideConcrete: e.target.checked ? s.hideConcrete : false,
+                        opacity: e.target.checked ? 0.2 : 1,
+                      })
+                    }
+                  />
+                  Схема арматуры
+                </label>
+              )}
+              <label>
+                Непрозрачность{" "}
+                <input
+                  aria-label="Непрозрачность"
+                  type="range"
+                  min={0.1}
+                  max={1}
+                  step={0.05}
+                  value={s.opacity}
+                  onChange={(e) => s.set({ opacity: +e.target.value })}
+                />
+              </label>
+              {s.section && (
+                <label>
+                  <select
+                    aria-label="Ось разреза"
+                    value={s.cutAxis}
+                    onChange={(e) => {
+                      const axis = e.target.value as "x" | "y" | "z",
+                        k = axis === "x" ? 0 : axis === "y" ? 1 : 2;
+                      s.set({
+                        cutAxis: axis,
+                        cut: centerForCut(k),
+                      });
+                    }}
+                  >
+                    <option value="x">X</option>
+                    <option value="y">Y</option>
+                    <option value="z">Z</option>
+                  </select>{" "}
+                  Сечение, м{" "}
+                  <input
+                    aria-label="Положение разреза"
+                    type="range"
+                    min={cutMin}
+                    max={cutMax}
+                    step={0.01}
+                    value={s.cut}
+                    onChange={(e) => s.set({ cut: +e.target.value })}
+                  />
+                  {fmt(s.cut)}
+                </label>
+              )}
+            </div>
+            {!opened && hasObjects(s.project) && (
+              <div className="multi-selection-bar">
+                <strong data-testid="selection-count" aria-live="polite">
+                  Выбрано: {s.calculatedObjects.length}
+                </strong>
+                <span>
+                  Нажимайте объекты подряд. Повторное нажатие снимает выбор.
+                </span>
+                <button
+                  disabled={!s.calculatedObjects.length}
+                  onClick={() => {
+                    s.set({
+                      calculatorOpen: true,
+                      mobilePanel: "inspector",
+                      mobileExpanded: false,
+                      measure: false,
+                      points: [],
+                    });
+                    setTab("model");
+                  }}
+                >
+                  Рассчитать выбранные
+                </button>
+                <button
+                  disabled={!s.calculatedObjects.length && !s.onlySelected}
+                  aria-pressed={s.onlySelected}
+                  onClick={s.toggleOnlySelected}
+                >
+                  {s.onlySelected
+                    ? "Вернуть весь проект"
+                    : "Показать только выбранные"}
+                </button>
+                <button
+                  disabled={!s.calculatedObjects.length}
+                  onClick={() => s.clearSelection()}
+                >
+                  Снять весь выбор
+                </button>
+              </div>
+            )}
+          </div>
           <div
             className={`viewport ${tab === "model" && compareOpen ? "model-and-drawing" : ""}`}
           >
@@ -1139,27 +1201,78 @@ export default function App() {
                 )}
               </>
             ) : tab === "workorder" ? (
-              <WorkOrderPanel
-                project={s.project}
-                opened={s.openedObject}
-                selected={s.selected}
-                selectedRoots={s.calculatedObjects}
-                draft={workDraft}
-                onDraft={setWorkDraft}
-                onFocus={(id) => {
-                  const object = objectFor(s.project, id);
-                  if (object) {
-                    s.openObject(object.id);
-                    useStore.getState().set({
-                      selected: id,
-                      mobilePanel: "none",
-                      cameraRevision: useStore.getState().cameraRevision + 1,
-                    });
-                    setSearch("");
-                    setTab("model");
-                  }
-                }}
-              />
+              <div className="work-order-layout">
+                <div className="work-order-map">
+                  <div className="work-order-map-heading">
+                    <strong>
+                      {selectedItem
+                        ? selectedItem.kind === "steel"
+                          ? selectedItem.label
+                          : selectedItem.element.name
+                        : "Выберите конструкцию на модели"}
+                    </strong>
+                    <span>
+                      Нажмите на объект или выберите его в форме — он
+                      подсветится.
+                    </span>
+                    <button onClick={() => s.set({ view: "top", ortho: true })}>
+                      План сверху
+                    </button>
+                    <button
+                      onClick={() =>
+                        s.set({
+                          view: "iso",
+                          ortho: false,
+                          cameraRevision: s.cameraRevision + 1,
+                        })
+                      }
+                    >
+                      Общий вид
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (s.openedObject) s.openObject(null);
+                        else if (s.selected)
+                          s.openObject(
+                            objectFor(s.project, s.selected)?.id ?? s.selected,
+                          );
+                      }}
+                    >
+                      {s.openedObject
+                        ? "Ко всем объектам"
+                        : "Выбрать части объекта"}
+                    </button>
+                  </div>
+                  <div className="model-stage">
+                    <Viewer />
+                  </div>
+                </div>
+                <WorkOrderPanel
+                  project={s.project}
+                  opened={s.openedObject}
+                  selected={s.selected}
+                  selectedRoots={s.calculatedObjects}
+                  draft={workDraft}
+                  onDraft={setWorkDraft}
+                  onFocus={(target) => {
+                    const whole = target.startsWith("object:");
+                    const id = target.replace(/^(object|part):/, "");
+                    const object = objectFor(s.project, id);
+                    if (object) {
+                      s.openObject(whole ? null : object.id);
+                      useStore.getState().set({
+                        selected: id,
+                        filters: emptyFilters,
+                        hideConcrete: false,
+                        rebarKinds: allBarKinds,
+                        mobilePanel: "none",
+                        cameraRevision: useStore.getState().cameraRevision + 1,
+                      });
+                      setSearch("");
+                    }
+                  }}
+                />
+              </div>
             ) : tab === "audit" ? (
               <InspectionPanel
                 project={s.project}
@@ -1363,6 +1476,11 @@ export default function App() {
                   : "Свойства элемента"}
             <Box size={16} />
           </div>
+          {s.selected && !s.calculatorOpen && (
+            <button className="object-work-order" onClick={openWorkOrder}>
+              <ClipboardList size={16} /> Работы по выбранному объекту
+            </button>
+          )}
           {s.calculatorOpen ? (
             <SelectionCalculator />
           ) : selectedObject ? (
@@ -1647,7 +1765,12 @@ export default function App() {
           )}
         </aside>
       </div>
-      <MobileControls onModel={() => setTab("model")} />
+      <MobileControls
+        onModel={() => setTab("model")}
+        onWorkOrder={openWorkOrder}
+        modelActive={tab === "model"}
+        workOrderActive={tab === "workorder"}
+      />
       <footer
         className={`status ${message.startsWith("Ошибка") ? "error" : ""}`}
         role="status"

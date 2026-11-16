@@ -77,6 +77,7 @@ test("Арматура по группам и размеры отдельног�
   await page
     .getByRole("button", { name: "Открыть отдельно", exact: true })
     .click();
+  await page.getByRole("button", { name: "Отображение", exact: true }).click();
   await page.getByLabel("Скрыть бетон", { exact: true }).check();
   await page.getByLabel("Сетки", { exact: true }).uncheck();
   await page.getByLabel("Хомуты и скобы", { exact: true }).uncheck();

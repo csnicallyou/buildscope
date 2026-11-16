@@ -3,7 +3,8 @@ import { elementQuantities, type Element, type Project } from "./model";
 import { modelObjects, sceneItems, type SceneItem } from "./objects";
 import { formBoards } from "./installation";
 import { elementQuantityStatus, quantityStatuses } from "./quality";
-export const workTypes = [
+import catalogue from "./data/work-catalogue.json";
+export const proposedWorkTypes = [
   { id: "prep", label: "Устройство бетонной подготовки", unit: "м³" },
   { id: "concrete", label: "Бетонирование монолитной конструкции", unit: "м³" },
   { id: "gravel", label: "Устройство щебёночной подготовки", unit: "м³" },
@@ -17,7 +18,26 @@ export const workTypes = [
   { id: "care", label: "Уход за бетоном", unit: "м²" },
   { id: "other", label: "Другая работа", unit: "чел.-ч" },
 ] as const;
-export type WorkId = (typeof workTypes)[number]["id"];
+type ModelWorkId = (typeof proposedWorkTypes)[number]["id"];
+export type WorkId = ModelWorkId | `excel:${number}`;
+export const sourceWorkTypes = catalogue.map((w) => ({
+  ...w,
+  id: w.id as WorkId,
+}));
+export const workTypes = [...sourceWorkTypes, ...proposedWorkTypes];
+// Only these operations have an unambiguous body/material match in this model.
+// Other source names retain their original unit and require a manual plan.
+const sourceRules: Record<string, ModelWorkId> = {
+  "Бетонирование подбетонного основания": "prep",
+  "Устройство подстилающего слоя из песка с уплотнением": "sand",
+  "Устройство подстилающего слоя из щебня с уплотнением": "gravel",
+};
+const operationKey = (id: WorkId): WorkId => {
+  const source = sourceWorkTypes.find((w) => w.id === id);
+  return source && source.unit === "м3"
+    ? (sourceRules[source.label] ?? id)
+    : id;
+};
 export type WorkTarget = {
   id: string;
   label: string;
@@ -93,7 +113,34 @@ export function footprintArea(e: Element) {
     0,
   );
 }
-export function workReference(t: WorkTarget, id: WorkId) {
+export function workReference(
+  t: WorkTarget,
+  id: WorkId,
+): {
+  elements: Element[];
+  value: number | null;
+  basis: string;
+  unit: string;
+} {
+  if (id.startsWith("excel:")) {
+    const type = sourceWorkTypes.find((w) => w.id === id)!;
+    const rule = sourceRules[type.label];
+    if (rule && type.unit === "м3") {
+      const ref = workReference(t, rule);
+      return {
+        ...ref,
+        unit: type.unit,
+        basis: `Работа из Excel, ОБЪЕМ H/J; ${ref.basis}`,
+      };
+    }
+    return {
+      elements: t.elements,
+      value: null,
+      unit: type.unit,
+      basis:
+        "Работа и единица из Excel, ОБЪЕМ H/J. Расчёт для этой операции не настроен; план введите вручную.",
+    };
+  }
   const es = workElements(t, id);
   let value: number | null = null,
     basis = "Объём работы вводится вручную";
@@ -229,7 +276,7 @@ export function addWork(
   if (
     draft.rows.some(
       (r) =>
-        r.workId === kind &&
+        operationKey(r.workId) === operationKey(kind) &&
         (kind !== "other" || r.work === "Другая работа") &&
         r.date === draft.date &&
         r.shift === draft.shift &&

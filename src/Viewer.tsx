@@ -159,7 +159,7 @@ function Camera({ paused }: { paused: boolean }) {
       bounds.set(new Vector3(-5, -5, -5), new Vector3(5, 5, 5));
     const center = bounds.getCenter(new Vector3());
     const diameter = Math.max(0.3, bounds.getSize(new Vector3()).length());
-    const distance = (diameter * 1.5) / Math.min(1, size.width / size.height);
+    const distance = (diameter * 1.25) / Math.min(1, size.width / size.height);
     const positions = {
       iso: [1, 0.8, 1],
       top: [0, 1, 0.0001],
@@ -177,7 +177,12 @@ function Camera({ paused }: { paused: boolean }) {
     camera.lookAt(center);
     if ("isOrthographicCamera" in camera) {
       (camera as import("three").OrthographicCamera).zoom =
-        Math.min(size.width, size.height) / (diameter * 1.15);
+        view === "top"
+          ? Math.min(
+              size.width / (Math.max(0.3, bounds.max.x - bounds.min.x) * 1.15),
+              size.height / (Math.max(0.3, bounds.max.z - bounds.min.z) * 1.15),
+            )
+          : Math.min(size.width, size.height) / (diameter * 1.15);
       camera.updateProjectionMatrix();
     }
     controls.current?.target.copy(center);
@@ -270,6 +275,7 @@ function Part({ item, index }: { item: SceneItem; index: number }) {
     s.selected === item.id ||
     (!s.openedObject && s.selected === objectFor(s.project, e.id)?.id);
   function click(event: ThreeEvent<MouseEvent>) {
+    if (event.delta > 3) return;
     if (
       s.section &&
       event.point.getComponent(

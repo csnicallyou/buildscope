@@ -8,6 +8,7 @@ import {
   crewHours,
   reportErrors,
   footprintArea,
+  sourceWorkTypes,
   type CrewRow,
 } from "./workOrders";
 import { modelObjects, objectItems } from "./objects";
@@ -17,6 +18,27 @@ const project = createKzh("canopy"),
     (t) => t.id === `object:${object.id}`,
   )!;
 describe("Наряд из модели", () => {
+  it("сохраняет единицы и происхождение Excel, не превращая площадь армирования в массу", () => {
+    expect(sourceWorkTypes).toHaveLength(148);
+    const source = sourceWorkTypes.find(
+      (w) => w.label === "Армирование монолитных участков",
+    )!;
+    const ref = workReference(target, source.id);
+    expect(ref.unit).toBe("м2");
+    expect(ref.value).toBeNull();
+    expect(ref.basis).toContain("Excel");
+    const preparation = sourceWorkTypes.find(
+      (w) => w.label === "Бетонирование подбетонного основания",
+    )!;
+    expect(workReference(target, preparation.id).value).toBeCloseTo(0.676);
+    const duplicate = initialWorkDraft();
+    duplicate.rows.push(addWork(duplicate, target, preparation.id, project)!);
+    expect(addWork(duplicate, target, "prep", project)).toBeNull();
+    const row = addWork(initialWorkDraft(), target, source.id, project)!;
+    expect(row.work).toBe(source.label);
+    expect(row.plan).toBeNull();
+    expect(row.unit).toBe("м2");
+  });
   it("объект целиком разворачивается в подходящие части для конкретной работы", () => {
     expect(workReference(target, "prep").value).toBeCloseTo(0.676);
     expect(workReference(target, "concrete").value).toBeCloseTo(2.592);
