@@ -58,6 +58,7 @@ export function ObjectInspector({
   onHide,
   onIsolate,
   onSource,
+  onCompare,
   hidden,
   isolated,
 }: {
@@ -66,6 +67,7 @@ export function ObjectInspector({
   onHide: () => void;
   onIsolate: () => void;
   onSource: () => void;
+  onCompare: () => void;
   hidden: boolean;
   isolated: boolean;
 }) {
@@ -82,6 +84,9 @@ export function ObjectInspector({
         <span className="category">Объект целиком · {e.category}</span>
         <h2>{e.mark}</h2>
         <p>{e.name}</p>
+      </div>
+      <div className="selection-actions">
+        <button onClick={onCompare}>Чертёж этого объекта</button>
       </div>
       <div className="selection-actions">
         <button className="open-object" onClick={onOpen}>

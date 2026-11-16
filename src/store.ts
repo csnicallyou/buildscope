@@ -1,6 +1,12 @@
 import { create } from "zustand";
 import { demo, type Project, type Vec3 } from "./model";
 import { hasObjects, objectFor } from "./objects";
+import {
+  emptyFilters,
+  allBarKinds,
+  type ViewFilters,
+  type BarKind,
+} from "./viewRules";
 type State = {
   project: Project;
   selected: string | null;
@@ -21,6 +27,12 @@ type State = {
   opacity: number;
   section: boolean;
   cut: number;
+  cutAxis: "x" | "y" | "z";
+  dimensions: boolean;
+  filters: ViewFilters;
+  auditIds: string[] | null;
+  hideConcrete: boolean;
+  rebarKinds: BarKind[];
   measure: boolean;
   points: Vec3[];
   theme: "dark" | "light";
@@ -52,6 +64,12 @@ export const useStore = create<State>((set, get) => ({
   opacity: 1,
   section: false,
   cut: 0,
+  cutAxis: "x",
+  dimensions: true,
+  filters: emptyFilters,
+  auditIds: null,
+  hideConcrete: false,
+  rebarKinds: allBarKinds,
   measure: false,
   points: [],
   theme: "dark",
@@ -138,6 +156,7 @@ export const useStore = create<State>((set, get) => ({
       measure: false,
       points: [],
       section: false,
+      auditIds: null,
       rebar: !!id,
       opacity: id ? 0.35 : 1,
       cameraRevision: s.cameraRevision + 1,
@@ -162,6 +181,10 @@ export const useStore = create<State>((set, get) => ({
       measure: false,
       rebar: false,
       opacity: 1,
+      filters: emptyFilters,
+      auditIds: null,
+      hideConcrete: false,
+      rebarKinds: allBarKinds,
     }),
   reset: () =>
     set({
@@ -173,6 +196,8 @@ export const useStore = create<State>((set, get) => ({
       onlySelected: false,
       groupVisibility: null,
       cameraRevision: get().cameraRevision + 1,
+      auditIds: null,
+      filters: emptyFilters,
     }),
 }));
 export function displayPosition(

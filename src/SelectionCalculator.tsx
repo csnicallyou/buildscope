@@ -5,6 +5,7 @@ import { calculateSelection, calculationCSV } from "./calculator";
 import { download } from "./export";
 import { useMemo, useState } from "react";
 
+import { sceneOptions } from "./viewRules";
 import QuantityBadges from "./QuantityBadges";
 const f = (n: number) =>
   n.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
@@ -41,6 +42,7 @@ export default function SelectionCalculator() {
       s.hidden,
       s.isolated,
       s.onlySelected ? s.calculatedObjects : null,
+      sceneOptions(s),
     ).map((item) => item.element.id),
   );
   const hiddenCount = c.objects.filter(

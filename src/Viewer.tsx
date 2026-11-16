@@ -12,23 +12,19 @@ import {
 import { Box3, Plane, Vector3, CanvasTexture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import { useStore, displayPosition } from "./store";
-import { itemBounds, objectFor, visibleItems, type SceneItem } from "./objects";
+import {
+  itemBounds,
+  itemLayer,
+  objectFor,
+  visibleItems,
+  type SceneItem,
+} from "./objects";
+import { sceneOptions, isConcrete, filteredBars } from "./viewRules";
+import Dimensions from "./Dimensions";
+import { dimensionData } from "./dimensionData";
+import SectionCap from "./SectionCap";
+import { Fragment } from "react";
 import { elementGeometries, barsGeometry } from "./geometry";
-const layers = [
-  "Основание",
-  "Фундаменты",
-  "Опоры",
-  "Балки",
-  "Плиты",
-  "Покрытие",
-  "Лестницы",
-  "Навес",
-  "Пути",
-  "Подготовка",
-  "ФЛ",
-  "ФБС",
-  "Фундаменты Фм",
-];
 function Camera() {
   const {
     view,
@@ -39,7 +35,19 @@ function Camera() {
     exploded,
     onlySelected,
     calculatedObjects,
+    filters,
+    auditIds,
+    hideConcrete,
+    rebar,
+    rebarKinds,
   } = useStore();
+  const viewKey = JSON.stringify({
+    filters,
+    auditIds,
+    hideConcrete,
+    rebar,
+    rebarKinds,
+  });
   const selectionKey = onlySelected ? calculatedObjects.join("|") : "";
   const controls = useRef<Controls>(null);
   const { camera, size } = useThree();
@@ -52,15 +60,14 @@ function Camera() {
       state.hidden,
       state.isolated,
       state.onlySelected ? state.calculatedObjects : null,
+      sceneOptions(state),
     )) {
       const e = item.element;
       const position = displayPosition(
         e.position,
         state.offsets[item.id],
         state.exploded,
-        openedObject
-          ? item.layer * 0.45
-          : Math.max(0, layers.indexOf(e.category)),
+        itemLayer(item, openedObject),
       );
       const b = itemBounds(item);
       for (const corner of [b.min, b.max])
@@ -112,6 +119,7 @@ function Camera() {
     exploded,
     onlySelected,
     selectionKey,
+    viewKey,
   ]);
   return (
     <OrbitControls
@@ -122,7 +130,7 @@ function Camera() {
     />
   );
 }
-function Part({ item }: { item: SceneItem }) {
+function Part({ item, index }: { item: SceneItem; index: number }) {
   const e = item.element;
   const s = useStore();
   const geometries = useMemo(
@@ -132,11 +140,11 @@ function Part({ item }: { item: SceneItem }) {
   const steel = useMemo(
     () =>
       item.kind === "steel"
-        ? barsGeometry(item.bars ?? [])
+        ? barsGeometry(filteredBars(item.bars ?? [], s.rebarKinds))
         : !s.openedObject && s.rebar && e.evidence?.bars
-          ? barsGeometry(e.evidence.bars)
+          ? barsGeometry(filteredBars(e.evidence.bars, s.rebarKinds))
           : null,
-    [e, item, s.rebar, s.openedObject],
+    [e, item, s.rebar, s.openedObject, s.rebarKinds],
   );
   useEffect(
     () => () => {
@@ -154,13 +162,23 @@ function Part({ item }: { item: SceneItem }) {
     e.position,
     s.offsets[item.id],
     s.exploded,
-    s.openedObject
-      ? item.layer * 0.45
-      : Math.max(0, layers.indexOf(e.category)),
+    itemLayer(item, s.openedObject),
   );
   const planes = useMemo(
-    () => (s.section ? [new Plane(new Vector3(-1, 0, 0), s.cut)] : []),
-    [s.section, s.cut],
+    () =>
+      s.section
+        ? [
+            new Plane(
+              new Vector3(
+                s.cutAxis === "x" ? -1 : 0,
+                s.cutAxis === "y" ? -1 : 0,
+                s.cutAxis === "z" ? -1 : 0,
+              ),
+              s.cut,
+            ),
+          ]
+        : [],
+    [s.section, s.cut, s.cutAxis],
   );
   const objectId = objectFor(s.project, e.id)?.id ?? e.id;
   const inCalculation =
@@ -169,11 +187,20 @@ function Part({ item }: { item: SceneItem }) {
     (s.calculatorOpen ||
       s.calculatedObjects.length > 1 ||
       s.selected !== objectId);
+  const auditHighlighted = !!s.auditIds?.includes(e.id);
+  const hiddenConcrete = s.hideConcrete && !s.auditIds && isConcrete(e);
   const highlighted =
     s.selected === item.id ||
     (!s.openedObject && s.selected === objectFor(s.project, e.id)?.id);
   function click(event: ThreeEvent<MouseEvent>) {
-    if (s.section && event.point.x > s.cut) return;
+    if (
+      s.section &&
+      event.point.getComponent(
+        s.cutAxis === "x" ? 0 : s.cutAxis === "y" ? 1 : 2,
+      ) >
+        s.cut + 1e-6
+    )
+      return;
     event.stopPropagation();
     if (s.measure) {
       const p = event.point;
@@ -184,40 +211,65 @@ function Part({ item }: { item: SceneItem }) {
   }
   return (
     <group position={pos}>
-      {geometries.map((p, i) => (
-        <mesh
-          key={i}
-          position={p.offset}
-          onClick={click}
-          userData={{ id: e.id }}
-          geometry={p.geometry}
-        >
-          <meshStandardMaterial
-            key={`${s.opacity < 1}-${s.wire}-${s.section}`}
-            onUpdate={(material) => {
-              material.needsUpdate = true;
-            }}
-            color={
-              inCalculation ? "#5ccbb7" : highlighted ? "#f4b85d" : e.color
-            }
-            roughness={0.82}
-            metalness={e.material === "Сталь" ? 0.35 : 0}
-            transparent={s.opacity < 1}
-            opacity={s.opacity}
-            depthWrite={s.opacity > 0.99}
-            wireframe={s.wire}
-            clippingPlanes={planes}
-          />
-          {!s.section && !s.wire && (
-            <Edges
-              threshold={20}
-              color={
-                inCalculation ? "#c8fff0" : highlighted ? "#fff0c5" : "#3e5558"
-              }
-            />
-          )}
-        </mesh>
-      ))}
+      {!hiddenConcrete &&
+        geometries.map((p, i) => (
+          <Fragment key={i}>
+            <mesh
+              key={i}
+              position={p.offset}
+              onClick={click}
+              userData={{ id: e.id }}
+              geometry={p.geometry}
+            >
+              <meshStandardMaterial
+                key={`${s.opacity < 1}-${s.wire}-${s.section}`}
+                onUpdate={(material) => {
+                  material.needsUpdate = true;
+                }}
+                color={
+                  auditHighlighted
+                    ? "#d897c5"
+                    : inCalculation
+                      ? "#5ccbb7"
+                      : highlighted
+                        ? "#f4b85d"
+                        : e.color
+                }
+                roughness={0.82}
+                metalness={e.material === "Сталь" ? 0.35 : 0}
+                transparent={s.opacity < 1}
+                opacity={s.opacity}
+                depthWrite={s.opacity > 0.99}
+                wireframe={s.wire}
+                clippingPlanes={planes}
+              />
+              {!s.section && !s.wire && (
+                <Edges
+                  threshold={20}
+                  color={
+                    inCalculation
+                      ? "#c8fff0"
+                      : highlighted
+                        ? "#fff0c5"
+                        : "#3e5558"
+                  }
+                />
+              )}
+            </mesh>
+            {s.section && !s.wire && (
+              <SectionCap
+                geometry={p.geometry}
+                offset={p.offset}
+                worldPosition={pos}
+                axis={s.cutAxis}
+                cut={s.cut}
+                plane={planes[0]}
+                order={10 + index * 200 + i * 3}
+                onClick={click}
+              />
+            )}
+          </Fragment>
+        ))}
       {steel && (
         <mesh geometry={steel} onClick={click}>
           <meshStandardMaterial
@@ -243,6 +295,7 @@ function Scene() {
         s.hidden,
         s.isolated,
         s.onlySelected ? s.calculatedObjects : null,
+        sceneOptions(s),
       ),
     [
       s.project,
@@ -251,6 +304,11 @@ function Scene() {
       s.isolated,
       s.onlySelected,
       s.calculatedObjects,
+      s.filters,
+      s.auditIds,
+      s.hideConcrete,
+      s.rebar,
+      s.rebarKinds,
     ],
   );
   const gridY = useMemo(
@@ -296,10 +354,20 @@ function Scene() {
       {s.project.document &&
         !s.isolated &&
         !s.openedObject &&
-        !s.onlySelected && <EngineeringAxes />}
-      {items.map((item) => (
-        <Part key={item.id} item={item} />
+        !s.onlySelected &&
+        !s.auditIds && <EngineeringAxes />}
+      {items.map((item, index) => (
+        <Part key={item.id} item={item} index={index} />
       ))}
+      {s.dimensions && items.find((item) => item.id === s.selected) && (
+        <Dimensions
+          item={items.find((item) => item.id === s.selected)!}
+          layer={itemLayer(
+            items.find((item) => item.id === s.selected)!,
+            s.openedObject,
+          )}
+        />
+      )}
       {s.points.map((p, i) => (
         <mesh key={i} position={p}>
           <sphereGeometry args={[0.12, 12, 12]} />
@@ -400,11 +468,22 @@ function AxisLabel({
 export default function Viewer() {
   const theme = useStore((s) => s.theme);
   const points = useStore((s) => s.points);
+  const state = useStore();
+  const focused = visibleItems(
+    state.project,
+    state.openedObject,
+    state.hidden,
+    state.isolated,
+    state.onlySelected ? state.calculatedObjects : null,
+    sceneOptions(state),
+  ).find((item) => item.id === state.selected);
+  const dims = focused && state.dimensions ? dimensionData(focused) : null;
   return (
     <>
       <Canvas
         gl={{
           antialias: true,
+          stencil: true,
           localClippingEnabled: true,
           preserveDrawingBuffer: true,
         }}
@@ -414,6 +493,38 @@ export default function Viewer() {
       >
         <Scene />
       </Canvas>
+      {dims && (
+        <div className="dimension-summary" data-testid="selected-dimensions">
+          <strong>Габариты модели</strong>
+          <span>
+            {dims.size
+              .map(
+                (n, i) =>
+                  `${["X", "Y", "Z"][i]} ${n.toLocaleString("ru-RU", { maximumFractionDigits: 3 })} м`,
+              )
+              .join(" · ")}
+          </span>
+          {dims.cutouts.length > 0 && (
+            <span>
+              Вырезы/профиль:{" "}
+              {[...new Set(dims.cutouts.map((s) => s.label))].join("; ")}
+            </span>
+          )}
+          <small>
+            {state.project.document?.zeroAbsolute === null
+              ? "Отметки схемы:"
+              : "Проектные отметки:"}{" "}
+            {dims.levels.bottom.toLocaleString("ru-RU", {
+              maximumFractionDigits: 3,
+            })}{" "}
+            /{" "}
+            {dims.levels.top.toLocaleString("ru-RU", {
+              maximumFractionDigits: 3,
+            })}{" "}
+            м
+          </small>
+        </div>
+      )}
       {points.length === 2 && (
         <div className="measurement-result">
           <span className="measure-label">

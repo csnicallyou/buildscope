@@ -7,6 +7,12 @@ import {
 } from "./model";
 import type { Bar } from "./engineering";
 import { elementQuantityStatus, type QuantityStatus } from "./quality";
+import {
+  matchesFilters,
+  isConcrete,
+  filteredBars,
+  type SceneOptions,
+} from "./viewRules";
 
 export type ModelObject = { id: string; root: Element; members: Element[] };
 export type SceneItem = {
@@ -17,6 +23,25 @@ export type SceneItem = {
   bars?: Bar[];
   layer: number;
 };
+const categoryLayers = [
+  "Основание",
+  "Фундаменты",
+  "Опоры",
+  "Балки",
+  "Плиты",
+  "Покрытие",
+  "Лестницы",
+  "Навес",
+  "Пути",
+  "Подготовка",
+  "ФЛ",
+  "ФБС",
+  "Фундаменты Фм",
+];
+export const itemLayer = (item: SceneItem, opened: string | null) =>
+  opened
+    ? item.layer * 0.45
+    : Math.max(0, categoryLayers.indexOf(item.element.category));
 export type MaterialAmount = {
   name: string;
   unit: "м³" | "кг" | "шт.";
@@ -121,9 +146,32 @@ export function visibleItems(
   hidden: string[],
   isolated: string | null,
   onlyObjects: string[] | null = null,
+  options?: SceneOptions,
 ) {
   const objects = modelObjects(project);
   return sceneItems(project, opened).filter((item) => {
+    if (!opened && options?.auditIds)
+      return options.auditIds.includes(item.element.id);
+    if (options) {
+      if (!opened && !matchesFilters(item.element, options.filters))
+        return false;
+      if (
+        item.kind === "steel" &&
+        (!options.rebar ||
+          !filteredBars(item.bars ?? [], options.rebarKinds).length)
+      )
+        return false;
+      if (
+        item.kind === "body" &&
+        options.hideConcrete &&
+        isConcrete(item.element) &&
+        (opened ||
+          !options.rebar ||
+          !filteredBars(item.element.evidence?.bars ?? [], options.rebarKinds)
+            .length)
+      )
+        return false;
+    }
     const rootId = !opened
       ? objects.find((o) => o.members.some((e) => e.id === item.element.id))?.id
       : item.id;

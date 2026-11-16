@@ -26,7 +26,12 @@ import SelectionCalculator from "./SelectionCalculator";
 import MobileControls, { MobilePanelHandle } from "./MobileControls";
 import QuantityBadges from "./QuantityBadges";
 import { elementQuantityStatus } from "./quality";
-import { useStore } from "./store";
+import { useStore, displayPosition } from "./store";
+import QuickFilters from "./QuickFilters";
+import DrawingComparison from "./DrawingComparison";
+import InspectionPanel from "./InspectionPanel";
+import { type InspectionResult, type Finding } from "./inspection";
+import { sceneOptions, matchesFilters, isConcrete } from "./viewRules";
 import {
   demo,
   parseProject,
@@ -47,6 +52,7 @@ import {
   objectFor,
   sceneItems,
   itemBounds,
+  itemLayer,
   visibleItems,
 } from "./objects";
 import { calculateSelection } from "./calculator";
@@ -106,11 +112,17 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [mobileTools, setMobileTools] = useState(false);
   const [tab, setTab] = useState<
-    "model" | "schedule" | "drawing" | "reinforcement" | "source"
+    "model" | "schedule" | "drawing" | "reinforcement" | "source" | "audit"
   >("model");
   useEffect(() => {
     if (tab !== "model") useStore.getState().set({ mobilePanel: "none" });
   }, [tab]);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [inspection, setInspection] = useState<InspectionResult | null>(null);
+  useEffect(() => {
+    setInspection(null);
+    setCompareOpen(false);
+  }, [s.project]);
   const [variant, setVariant] = useState<"plan" | "sections">("plan");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null),
     [pdfPage, setPdfPage] = useState(1);
@@ -140,7 +152,7 @@ export default function App() {
     !opened && hasObjects(s.project) && selected
       ? objectFor(s.project, selected.id)
       : null;
-  const treeItems = opened
+  const baseTreeItems = opened
     ? items
     : hasObjects(s.project)
       ? objects.map((o) => ({
@@ -151,18 +163,140 @@ export default function App() {
           layer: 0,
         }))
       : items;
+  const treeItems = opened
+    ? baseTreeItems
+    : baseTreeItems.filter((item) => {
+        const members = objects.find((o) => o.id === item.id)?.members ?? [
+          item.element,
+        ];
+        return s.auditIds
+          ? members.some((e) => s.auditIds!.includes(e.id))
+          : members.some((e) => matchesFilters(e, s.filters));
+      });
+  const visibleScene = useMemo(
+    () =>
+      visibleItems(
+        s.project,
+        s.openedObject,
+        s.hidden,
+        s.isolated,
+        s.onlySelected ? s.calculatedObjects : null,
+        sceneOptions(s),
+      ),
+    [
+      s.project,
+      s.openedObject,
+      s.hidden,
+      s.isolated,
+      s.onlySelected,
+      s.calculatedObjects,
+      s.filters,
+      s.auditIds,
+      s.hideConcrete,
+      s.rebar,
+      s.rebarKinds,
+    ],
+  );
+  const visibleElements = [
+    ...new Map(
+      visibleScene
+        .filter(
+          (item) =>
+            item.kind === "body" &&
+            !(s.hideConcrete && !s.auditIds && isConcrete(item.element)),
+        )
+        .map((item) => [item.element.id, item.element]),
+    ).values(),
+  ];
+  const filtersActive = !!(
+    s.filters.category ||
+    s.filters.material ||
+    s.filters.unverified
+  );
+  const openComparison = () => {
+    if (!selected?.evidence) return;
+    setPdfPage(
+      selected.evidence.pages.find((p) => p >= 27) ??
+        selected.evidence.pages[0] ??
+        4,
+    );
+    setCompareOpen(true);
+    setTab("model");
+    s.set({ mobilePanel: "none" });
+  };
+  useEffect(() => {
+    if (compareOpen && selected?.evidence)
+      setPdfPage(
+        selected.evidence.pages.find((p) => p >= 27) ??
+          selected.evidence.pages[0] ??
+          4,
+      );
+  }, [compareOpen, selected]);
+  const focusFinding = (finding: Finding) => {
+    s.set({
+      auditIds: finding.ids,
+      selected: finding.ids[0],
+      mobilePanel: "none",
+      cameraRevision: s.cameraRevision + 1,
+    });
+    setTab("model");
+  };
+  const cutIndex = s.cutAxis === "x" ? 0 : s.cutAxis === "y" ? 1 : 2;
+  const sceneBounds = visibleScene.map((item) => {
+    const b = itemBounds(item),
+      pos = displayPosition(
+        item.element.position,
+        s.offsets[item.id],
+        s.exploded,
+        itemLayer(item, s.openedObject),
+      );
+    return {
+      id: item.id,
+      min: b.min.map((v, a) => v + pos[a]),
+      max: b.max.map((v, a) => v + pos[a]),
+    };
+  });
+  const centerForCut = (k: number) => {
+    const focused = sceneBounds.find((b) => b.id === s.selected);
+    const bounds = focused ? [focused] : sceneBounds;
+    return bounds.length
+      ? (Math.min(...bounds.map((b) => b.min[k])) +
+          Math.max(...bounds.map((b) => b.max[k]))) /
+          2
+      : 0;
+  };
+  const cutExtents = sceneBounds.map((b) => ({
+    min: b.min[cutIndex],
+    max: b.max[cutIndex],
+  }));
+  const cutMin = cutExtents.length
+    ? Math.min(...cutExtents.map((b) => b.min)) - 0.01
+    : -1;
+  const cutMax = cutExtents.length
+    ? Math.max(...cutExtents.map((b) => b.max)) + 0.01
+    : 1;
   const selectionCalculation = useMemo(
     () => calculateSelection(s.project, s.calculatedObjects),
     [s.project, s.calculatedObjects],
   );
   const scopeElements =
     opened?.members ??
-    (s.onlySelected ? selectionCalculation.elements : s.project.elements);
+    (s.onlySelected
+      ? selectionCalculation.elements
+      : s.auditIds || filtersActive
+        ? visibleElements
+        : s.project.elements);
   const scopeProject =
-    opened || s.onlySelected
+    opened || s.onlySelected || s.auditIds || filtersActive
       ? {
           ...s.project,
-          name: opened ? opened.root.name : "Выбранные объекты",
+          name: opened
+            ? opened.root.name
+            : s.onlySelected
+              ? "Выбранные объекты"
+              : s.auditIds
+                ? "Проверяемые тела"
+                : "По фильтру",
           elements: scopeElements,
           document: s.project.document
             ? {
@@ -248,7 +382,7 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.5</span>
+          <span>0.6</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -354,7 +488,7 @@ export default function App() {
             return;
           }
           setPdfUrl(URL.createObjectURL(f));
-          setTab("source");
+          setTab(compareOpen ? "model" : "source");
           e.target.value = "";
         }}
       />
@@ -556,6 +690,12 @@ export default function App() {
                 </button>
               </>
             )}
+            <button
+              className={tab === "audit" ? "active" : ""}
+              onClick={() => setTab("audit")}
+            >
+              Проверка модели
+            </button>
             {drawing && (
               <button
                 className={tab === "drawing" ? "active" : ""}
@@ -566,6 +706,29 @@ export default function App() {
             )}
             <span className="demo-badge">{projectNotice}</span>
           </nav>
+          {tab === "model" && (
+            <QuickFilters
+              project={s.project}
+              onCompare={openComparison}
+              canCompare={!!selected?.evidence}
+            />
+          )}
+          {s.auditIds && tab === "model" && (
+            <div className="audit-focus">
+              <strong>Проверка · {s.auditIds.length} тел</strong>
+              <button
+                onClick={() =>
+                  s.set({
+                    auditIds: null,
+                    cameraRevision: s.cameraRevision + 1,
+                  })
+                }
+              >
+                Вернуться к обычному виду
+              </button>
+              <button onClick={() => setTab("audit")}>К замечаниям</button>
+            </div>
+          )}
           {opened && (
             <div className="object-navigation">
               <button
@@ -654,7 +817,12 @@ export default function App() {
               <button
                 aria-pressed={s.section}
                 className={s.section ? "active" : ""}
-                onClick={() => s.set({ section: !s.section })}
+                onClick={() =>
+                  s.set({
+                    section: !s.section,
+                    cut: !s.section ? centerForCut(cutIndex) : s.cut,
+                  })
+                }
               >
                 <Scissors size={16} />
                 Разрез
@@ -747,6 +915,7 @@ export default function App() {
                   onChange={(e) =>
                     s.set({
                       rebar: e.target.checked,
+                      hideConcrete: e.target.checked ? s.hideConcrete : false,
                       opacity: e.target.checked ? 0.2 : 1,
                     })
                   }
@@ -768,13 +937,29 @@ export default function App() {
             </label>
             {s.section && (
               <label>
-                Сечение X, м{" "}
+                <select
+                  aria-label="Ось разреза"
+                  value={s.cutAxis}
+                  onChange={(e) => {
+                    const axis = e.target.value as "x" | "y" | "z",
+                      k = axis === "x" ? 0 : axis === "y" ? 1 : 2;
+                    s.set({
+                      cutAxis: axis,
+                      cut: centerForCut(k),
+                    });
+                  }}
+                >
+                  <option value="x">X</option>
+                  <option value="y">Y</option>
+                  <option value="z">Z</option>
+                </select>{" "}
+                Сечение, м{" "}
                 <input
                   aria-label="Положение разреза"
                   type="range"
-                  min={-length}
-                  max={length}
-                  step={0.1}
+                  min={cutMin}
+                  max={cutMax}
+                  step={0.01}
                   value={s.cut}
                   onChange={(e) => s.set({ cut: +e.target.value })}
                 />
@@ -822,42 +1007,65 @@ export default function App() {
               </button>
             </div>
           )}
-          <div className="viewport">
+          <div
+            className={`viewport ${tab === "model" && compareOpen ? "model-and-drawing" : ""}`}
+          >
             {tab === "model" ? (
               <>
-                <Viewer />
-                <div className="viewport-heading">
-                  <span>{opened ? opened.root.name : s.project.name}</span>
-                  {s.calculatorOpen && (
-                    <strong className="calculation-hint">
-                      В расчёте: {s.calculatedObjects.length} · нажимайте
-                      объекты для выбора
-                    </strong>
-                  )}
-                  <small>
-                    {s.ortho ? "Ортографическая" : "Перспективная"} проекция ·
-                    метры
-                  </small>
+                <div className="model-stage">
+                  <Viewer />
+                  <div className="viewport-heading">
+                    <span>{opened ? opened.root.name : s.project.name}</span>
+                    {s.calculatorOpen && (
+                      <strong className="calculation-hint">
+                        В расчёте: {s.calculatedObjects.length} · нажимайте
+                        объекты для выбора
+                      </strong>
+                    )}
+                    <small>
+                      {s.ortho ? "Ортографическая" : "Перспективная"} проекция ·
+                      метры
+                    </small>
+                  </div>
+                  <div className="viewport-bottom">
+                    <span>
+                      {s.measure
+                        ? "Выберите две точки на поверхностях. Замер учитывает временное положение."
+                        : "ЛКМ — вращение / выбор · ПКМ — перемещение · колесо — масштаб"}
+                    </span>
+                    <button
+                      title="Вернуть изометрию"
+                      onClick={() =>
+                        s.set({
+                          view: "iso",
+                          cameraRevision: s.cameraRevision + 1,
+                        })
+                      }
+                    >
+                      <Maximize size={16} />
+                    </button>
+                  </div>
                 </div>
-                <div className="viewport-bottom">
-                  <span>
-                    {s.measure
-                      ? "Выберите две точки на поверхностях. Замер учитывает временное положение."
-                      : "ЛКМ — вращение / выбор · ПКМ — перемещение · колесо — масштаб"}
-                  </span>
-                  <button
-                    title="Вернуть изометрию"
-                    onClick={() =>
-                      s.set({
-                        view: "iso",
-                        cameraRevision: s.cameraRevision + 1,
-                      })
-                    }
-                  >
-                    <Maximize size={16} />
-                  </button>
-                </div>
+                {compareOpen && (
+                  <DrawingComparison
+                    project={s.project}
+                    selected={selected}
+                    url={pdfUrl}
+                    page={pdfPage}
+                    onPage={setPdfPage}
+                    onOpen={() => pdf.current?.click()}
+                    onClose={() => setCompareOpen(false)}
+                  />
+                )}
               </>
+            ) : tab === "audit" ? (
+              <InspectionPanel
+                project={s.project}
+                visible={visibleElements}
+                result={inspection}
+                onResult={setInspection}
+                onFocus={focusFinding}
+              />
             ) : tab === "reinforcement" ? (
               <ReinforcementPanel project={scopeProject} selected={selected} />
             ) : tab === "source" ? (
@@ -1011,16 +1219,21 @@ export default function App() {
                   s.hidden,
                   s.isolated,
                   s.onlySelected ? s.calculatedObjects : null,
+                  sceneOptions(s),
                 ).length
               }{" "}
               / {items.length} {opened ? "частей" : "элементов"}
             </span>
             <span title="Итог геометрии, включая номинальные тела. Схемы исключены.">
-              {s.onlySelected
-                ? "Выбор:"
-                : s.calculatorOpen
-                  ? "Вся модель:"
-                  : "Σ геом."}{" "}
+              {s.auditIds
+                ? "Проверка:"
+                : filtersActive && !s.onlySelected
+                  ? "По фильтру:"
+                  : s.onlySelected
+                    ? "Выбор:"
+                    : s.calculatorOpen
+                      ? "Вся модель:"
+                      : "Σ геом."}{" "}
               {hasQuantities ? fmt(volume) : "—"} м³
             </span>
             <button
@@ -1053,6 +1266,7 @@ export default function App() {
           ) : selectedObject ? (
             <ObjectInspector
               object={selectedObject}
+              onCompare={openComparison}
               onOpen={() => {
                 s.openObject(selectedObject.id);
                 setSearch("");
@@ -1260,8 +1474,7 @@ export default function App() {
                     </p>
                     <button
                       onClick={() => {
-                        setPdfPage(selected.evidence!.pages[0]);
-                        setTab("source");
+                        openComparison();
                       }}
                     >
                       PDF: страницы {selected.evidence.pages.join(", ")}

@@ -1,4 +1,5 @@
 import QuantityBadges from "./QuantityBadges";
+import PdfCanvas from "./PdfCanvas";
 import type { Project, Element } from "./model";
 const f = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
@@ -149,12 +150,9 @@ export function SourcePanel({
         </label>
       </div>
       {pdfUrl ? (
-        <iframe
-          title="Исходный PDF"
-          src={`${pdfUrl}#page=${page}&view=FitH`}
-          key={pdfUrl + page}
-          className="pdf-frame"
-        />
+        <div className="source-pdf-canvas">
+          <PdfCanvas url={pdfUrl} page={page} />
+        </div>
       ) : (
         <div className="pdf-empty">
           <p>
