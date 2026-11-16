@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
+  Play,
   ChevronDown,
   Eye,
   EyeOff,
@@ -22,6 +23,8 @@ import {
   X,
 } from "lucide-react";
 import Viewer from "./Viewer";
+import InstallationPlayer from "./InstallationPlayer";
+import { installationPlan } from "./installation";
 import SelectionCalculator from "./SelectionCalculator";
 import MobileControls, { MobilePanelHandle } from "./MobileControls";
 import QuantityBadges from "./QuantityBadges";
@@ -147,6 +150,53 @@ export default function App() {
     [s.project, s.openedObject],
   );
   const selectedItem = items.find((item) => item.id === s.selected);
+  const plan = useMemo(
+    () => (opened && selectedItem ? installationPlan(selectedItem) : null),
+    [opened, selectedItem],
+  );
+  const [work, setWork] = useState<{
+    itemId: string;
+    objectId: string;
+    project: typeof s.project;
+    previousPanel: typeof s.mobilePanel;
+  } | null>(null);
+  const workActive = !!(
+    work &&
+    plan &&
+    selectedItem &&
+    work.itemId === selectedItem.id &&
+    work.objectId === opened?.id &&
+    work.project === s.project &&
+    s.mobilePanel === "none" &&
+    tab === "model"
+  );
+  useEffect(() => {
+    if (work && !workActive) setWork(null);
+  }, [work, workActive]);
+  const startWork = () => {
+    if (!opened || !selectedItem || !plan) return;
+    setWork({
+      itemId: selectedItem.id,
+      objectId: opened.id,
+      project: s.project,
+      previousPanel: s.mobilePanel,
+    });
+    s.set({ mobilePanel: "none" });
+    setTab("model");
+  };
+  const closeWork = useCallback(() => {
+    setWork(null);
+    if (
+      work?.project === useStore.getState().project &&
+      work?.objectId === opened?.id
+    )
+      useStore.getState().set({ mobilePanel: work.previousPanel });
+    requestAnimationFrame(() =>
+      document
+        .querySelector<HTMLButtonElement>('[data-testid="start-installation"]')
+        ?.focus(),
+    );
+  }, [work, opened]);
   const selected = selectedItem?.element;
   const selectedObject =
     !opened && hasObjects(s.project) && selected
@@ -376,13 +426,13 @@ export default function App() {
   }
   return (
     <div
-      className={`app ${s.theme} mobile-${s.mobilePanel} ${s.mobileExpanded ? "mobile-expanded" : ""} ${mobileTools ? "mobile-tools-open" : ""}`}
+      className={`app ${workActive ? "installation-active" : ""} ${s.theme} mobile-${s.mobilePanel} ${s.mobileExpanded ? "mobile-expanded" : ""} ${mobileTools ? "mobile-tools-open" : ""}`}
     >
       <header className="header">
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.6</span>
+          <span>0.7</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -1013,7 +1063,7 @@ export default function App() {
             {tab === "model" ? (
               <>
                 <div className="model-stage">
-                  <Viewer />
+                  <Viewer paused={workActive} />
                   <div className="viewport-heading">
                     <span>{opened ? opened.root.name : s.project.name}</span>
                     {s.calculatorOpen && (
@@ -1046,6 +1096,15 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+                {workActive && selectedItem && opened && plan && (
+                  <InstallationPlayer
+                    item={selectedItem}
+                    members={opened.members}
+                    plan={plan}
+                    onClose={closeWork}
+                    schemeLevels={s.project.document?.zeroAbsolute === null}
+                  />
+                )}
                 {compareOpen && (
                   <DrawingComparison
                     project={s.project}
@@ -1288,6 +1347,14 @@ export default function App() {
             />
           ) : selectedItem?.kind === "steel" ? (
             <>
+              {plan && (
+                <div className="part-installation-action">
+                  <button data-testid="start-installation" onClick={startWork}>
+                    <Play size={16} />
+                    Показать устройство
+                  </button>
+                </div>
+              )}
               <SteelInspector item={selectedItem} />
               <div className="selection-actions">
                 <button onClick={() => hide(selectedItem.id)}>
@@ -1314,6 +1381,21 @@ export default function App() {
                 <h2>{selected.mark}</h2>
                 <p>{selected.name}</p>
               </div>
+              {opened && plan && (
+                <div className="part-installation-action">
+                  <button data-testid="start-installation" onClick={startWork}>
+                    <Play size={16} />
+                    Показать устройство
+                  </button>
+                  <small>Шаги, размеры и материалы выбранной части</small>
+                </div>
+              )}
+              {opened && !plan && (
+                <p className="installation-unavailable">
+                  Сценарий устройства недоступен: контур этой части не
+                  восстановлен или не поддерживается.
+                </p>
+              )}
               <div className="selection-actions">
                 <button onClick={() => hide(selectedItem!.id)}>
                   <EyeOff size={15} />

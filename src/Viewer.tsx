@@ -25,7 +25,7 @@ import { dimensionData } from "./dimensionData";
 import SectionCap from "./SectionCap";
 import { Fragment } from "react";
 import { elementGeometries, barsGeometry } from "./geometry";
-function Camera() {
+function Camera({ paused }: { paused: boolean }) {
   const {
     view,
     ortho,
@@ -51,7 +51,81 @@ function Camera() {
   const selectionKey = onlySelected ? calculatedObjects.join("|") : "";
   const controls = useRef<Controls>(null);
   const { camera, size } = useThree();
+  const saved = useRef<{
+    position: Vector3;
+    up: Vector3;
+    quaternion: import("three").Quaternion;
+    target: Vector3;
+    zoom: number;
+    project: typeof project;
+    width: number;
+    height: number;
+    viewStamp: string;
+  } | null>(null);
+  const resumedAt = useRef(0);
+  const viewStamp = JSON.stringify([
+    view,
+    ortho,
+    cameraRevision,
+    openedObject,
+    exploded,
+    onlySelected,
+    selectionKey,
+    viewKey,
+  ]);
   useEffect(() => {
+    if (paused) {
+      if (!saved.current) {
+        saved.current = {
+          position: camera.position.clone(),
+          up: camera.up.clone(),
+          quaternion: camera.quaternion.clone(),
+          target: controls.current?.target.clone() ?? new Vector3(),
+          zoom: "zoom" in camera ? Number(camera.zoom) : 1,
+          project,
+          width: size.width,
+          height: size.height,
+          viewStamp,
+        };
+        const c = controls.current;
+        if (c) {
+          const damping = c.enableDamping;
+          c.enableDamping = false;
+          c.update();
+          c.enableDamping = damping;
+          camera.position.copy(saved.current.position);
+          camera.quaternion.copy(saved.current.quaternion);
+        }
+      }
+      resumedAt.current = 0;
+      return;
+    }
+    if (saved.current) {
+      const previous = saved.current;
+      if (!resumedAt.current) resumedAt.current = performance.now();
+      const canRestore =
+        previous.project === project &&
+        previous.viewStamp === viewStamp &&
+        performance.now() - resumedAt.current < 500;
+      if (
+        !canRestore ||
+        (size.width === previous.width && size.height === previous.height)
+      )
+        saved.current = null;
+      if (canRestore) {
+        camera.position.copy(previous.position);
+        camera.up.copy(previous.up);
+        camera.quaternion.copy(previous.quaternion);
+        if ("zoom" in camera) {
+          camera.zoom = previous.zoom;
+          camera.updateProjectionMatrix();
+        }
+        controls.current?.target.copy(previous.target);
+        controls.current?.update();
+        return;
+      }
+    }
+
     const bounds = new Box3();
     const state = useStore.getState();
     for (const item of visibleItems(
@@ -120,10 +194,13 @@ function Camera() {
     onlySelected,
     selectionKey,
     viewKey,
+    paused,
+    viewStamp,
   ]);
   return (
     <OrbitControls
       ref={controls}
+      enabled={!paused}
       makeDefault
       minDistance={0.05}
       maxDistance={5000}
@@ -285,7 +362,7 @@ function Part({ item, index }: { item: SceneItem; index: number }) {
     </group>
   );
 }
-function Scene() {
+function Scene({ paused }: { paused: boolean }) {
   const s = useStore();
   const items = useMemo(
     () =>
@@ -339,7 +416,7 @@ function Scene() {
           far={10000}
         />
       )}
-      <Camera />
+      <Camera paused={paused} />
       <ambientLight intensity={1.7} />
       <directionalLight position={[10, 25, 8]} intensity={2.4} />
       <gridHelper
@@ -465,7 +542,7 @@ function AxisLabel({
     </sprite>
   );
 }
-export default function Viewer() {
+export default function Viewer({ paused = false }: { paused?: boolean }) {
   const theme = useStore((s) => s.theme);
   const points = useStore((s) => s.points);
   const state = useStore();
@@ -481,6 +558,7 @@ export default function Viewer() {
   return (
     <>
       <Canvas
+        frameloop={paused ? "never" : "always"}
         gl={{
           antialias: true,
           stencil: true,
@@ -491,7 +569,7 @@ export default function Viewer() {
         style={{ background: theme === "dark" ? "#142832" : "#e5edef" }}
         onPointerMissed={() => useStore.getState().set({ selected: null })}
       >
-        <Scene />
+        <Scene paused={paused} />
       </Canvas>
       {dims && (
         <div className="dimension-summary" data-testid="selected-dimensions">

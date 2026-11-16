@@ -1781,3 +1781,261 @@ tfoot {
     bottom: 8px;
   }
 }
+.part-installation-action {
+  padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.part-installation-action button {
+  justify-content: center;
+  min-height: 40px;
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.part-installation-action small,
+.installation-unavailable {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.installation-unavailable {
+  padding: 0 20px;
+}
+.installation-player {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  background: #142832;
+  color: #e0e9eb;
+  min-width: 0;
+  min-height: 0;
+}
+.installation-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  background: #1d333d;
+  border-bottom: 1px solid #36505a;
+}
+.installation-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.installation-heading span {
+  font-size: 10px;
+  color: #9bb0b8;
+}
+.installation-heading strong {
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.installation-heading button {
+  flex-shrink: 0;
+  min-height: 36px;
+  color: #e0e9eb;
+}
+.installation-heading button span {
+  color: inherit;
+}
+.installation-stage {
+  flex: 1;
+  min-height: 100px;
+  position: relative;
+  overflow: hidden;
+}
+.installation-scene-note {
+  position: absolute;
+  left: 12px;
+  top: 8px;
+  right: 12px;
+  color: #9bb0b8;
+  font-size: 10px;
+  pointer-events: none;
+}
+.installation-controls {
+  padding: 12px 14px 10px;
+  background: #1d333d;
+  border-top: 1px solid #36505a;
+  flex-shrink: 0;
+}
+.installation-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.installation-step > span {
+  color: #e8bd78;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.installation-step label {
+  flex: 1;
+  min-width: 0;
+}
+.installation-player select {
+  background: #142832;
+  color: #e0e9eb;
+  font: inherit;
+  border: 1px solid #36505a;
+  border-radius: 4px;
+  padding: 6px;
+}
+.installation-step select {
+  font-size: 13px;
+  max-width: 100%;
+  width: 100%;
+}
+.installation-explanation {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #b5c7cd;
+  margin: 8px 0 10px;
+  min-height: 35px;
+}
+.installation-transport {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.installation-transport button {
+  min-width: 36px;
+  min-height: 36px;
+  justify-content: center;
+  color: #dce8eb;
+  border: 1px solid #36505a;
+}
+.installation-transport .installation-play {
+  background: #397981;
+  color: #fff;
+  padding-inline: 12px;
+}
+.installation-transport label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #b5c7cd;
+}
+.installation-speed {
+  margin-left: auto;
+}
+.installation-timeline {
+  width: 100%;
+  height: 24px;
+  accent-color: #75c5bc;
+  cursor: pointer;
+  margin: 7px 0 3px;
+}
+.installation-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  color: #a8bdc4;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.installation-metrics > span:first-child {
+  color: #d9e6e8;
+}
+.installation-active .model-stage > .viewport-heading,
+.installation-active .model-stage > .viewport-bottom,
+.installation-active .model-stage > .dimension-summary {
+  visibility: hidden;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+@media (max-width: 850px) {
+  .installation-player {
+    position: fixed;
+    top: 0;
+    bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    z-index: 75;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .installation-heading {
+    padding: 8px 10px;
+  }
+  .installation-controls {
+    padding: 8px 10px;
+    max-height: 48%;
+    overflow: auto;
+  }
+  .installation-step select {
+    font-size: 12px;
+  }
+  .installation-explanation {
+    font-size: 11px;
+    margin: 6px 0;
+    min-height: 0;
+  }
+  .installation-transport {
+    gap: 4px;
+  }
+  .installation-transport button {
+    min-width: 36px;
+    min-height: 38px;
+  }
+  .installation-transport label {
+    font-size: 10px;
+  }
+  .installation-dimensions {
+    margin-left: auto;
+  }
+  .installation-speed {
+    margin-left: 2px;
+  }
+  .installation-metrics {
+    font-size: 9px;
+    gap: 3px 7px;
+  }
+  .installation-heading strong {
+    max-width: calc(100vw - 115px);
+  }
+  .installation-active .inspector {
+    visibility: hidden;
+  }
+}
+@media (max-width: 850px) and (max-height: 500px) {
+  .installation-player {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 40%);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .installation-heading {
+    grid-column: 1/-1;
+  }
+  .installation-controls {
+    max-height: none;
+    overflow: auto;
+  }
+  .installation-stage {
+    min-height: 0;
+  }
+}
+.installation-controls input.installation-timeline {
+  width: 100%;
+  height: 26px;
+}

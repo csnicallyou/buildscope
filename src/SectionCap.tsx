@@ -43,7 +43,9 @@ export default function SectionCap({
   plane,
   order,
   onClick,
+  color = "#e2a45d",
 }: {
+  color?: string;
   geometry: BufferGeometry;
   offset: Vec3;
   worldPosition: Vec3;
@@ -135,7 +137,7 @@ export default function SectionCap({
       >
         <planeGeometry args={[widths[0] + 0.002, widths[1] + 0.002]} />
         <meshStandardMaterial
-          color="#e2a45d"
+          color={color}
           side={DoubleSide}
           roughness={0.9}
           stencilWrite
