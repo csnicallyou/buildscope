@@ -52,14 +52,17 @@ export const useStore = create<State>((set, get) => ({
   set,
   select: (id) => {
     const s = get();
-    if (s.calculatorOpen && !s.openedObject) {
+    if (hasObjects(s.project) && !s.openedObject) {
       const root = objectFor(s.project, id)?.id;
-      if (root)
+      if (root) {
+        const removing = s.calculatedObjects.includes(root);
         set({
-          calculatedObjects: s.calculatedObjects.includes(root)
+          selected: removing ? null : root,
+          calculatedObjects: removing
             ? s.calculatedObjects.filter((x) => x !== root)
             : [...s.calculatedObjects, root],
         });
+      }
       return;
     }
     set({

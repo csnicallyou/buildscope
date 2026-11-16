@@ -1085,6 +1085,42 @@ tfoot {
   margin-top: 7px;
   max-width: 80%;
 }
+.multi-selection-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 8px 15px;
+  background: var(--accent-bg);
+  border-block: 1px solid var(--border);
+  font-size: 11px;
+}
+.multi-selection-bar span {
+  color: var(--muted);
+  flex: 1;
+}
+.multi-selection-bar strong {
+  white-space: nowrap;
+}
+.multi-selection-bar button {
+  min-height: 36px;
+}
+@media (max-width: 560px) {
+  .multi-selection-bar span {
+    display: none;
+  }
+  .multi-selection-bar {
+    padding: 6px 8px;
+    gap: 4px 7px;
+  }
+  .multi-selection-bar button {
+    font-size: 10px;
+    padding-inline: 6px;
+  }
+  .main {
+    height: 730px;
+  }
+}
 .material-card strong {
   font-size: 16px;
   font-weight: 500;

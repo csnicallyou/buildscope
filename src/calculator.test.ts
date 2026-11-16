@@ -5,6 +5,30 @@ import { modelObjects } from "./objects";
 import { useStore } from "./store";
 
 describe("Калькулятор выбранных объектов", () => {
+  it("два разных объекта накапливаются сразу, без открытия калькулятора; отдельный вид остаётся одиночным", () => {
+    const p = createKzh("canopy");
+    const objects = modelObjects(p).filter((o) => o.root.mark === "Фм4");
+    const s = useStore;
+    s.getState().load(p);
+    expect(s.getState().calculatorOpen).toBe(false);
+    s.getState().select(objects[0].id);
+    s.getState().select(objects[1].members[1].id);
+    expect(s.getState().calculatedObjects).toEqual([
+      objects[0].id,
+      objects[1].id,
+    ]);
+    s.getState().set({ calculatorOpen: true });
+    expect(
+      calculateSelection(p, s.getState().calculatedObjects).objects,
+    ).toHaveLength(2);
+    s.getState().set({ calculatorOpen: false });
+    s.getState().select(objects[0].id);
+    expect(s.getState().calculatedObjects).toEqual([objects[1].id]);
+    s.getState().openObject(objects[0].id);
+    s.getState().select(objects[0].members[1].id);
+    expect(s.getState().selected).toBe(objects[0].members[1].id);
+    expect(s.getState().calculatedObjects).toEqual([objects[1].id]);
+  });
   it("два Фм4: материалы полных сборок, марки стали и анкеры в своих единицах", () => {
     const p = createKzh("canopy");
     const selected = modelObjects(p)

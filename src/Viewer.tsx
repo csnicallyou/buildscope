@@ -150,9 +150,13 @@ function Part({ item }: { item: SceneItem }) {
     () => (s.section ? [new Plane(new Vector3(-1, 0, 0), s.cut)] : []),
     [s.section, s.cut],
   );
+  const objectId = objectFor(s.project, e.id)?.id ?? e.id;
   const inCalculation =
-    s.calculatorOpen &&
-    s.calculatedObjects.includes(objectFor(s.project, e.id)?.id ?? e.id);
+    !s.openedObject &&
+    s.calculatedObjects.includes(objectId) &&
+    (s.calculatorOpen ||
+      s.calculatedObjects.length > 1 ||
+      s.selected !== objectId);
   const highlighted =
     s.selected === item.id ||
     (!s.openedObject && s.selected === objectFor(s.project, e.id)?.id);

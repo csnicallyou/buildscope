@@ -230,7 +230,7 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.4</span>
+          <span>0.4.1</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -409,9 +409,9 @@ export default function App() {
                       return (
                         <div
                           key={item.id}
-                          className={`tree-row ${s.calculatorOpen && s.calculatedObjects.includes(item.id) ? "in-calculation" : ""} ${s.selected === item.id ? "selected" : ""} ${s.hidden.includes(item.id) ? "hidden-row" : ""}`}
+                          className={`tree-row ${!opened && s.calculatedObjects.includes(item.id) ? "in-calculation" : ""} ${s.selected === item.id ? "selected" : ""} ${s.hidden.includes(item.id) ? "hidden-row" : ""}`}
                         >
-                          {s.calculatorOpen && !opened && (
+                          {!opened && hasObjects(s.project) && (
                             <label className="calculation-check">
                               <input
                                 type="checkbox"
@@ -720,6 +720,31 @@ export default function App() {
               </label>
             )}
           </div>
+          {!opened && hasObjects(s.project) && (
+            <div className="multi-selection-bar">
+              <strong data-testid="selection-count" aria-live="polite">
+                Выбрано: {s.calculatedObjects.length}
+              </strong>
+              <span>
+                Нажимайте объекты подряд. Повторное нажатие снимает выбор.
+              </span>
+              <button
+                disabled={!s.calculatedObjects.length}
+                onClick={() => {
+                  s.set({ calculatorOpen: true, measure: false, points: [] });
+                  setTab("model");
+                }}
+              >
+                Рассчитать выбранные
+              </button>
+              <button
+                disabled={!s.calculatedObjects.length}
+                onClick={() => s.set({ calculatedObjects: [], selected: null })}
+              >
+                Снять весь выбор
+              </button>
+            </div>
+          )}
           <div className="viewport">
             {tab === "model" ? (
               <>
