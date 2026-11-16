@@ -1,0 +1,1851 @@
+{
+  "pavilion": [
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [2.4, -1.915, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [4.8, -1.915, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [7.2, -1.915, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [9.6, -1.915, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [12.0, -1.915, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [14.4, -1.915, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [10.39, -1.315, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [12.79, -1.315, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [14.505, -1.315, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [15.555, -1.315, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [1.39, -1.315, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [3.19, -1.315, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [5.59, -1.315, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [7.99, -1.315, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [2.4, -0.715, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [4.8, -0.715, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [7.2, -0.715, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [9.6, -0.715, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [12.0, -0.715, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [14.4, -0.715, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [1.0, -0.715, 1.4],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -0.715, 2.45],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -0.715, 3.35],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -0.715, 4.65],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -0.715, 5.55],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -0.715, 6.45],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [1.0, -0.715, 7.555],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [1.0, -1.315, 1.9],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -1.315, 2.95],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [1.0, -1.315, 4.0],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -1.315, 5.05],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [1.0, -1.915, 1.4],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -1.915, 2.45],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -1.915, 3.35],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -1.915, 4.65],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -1.915, 5.55],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -1.915, 6.45],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [1.0, -1.915, 7.555],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [1.0, -1.315, 5.95],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [1.0, -1.315, 7.0],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [15.945, -0.715, 1.4],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -0.715, 2.45],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -0.715, 3.35],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -0.715, 4.65],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -0.715, 5.55],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -0.715, 6.45],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [15.945, -0.715, 7.555],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [15.945, -1.315, 1.9],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -1.315, 2.95],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [15.945, -1.315, 4.0],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -1.315, 5.05],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [15.945, -1.915, 1.4],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -1.915, 2.45],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -1.915, 3.35],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -1.915, 4.65],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -1.915, 5.55],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -1.915, 6.45],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [15.945, -1.915, 7.555],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [15.945, -1.315, 5.95],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [15.945, -1.315, 7.0],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [1.38, -0.715, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [3.18, -0.715, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [5.58, -0.715, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [7.98, -0.715, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [10.38, -0.715, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [12.78, -0.715, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [14.505, -0.715, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [15.555, -0.715, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [2.4, -1.315, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [4.8, -1.315, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [7.2, -1.315, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [9.6, -1.315, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [12.0, -1.315, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [14.4, -1.315, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [1.38, -1.915, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [3.18, -1.915, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [5.58, -1.915, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [7.98, -1.915, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [10.38, -1.915, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [12.78, -1.915, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [14.505, -1.915, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [15.555, -1.915, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [2.4, -0.715, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [4.8, -0.715, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [7.2, -0.715, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [9.6, -0.715, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [12.0, -0.715, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [14.545, -0.715, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [1.39, -1.315, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [3.19, -1.315, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [5.59, -1.315, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [7.99, -1.315, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [10.39, -1.315, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [12.79, -1.315, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [14.44, -1.315, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [15.555, -1.315, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [2.4, -1.915, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [4.8, -1.915, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [7.2, -1.915, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [9.6, -1.915, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [12.0, -1.915, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [14.545, -1.915, 7.945],
+      "page": 7,
+      "section": "5-5"
+    }
+  ],
+  "canopy": [
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [4.95, -1.21, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [5.85, -1.21, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [6.75, -1.21, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [7.65, -1.21, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [5.4, -1.81, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [6.3, -1.81, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [7.2, -1.81, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [8.1, -1.81, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -1.81, 4.885],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.81, 6.535],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.81, 8.935],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.81, 11.335],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.81, 13.735],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -1.81, 15.385],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -1.81, 16.285],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -1.81, 17.185],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.81, 18.835],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [4.75, -1.81, 20.635],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -1.21, 5.295],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -1.21, 6.195],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.21, 7.845],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.21, 10.245],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.21, 12.645],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.21, 15.045],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -1.21, 17.445],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -1.21, 19.095],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [4.75, -1.21, 20.225],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -0.61, 6.535],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -0.61, 8.935],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -0.61, 11.335],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -0.61, 13.735],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -0.61, 15.385],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -0.61, 17.185],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [4.75, -0.61, 16.285],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [4.75, -0.61, 18.835],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [4.75, -0.61, 20.635],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -0.61, 8.585],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -0.61, 6.185],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -1.21, 6.985],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [8.3, -1.21, 5.185],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -0.61, 10.985],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -0.61, 13.385],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -0.61, 15.785],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [8.3, -0.61, 17.435],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [8.3, -0.61, 18.375],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -1.21, 9.385],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -1.21, 11.785],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -1.21, 14.185],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [8.3, -1.21, 18.835],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [8.3, -1.21, 17.935],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [8.3, -1.21, 17.035],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "z",
+      "position": [8.3, -1.21, 15.985],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -1.81, 8.595],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -1.81, 6.195],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -1.81, 10.995],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -1.81, 13.395],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "z",
+      "position": [8.3, -1.81, 15.795],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [8.3, -1.81, 17.445],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "z",
+      "position": [8.3, -1.81, 18.375],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [9.3, -0.61, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [11.86, -0.61, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [21.71, -0.61, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [10.61, -1.21, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [9.3, -1.81, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [8.96, -1.21, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [13.36, -1.21, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [19.91, -1.21, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [20.96, -1.21, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [11.86, -1.81, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [21.71, -1.81, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [19.76, -1.81, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [13.51, -1.81, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [12.31, -1.21, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [20.66, -0.61, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [21.86, -1.21, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [20.66, -1.81, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [6.149, -0.61, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [8.549, -0.61, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [10.95, -0.61, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [4.989, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [6.749, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [9.15, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [11.55, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [13.35, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [22.9, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [25.3, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [27.7, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [6.149, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [8.549, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [10.95, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [12.6, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [21.4, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [26.2, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ2",
+      "direction": "x",
+      "position": [28.9, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [19.75, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [23.8, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [13.5, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [20.5, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [12.6, -0.61, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [30.85, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [29.95, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ1",
+      "direction": "x",
+      "position": [30.1, -1.21, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "СБ3",
+      "direction": "x",
+      "position": [27.85, -1.81, 21.025],
+      "page": 13,
+      "section": "5-5"
+    }
+  ],
+  "pavilionFootings": [
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [1.87, -2.375, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [4.27, -2.375, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [6.67, -2.375, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [9.07, -2.375, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [11.47, -2.375, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [13.87, -2.375, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [15.67, -2.375, 1.0],
+      "page": 6,
+      "section": "1-1"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "z",
+      "position": [1.0, -2.375, 2.5],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "z",
+      "position": [1.0, -2.375, 5.5],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [1.0, -2.375, 7.3],
+      "page": 6,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "z",
+      "position": [15.945, -2.375, 2.5],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "z",
+      "position": [15.945, -2.375, 5.5],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [15.945, -2.375, 7.3],
+      "page": 6,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [1.86, -2.375, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [4.26, -2.375, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [6.66, -2.375, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [9.06, -2.375, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [11.46, -2.375, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [13.86, -2.375, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [15.66, -2.375, 4.0],
+      "page": 7,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [1.87, -2.375, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [4.27, -2.375, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [6.67, -2.375, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [9.07, -2.375, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [11.47, -2.375, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [13.87, -2.375, 7.945],
+      "page": 7,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [15.67, -2.375, 7.945],
+      "page": 7,
+      "section": "5-5"
+    }
+  ],
+  "canopyFootings": [
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [5.0, -2.27, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [6.8, -2.27, 4.645],
+      "page": 12,
+      "section": "1-1"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [4.75, -2.27, 6.145],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [4.75, -2.27, 8.545],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [4.75, -2.27, 10.945],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [4.75, -2.27, 13.345],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [4.75, -2.27, 15.745],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "z",
+      "position": [4.75, -2.27, 17.545],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [4.75, -2.27, 19.525],
+      "page": 12,
+      "section": "2-2"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "z",
+      "position": [8.3, -2.27, 5.095],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [8.3, -2.27, 6.895],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [8.3, -2.27, 9.295],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [8.3, -2.27, 12.125],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [8.3, -2.27, 14.525],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "z",
+      "position": [8.3, -2.27, 16.925],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "z",
+      "position": [8.3, -2.27, 18.725],
+      "page": 13,
+      "section": "3-3"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [9.21, -2.27, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [11.01, -2.27, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [13.41, -2.27, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [20.39, -2.27, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [22.19, -2.27, 19.075],
+      "page": 13,
+      "section": "4-4"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [5.029, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [6.829, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [9.23, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ1",
+      "direction": "x",
+      "position": [11.03, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [12.83, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [20.4, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [22.9, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [25.3, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [27.7, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    },
+    {
+      "mark": "ФЛ2",
+      "direction": "x",
+      "position": [30.1, -2.27, 21.025],
+      "page": 13,
+      "section": "5-5"
+    }
+  ]
+}

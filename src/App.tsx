@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   ChevronDown,
@@ -24,13 +24,18 @@ import { useStore } from "./store";
 import {
   demo,
   parseProject,
-  quantities,
+  elementQuantities,
+  elementBounds,
   totals,
   toCSV,
+  toSourceCSV,
   type Vec3,
 } from "./model";
 import { download, exportGLB } from "./export";
 import { dxfImporter, type Drawing } from "./importers";
+import { createKzh, type Assembly } from "./kzh";
+import { ReinforcementPanel, SourcePanel } from "./DocumentPanels";
+import { createKzhDetails } from "./details";
 const fmt = (n: number) =>
   n.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
 const confidence = {
@@ -84,18 +89,45 @@ function DrawingView({ drawing: d }: { drawing: Drawing }) {
 export default function App() {
   const s = useStore();
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"model" | "schedule" | "drawing">("model");
+  const [tab, setTab] = useState<
+    "model" | "schedule" | "drawing" | "reinforcement" | "source"
+  >("model");
+  const [variant, setVariant] = useState<"plan" | "sections">("plan");
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null),
+    [pdfPage, setPdfPage] = useState(1);
+  const pdf = useRef<HTMLInputElement>(null);
+  useEffect(
+    () => () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    },
+    [pdfUrl],
+  );
   const [drawing, setDrawing] = useState<Drawing | null>(null);
-  const [message, setMessage] = useState("Демонстрационная модель загружена");
+  const [message, setMessage] = useState(
+    "Модель готова. Проверьте источники и замечания комплекта.",
+  );
   const [length, setLength] = useState(36);
   const file = useRef<HTMLInputElement>(null),
     dxf = useRef<HTMLInputElement>(null);
   const selected = s.project.elements.find((e) => e.id === s.selected);
   const q = useMemo(
-    () => (selected ? quantities(selected.parts) : null),
+    () => (selected ? elementQuantities(selected) : null),
     [selected],
   );
   const summary = useMemo(() => totals(s.project.elements), [s.project]);
+  const hasQuantities = Object.keys(summary).length > 0 || !s.project.document;
+  const selectedBounds = selected ? elementBounds(selected) : null;
+  const quantitiesExcluded =
+    selected?.evidence?.representation === "diagram" ||
+    selected?.evidence?.representation === "envelope";
+  const openAssembly = (assembly: Assembly, newVariant = variant) => {
+    s.load(createKzh(assembly, newVariant));
+    setTab("model");
+    setSearch("");
+    setMessage(
+      "Загружена ручная реконструкция КЖ. Неустранённые расхождения — в разделе «Источник».",
+    );
+  };
   const projectNotice =
     s.project.elements.length > 0 &&
     s.project.elements.every((e) => e.confidence === "assumed")
@@ -148,7 +180,7 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.1</span>
+          <span>0.2</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -187,6 +219,77 @@ export default function App() {
           </button>
         </div>
       </header>
+      <div className="project-switcher">
+        <span>Комплект КЖ1.5</span>
+        <button
+          className={
+            s.project.document?.assembly === "Каталог гнутых деталей"
+              ? "active"
+              : ""
+          }
+          onClick={() => {
+            s.load(createKzhDetails());
+            setTab("model");
+            setSearch("");
+          }}
+        >
+          Гнутые детали
+        </button>
+        <button
+          className={
+            s.project.document?.assembly === "Кассовый павильон" ? "active" : ""
+          }
+          onClick={() => openAssembly("pavilion")}
+        >
+          Кассовый павильон
+        </button>
+        <button
+          className={
+            s.project.document?.assembly.includes("Навес") ? "active" : ""
+          }
+          onClick={() => openAssembly("canopy")}
+        >
+          Навес «сухие ноги»
+        </button>
+        {s.project.document?.assembly.includes("Навес") && (
+          <label>
+            Отметки{" "}
+            <select
+              aria-label="Вариант отметок"
+              value={s.project.document.variant ?? variant}
+              onChange={(e) => {
+                const v = e.target.value as "plan" | "sections";
+                setVariant(v);
+                openAssembly("canopy", v);
+              }}
+            >
+              <option value="plan">По плану</option>
+              <option value="sections">По разрезам</option>
+            </select>
+          </label>
+        )}
+        <button className="source-shortcut" onClick={() => setTab("source")}>
+          Источники и расхождения
+        </button>
+      </div>
+      <input
+        hidden
+        type="file"
+        accept=".pdf"
+        ref={pdf}
+        aria-label="Исходный PDF"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          if (f.size > 50 * 1024 * 1024) {
+            setMessage("Ошибка: лимит PDF 50 МБ");
+            return;
+          }
+          setPdfUrl(URL.createObjectURL(f));
+          setTab("source");
+          e.target.value = "";
+        }}
+      />
       <input
         hidden
         ref={file}
@@ -330,6 +433,22 @@ export default function App() {
             >
               Ведомость материалов
             </button>
+            {s.project.document && (
+              <>
+                <button
+                  className={tab === "reinforcement" ? "active" : ""}
+                  onClick={() => setTab("reinforcement")}
+                >
+                  Армирование
+                </button>
+                <button
+                  className={tab === "source" ? "active" : ""}
+                  onClick={() => setTab("source")}
+                >
+                  Источник
+                </button>
+              </>
+            )}
             {drawing && (
               <button
                 className={tab === "drawing" ? "active" : ""}
@@ -407,6 +526,21 @@ export default function App() {
               />
               Каркас
             </label>
+            {s.project.document && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={s.rebar}
+                  onChange={(e) =>
+                    s.set({
+                      rebar: e.target.checked,
+                      opacity: e.target.checked ? 0.2 : 1,
+                    })
+                  }
+                />
+                Схема арматуры
+              </label>
+            )}
             <label>
               Непрозрачность{" "}
               <input
@@ -465,12 +599,42 @@ export default function App() {
                   </button>
                 </div>
               </>
+            ) : tab === "reinforcement" ? (
+              <ReinforcementPanel project={s.project} selected={selected} />
+            ) : tab === "source" ? (
+              <SourcePanel
+                project={s.project}
+                pdfUrl={pdfUrl}
+                page={pdfPage}
+                onPage={setPdfPage}
+                onOpen={() => pdf.current?.click()}
+              />
             ) : tab === "drawing" && drawing ? (
               <DrawingView drawing={drawing} />
             ) : (
               <section className="schedule">
                 <h1>Ведомость материалов</h1>
+                {s.project.document && (
+                  <button
+                    onClick={() =>
+                      download(
+                        toSourceCSV(s.project),
+                        "kzh-source-schedules.csv",
+                        "text/csv;charset=utf-8",
+                      )
+                    }
+                  >
+                    Экспорт ведомостей PDF в CSV
+                  </button>
+                )}
                 <p>Весь проект · исходная геометрия · {projectNotice}</p>
+                {s.project.document && (
+                  <p>
+                    Объёмы геометрии, включая номинальные ФЛ/ФБС. Схемы и
+                    огибающие слоёв исключены. Значения ведомости PDF приведены
+                    отдельно.
+                  </p>
+                )}
                 <table>
                   <thead>
                     <tr>
@@ -498,7 +662,9 @@ export default function App() {
                     <tr>
                       <th>Всего</th>
                       <td>{s.project.elements.length}</td>
-                      <td data-testid="total-volume">{fmt(volume)}</td>
+                      <td data-testid="total-volume">
+                        {hasQuantities ? fmt(volume) : "—"}
+                      </td>
                     </tr>
                   </tfoot>
                 </table>
@@ -506,6 +672,36 @@ export default function App() {
                   Объёмы пересекающихся частей одного элемента объединяются.
                   Пересечения разных элементов не вычитаются.
                 </p>
+                {s.project.document && (
+                  <>
+                    <h2>По ведомостям исходного PDF</h2>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Материал / работа</th>
+                          <th>Ед.</th>
+                          <th>PDF</th>
+                          <th>Количество</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {s.project.document.materials.map((r, i) => (
+                          <tr key={i}>
+                            <td>{r.name}</td>
+                            <td>{r.unit}</td>
+                            <td>{r.page}</td>
+                            <td>{fmt(r.value)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p>
+                      Эти количества не прибавляются к геометрическим: это
+                      независимые данные источника. Толщина обмазки не задана;
+                      площади не превращаются в выдуманные объёмы.
+                    </p>
+                  </>
+                )}
                 <button
                   onClick={() =>
                     download(
@@ -536,7 +732,7 @@ export default function App() {
               }{" "}
               / {s.project.elements.length} элементов
             </span>
-            <span>Σ {fmt(volume)} м³</span>
+            <span>Σ {hasQuantities ? fmt(volume) : "—"} м³</span>
             <button
               onClick={() => {
                 void exportGLB(s.project)
@@ -583,13 +779,27 @@ export default function App() {
                   <dt>Материал</dt>
                   <dd>{selected.material}</dd>
                   <dt>Объём</dt>
-                  <dd data-testid="element-volume">{fmt(q.volume)} м³</dd>
+                  <dd data-testid="element-volume">
+                    {quantitiesExcluded
+                      ? "Не определён"
+                      : fmt(q.volume) + " м³"}
+                  </dd>
                   <dt>Площадь поверхности</dt>
-                  <dd>{fmt(q.area)} м²</dd>
+                  <dd>
+                    {quantitiesExcluded ? "Не определена" : fmt(q.area) + " м²"}
+                  </dd>
+                  {selected.evidence?.reportedVolume !== undefined && (
+                    <>
+                      <dt>В спецификации</dt>
+                      <dd>{fmt(selected.evidence.reportedVolume)} м³</dd>
+                    </>
+                  )}
                   <dt>Количество</dt>
                   <dd>1 шт.</dd>
                   <dt>Частей тела</dt>
-                  <dd>{selected.parts.length}</dd>
+                  <dd>
+                    {selected.shape ? "Профиль / тело" : selected.parts.length}
+                  </dd>
                   <dt>ID</dt>
                   <dd>{selected.id}</dd>
                 </dl>
@@ -607,27 +817,25 @@ export default function App() {
                 <dl>
                   <dt>Низ / верх</dt>
                   <dd>
-                    {fmt(
-                      Math.min(
-                        ...selected.parts.map(
-                          (p) =>
-                            selected.position[1] + p.offset[1] - p.size[1] / 2,
-                        ),
-                      ),
-                    )}{" "}
-                    /{" "}
-                    {fmt(
-                      Math.max(
-                        ...selected.parts.map(
-                          (p) =>
-                            selected.position[1] + p.offset[1] + p.size[1] / 2,
-                        ),
-                      ),
-                    )}
+                    {fmt(selected.position[1] + selectedBounds!.min[1])} /{" "}
+                    {fmt(selected.position[1] + selectedBounds!.max[1])}
                   </dd>
                 </dl>
                 <details>
                   <summary>Размеры частей, м</summary>
+                  {selected.shape && (
+                    <p>
+                      Габарит:{" "}
+                      {selectedBounds!.max
+                        .map((v, i) => fmt(v - selectedBounds!.min[i]))
+                        .join(" × ")}
+                      . Геометрия:{" "}
+                      {selected.shape.kind === "extrusion"
+                        ? "экструзия профиля"
+                        : "замкнутое тело"}
+                      .
+                    </p>
+                  )}
                   {selected.parts.map((p, i) => (
                     <p key={i}>
                       {i + 1}: {p.size.map(fmt).join(" × ")}
@@ -673,6 +881,37 @@ export default function App() {
                   {confidence[selected.confidence]}
                 </span>
                 <p>{selected.source}</p>
+                {selected.evidence && (
+                  <>
+                    <p>
+                      Представление:{" "}
+                      {
+                        {
+                          dimensioned: "по размерам",
+                          nominal: "номинальное",
+                          diagram: "схема · без расчётного объёма",
+                          envelope: "огибающая · без расчётного объёма",
+                        }[selected.evidence.representation]
+                      }
+                    </p>
+                    <button
+                      onClick={() => {
+                        setPdfPage(selected.evidence!.pages[0]);
+                        setTab("source");
+                      }}
+                    >
+                      PDF: страницы {selected.evidence.pages.join(", ")}
+                    </button>
+                    {selected.evidence.reinforcement && (
+                      <button onClick={() => setTab("reinforcement")}>
+                        Спецификация армирования
+                      </button>
+                    )}
+                    {selected.evidence.notes.map((note, i) => (
+                      <p key={i}>{note}</p>
+                    ))}
+                  </>
+                )}
                 <small>
                   Объём и площадь вычислены по геометрии. Точность зависит от
                   исходных данных.
@@ -708,7 +947,9 @@ export default function App() {
         role="status"
       >
         <span>{message}</span>
-        <span>Y — высота · единицы: м · формат проекта v1</span>
+        <span>
+          Y — высота · единицы: м · формат проекта v{s.project.version}
+        </span>
       </footer>
     </div>
   );

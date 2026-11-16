@@ -1,4 +1,5 @@
-import { BoxGeometry, Group, Mesh, MeshStandardMaterial } from "three";
+import { Group, Mesh, MeshStandardMaterial } from "three";
+import { elementGeometries, barsGeometry } from "./geometry";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 import type { Project } from "./model";
 export function download(
@@ -20,13 +21,24 @@ export async function exportGLB(project: Project) {
     group.name = e.mark;
     group.position.set(...e.position);
     group.userData = { ...e };
-    for (const p of e.parts) {
+    for (const p of elementGeometries(e)) {
       const mesh = new Mesh(
-        new BoxGeometry(...p.size),
+        p.geometry,
         new MeshStandardMaterial({ color: e.color }),
       );
       mesh.position.set(...p.offset);
       group.add(mesh);
+    }
+    if (e.evidence?.bars) {
+      const geometry = barsGeometry(e.evidence.bars);
+      if (geometry) {
+        const mesh = new Mesh(
+          geometry,
+          new MeshStandardMaterial({ color: "#dba45b" }),
+        );
+        mesh.name = "Армирование · схема";
+        group.add(mesh);
+      }
     }
     root.add(group);
   }

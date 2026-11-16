@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "export:projects": "node scripts/export-projects.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -30,6 +31,7 @@
     "@types/react-dom": "^19.2.0",
     "@types/three": "^0.181.0",
     "@vitejs/plugin-react": "^5.1.0",
+    "esbuild": "^0.28.2",
     "eslint": "^9.39.0",
     "prettier": "^3.10.1",
     "typescript": "~5.9.3",

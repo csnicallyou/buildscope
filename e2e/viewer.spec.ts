@@ -5,7 +5,7 @@ test("Демо, выбор, скрытие, разборка, смещение, 
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto("/?demo=1");
   await expect(page.locator("canvas")).toBeVisible();
   await page
     .getByRole("button", { name: "ОС-001 Щебёночное основание", exact: true })
@@ -38,7 +38,7 @@ test("Демо, выбор, скрытие, разборка, смещение, 
 test("JSON сохраняется, открывается и валидируется; CSV и GLB экспортируются", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?demo=1");
   const saved = page.waitForEvent("download");
   await page.getByRole("button", { name: "Сохранить", exact: true }).click();
   const file = await saved;
@@ -52,13 +52,11 @@ test("JSON сохраняется, открывается и валидируе�
   project.elements.forEach((e: { confidence: string }) => {
     e.confidence = "drawing";
   });
-  await page
-    .getByLabel("Загрузить JSON", { exact: true })
-    .setInputFiles({
-      name: "verified.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(project)),
-    });
+  await page.getByLabel("Загрузить JSON", { exact: true }).setInputFiles({
+    name: "verified.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(project)),
+  });
   await expect(page.locator(".project-name")).toContainText(
     "Контрольный проект",
   );
@@ -83,7 +81,7 @@ test("JSON сохраняется, открывается и валидируе�
   expect(bytes.readUInt32LE(8)).toBe(bytes.length);
 });
 test("Проекции, сечение, тема, изоляция и DXF", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/?demo=1");
   for (const name of [
     "Сверху",
     "Спереди",
@@ -117,7 +115,7 @@ test("Проекции, сечение, тема, изоляция и DXF", asyn
 test("Визуальная проверка, выбор и измерение через WebGL", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto("/?demo=1");
   await page.waitForLoadState("networkidle");
   const canvas = page.locator("canvas");
   const bounds = await canvas.boundingBox();
@@ -161,7 +159,7 @@ test("Визуальная проверка, выбор и измерение ч
 test("Светлая тема и узкий экран без горизонтального переполнения", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?demo=1");
   await page.waitForLoadState("networkidle");
   await page.getByLabel("Сменить тему").click();
   await page.screenshot({

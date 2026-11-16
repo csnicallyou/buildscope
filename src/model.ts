@@ -1,4 +1,11 @@
 import { z } from "zod";
+import {
+  shapeSchema,
+  evidenceSchema,
+  documentSchema,
+  shapeQuantities,
+  validateShape,
+} from "./engineering";
 
 export const vector = z.tuple([
   z.number().finite().min(-10000000).max(10000000),
@@ -20,7 +27,9 @@ export const elementSchema = z.object({
   material: z.string(),
   color: z.string().regex(/^#[0-9a-f]{6}$/i),
   position: vector,
-  parts: z.array(box).min(1).max(64),
+  parts: z.array(box).max(64),
+  shape: shapeSchema.optional(),
+  evidence: evidenceSchema.optional(),
   source: z.string(),
   confidence: z.enum(["drawing", "computed", "manual", "assumed", "unknown"]),
   parentId: z.string().nullable().default(null),
@@ -28,12 +37,15 @@ export const elementSchema = z.object({
 });
 export const projectSchema = z
   .object({
-    version: z.literal(1),
+    version: z.union([z.literal(1), z.literal(2)]),
     name: z.string(),
     units: z.literal("m"),
     elements: z.array(elementSchema).max(10000),
+    document: documentSchema.optional(),
   })
   .superRefine((p, ctx) => {
+    if (p.version === 1 && p.document)
+      ctx.addIssue({ code: "custom", message: "Документ требует формат v2" });
     const ids = new Set(p.elements.map((e) => e.id));
     const parents = new Map(p.elements.map((e) => [e.id, e.parentId]));
     const checked = new Set<string>();
@@ -41,6 +53,21 @@ export const projectSchema = z
       ctx.addIssue({ code: "custom", message: "Повторяющийся ID" });
     let totalCells = 0;
     for (const e of p.elements) {
+      if ((e.shape ? 1 : 0) + (e.parts.length > 0 ? 1 : 0) !== 1)
+        ctx.addIssue({
+          code: "custom",
+          message: "Элемент должен содержать один вид геометрии",
+        });
+      if (p.version === 1 && (e.shape || e.evidence || p.document))
+        ctx.addIssue({
+          code: "custom",
+          message: "Инженерные расширения требуют формат v2",
+        });
+      if (e.shape) {
+        const error = validateShape(e.shape);
+        if (error)
+          ctx.addIssue({ code: "custom", message: `${e.id}: ${error}` });
+      }
       const cells = [0, 1, 2]
         .map(
           (a) =>
@@ -134,9 +161,49 @@ export function quantities(parts: Box[]) {
 }
 export function totals(elements: Element[]) {
   return elements.reduce<Record<string, number>>((a, e) => {
-    a[e.material] = (a[e.material] ?? 0) + quantities(e.parts).volume;
+    if (
+      e.evidence?.representation === "envelope" ||
+      e.evidence?.representation === "diagram"
+    )
+      return a;
+    a[e.material] = (a[e.material] ?? 0) + elementQuantities(e).volume;
     return a;
   }, {});
+}
+export function elementQuantities(e: Element) {
+  return e.shape ? shapeQuantities(e.shape) : quantities(e.parts);
+}
+export function elementBounds(e: Element): { min: Vec3; max: Vec3 } {
+  const shape = e.shape;
+  let points: Vec3[];
+  if (!shape)
+    points = e.parts.flatMap((p) =>
+      [-1, 1].map(
+        (s) => p.offset.map((v, a) => v + (s * p.size[a]) / 2) as Vec3,
+      ),
+    );
+  else if (shape.kind === "solid") points = shape.vertices;
+  else if (shape.kind === "bar")
+    points = shape.points.flatMap((p) =>
+      [-1, 1].map(
+        (sign) => p.map((v) => v + (sign * shape.diameter) / 2) as Vec3,
+      ),
+    );
+  else
+    points = shape.outline.flatMap(([u, v]) =>
+      [-shape.depth / 2, shape.depth / 2].map(
+        (d) =>
+          (shape.axis === "y"
+            ? [u, d, v]
+            : shape.axis === "x"
+              ? [d, v, u]
+              : [u, v, d]) as Vec3,
+      ),
+    );
+  return {
+    min: [0, 1, 2].map((a) => Math.min(...points.map((p) => p[a]))) as Vec3,
+    max: [0, 1, 2].map((a) => Math.max(...points.map((p) => p[a]))) as Vec3,
+  };
 }
 const csvCell = (v: unknown) =>
   `"${String(v)
@@ -156,19 +223,28 @@ export function toCSV(p: Project) {
         "Количество",
         "Источник",
         "Достоверность",
+        "Основание расчёта",
+        "Объём в спецификации м3",
+        "Страницы PDF",
       ],
       ...p.elements.map((e) => {
-        const q = quantities(e.parts);
+        const q = elementQuantities(e);
+        const excluded =
+          e.evidence?.representation === "diagram" ||
+          e.evidence?.representation === "envelope";
         return [
           e.id,
           e.mark,
           e.name,
           e.material,
-          q.volume,
-          q.area,
+          excluded ? "" : q.volume,
+          excluded ? "" : q.area,
           1,
           e.source,
           e.confidence,
+          e.evidence?.representation ?? "dimensioned",
+          e.evidence?.reportedVolume ?? "",
+          e.evidence?.pages.join(", ") ?? "",
         ];
       }),
     ]
@@ -186,6 +262,104 @@ export function parseProject(raw: string): Project {
         .join("; "),
     );
   return result.data;
+}
+export function toSourceCSV(p: Project) {
+  const rows: unknown[][] = [
+    [
+      "Раздел",
+      "Сборка",
+      "Марка",
+      "Экземпляров",
+      "Позиция",
+      "Наименование",
+      "Сталь",
+      "Диаметр мм",
+      "Кол-во на изделие",
+      "L м",
+      "Суммарная L м на изделие",
+      "Масса ед кг",
+      "Масса на изделие кг",
+      "Количество ведомости",
+      "Ед.",
+      "Страница PDF",
+      "Примечание",
+    ],
+  ];
+  const doc = p.document;
+  if (doc) {
+    for (const r of doc.materials)
+      rows.push([
+        "Ведомость",
+        doc.assembly,
+        "",
+        "",
+        "",
+        r.name,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        r.value,
+        r.unit,
+        r.page,
+        "На всю сборку. Независимые данные источника.",
+      ]);
+    for (const r of doc.additionalReinforcement ?? [])
+      rows.push([
+        "Анкерные связи",
+        doc.assembly,
+        "",
+        1,
+        r.position,
+        r.name,
+        r.grade,
+        r.diameter,
+        r.count,
+        r.length,
+        r.totalLength,
+        r.unitMass,
+        r.totalMass,
+        "",
+        "",
+        r.page,
+        r.note ?? "",
+      ]);
+  }
+  const types = [
+    ...new Map(
+      p.elements
+        .filter((e) => e.evidence?.reinforcement)
+        .map((e) => [e.mark, e]),
+    ).values(),
+  ];
+  for (const e of types)
+    for (const r of e.evidence!.reinforcement!)
+      rows.push([
+        "Армирование",
+        doc?.assembly ?? p.name,
+        e.mark,
+        p.elements.filter((x) => x.mark === e.mark).length,
+        r.position,
+        r.name,
+        r.grade,
+        r.diameter,
+        r.count,
+        r.length,
+        r.totalLength,
+        r.unitMass,
+        r.totalMass,
+        "",
+        "",
+        r.page,
+        r.note ?? "На один исходный элемент. Массы и длины не подгоняются.",
+      ]);
+  return (
+    "\uFEFF" +
+    rows.map((row) => row.map((v) => csvCell(v ?? "")).join(";")).join("\r\n")
+  );
 }
 
 export function demo(length = 36): Project {

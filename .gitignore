@@ -6,3 +6,5 @@ playwright-report/
 .env*
 drawings/
 *.tsbuildinfo
+__pycache__/
+*.pyc

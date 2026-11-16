@@ -7,13 +7,13 @@ import {
   GizmoHelper,
   GizmoViewport,
   Line,
-  Html,
   Edges,
 } from "@react-three/drei";
-import { Box3, Plane, Vector3 } from "three";
+import { Box3, Plane, Vector3, CanvasTexture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import { useStore, displayPosition } from "./store";
-import type { Element } from "./model";
+import { elementBounds, type Element } from "./model";
+import { elementGeometries, barsGeometry } from "./geometry";
 const layers = [
   "Основание",
   "Фундаменты",
@@ -24,6 +24,10 @@ const layers = [
   "Лестницы",
   "Навес",
   "Пути",
+  "Подготовка",
+  "ФЛ",
+  "ФБС",
+  "Фундаменты Фм",
 ];
 function Camera() {
   const { view, ortho, project, cameraRevision } = useStore();
@@ -44,20 +48,22 @@ function Camera() {
         state.exploded,
         Math.max(0, layers.indexOf(e.category)),
       );
-      for (const p of e.parts)
-        for (const sign of [-1, 1])
-          bounds.expandByPoint(
-            new Vector3(
-              ...(position.map(
-                (v, a) => v + p.offset[a] + (sign * p.size[a]) / 2,
-              ) as [number, number, number]),
-            ),
-          );
+      const b = elementBounds(e);
+      for (const corner of [b.min, b.max])
+        bounds.expandByPoint(
+          new Vector3(
+            ...(corner.map((v, a) => v + position[a]) as [
+              number,
+              number,
+              number,
+            ]),
+          ),
+        );
     }
     if (bounds.isEmpty())
       bounds.set(new Vector3(-5, -5, -5), new Vector3(5, 5, 5));
     const center = bounds.getCenter(new Vector3());
-    const diameter = Math.max(5, bounds.getSize(new Vector3()).length());
+    const diameter = Math.max(0.3, bounds.getSize(new Vector3()).length());
     const distance = (diameter * 1.5) / Math.min(1, size.width / size.height);
     const positions = {
       iso: [1, 0.8, 1],
@@ -86,13 +92,30 @@ function Camera() {
     <OrbitControls
       ref={controls}
       makeDefault
-      minDistance={2}
+      minDistance={0.05}
       maxDistance={5000}
     />
   );
 }
 function Part({ element: e }: { element: Element }) {
   const s = useStore();
+  const geometries = useMemo(() => elementGeometries(e), [e]);
+  const steel = useMemo(
+    () => (s.rebar && e.evidence?.bars ? barsGeometry(e.evidence.bars) : null),
+    [e, s.rebar],
+  );
+  useEffect(
+    () => () => {
+      geometries.forEach((g) => g.geometry.dispose());
+    },
+    [geometries],
+  );
+  useEffect(
+    () => () => {
+      steel?.dispose();
+    },
+    [steel],
+  );
   const pos = displayPosition(
     e.position,
     s.offsets[e.id],
@@ -117,20 +140,21 @@ function Part({ element: e }: { element: Element }) {
   }
   return (
     <group position={pos}>
-      {e.parts.map((p, i) => (
+      {geometries.map((p, i) => (
         <mesh
           key={i}
           position={p.offset}
           onClick={click}
           userData={{ id: e.id }}
+          geometry={p.geometry}
         >
-          <boxGeometry args={p.size} />
           <meshStandardMaterial
             color={s.selected === e.id ? "#f4b85d" : e.color}
             roughness={0.82}
             metalness={e.material === "Сталь" ? 0.35 : 0}
             transparent={s.opacity < 1}
             opacity={s.opacity}
+            depthWrite={s.opacity > 0.99}
             wireframe={s.wire}
             clippingPlanes={planes}
           />
@@ -142,11 +166,31 @@ function Part({ element: e }: { element: Element }) {
           )}
         </mesh>
       ))}
+      {steel && (
+        <mesh geometry={steel} onClick={click}>
+          <meshStandardMaterial
+            color={s.selected === e.id ? "#ffcf76" : "#dba45b"}
+            roughness={0.5}
+            metalness={0.3}
+            clippingPlanes={planes}
+          />
+        </mesh>
+      )}
     </group>
   );
 }
 function Scene() {
   const s = useStore();
+  const gridY = useMemo(
+    () =>
+      Math.min(
+        -0.85,
+        ...s.project.elements.map(
+          (e) => elementBounds(e).min[1] + e.position[1] - 0.15,
+        ),
+      ),
+    [s.project],
+  );
   return (
     <>
       {s.ortho ? (
@@ -175,8 +219,9 @@ function Scene() {
           s.theme === "dark" ? "#38525c" : "#b0c2c6",
           s.theme === "dark" ? "#243a44" : "#d2dfe0",
         ]}
-        position={[0, -0.85, 0]}
+        position={[0, gridY, 0]}
       />
+      {s.project.document && !s.isolated && <EngineeringAxes />}
       {s.project.elements.map((e) => (
         <Part key={e.id} element={e} />
       ))}
@@ -189,14 +234,6 @@ function Scene() {
       {s.points.length === 2 && (
         <>
           <Line points={s.points} color="#ffbe59" lineWidth={2} />
-          <Html position={s.points[1]}>
-            <span className="measure-label">
-              {new Vector3(...s.points[0])
-                .distanceTo(new Vector3(...s.points[1]))
-                .toFixed(3)}{" "}
-              м
-            </span>
-          </Html>
         </>
       )}
       <GizmoHelper alignment="bottom-right" margin={[65, 65]}>
@@ -208,20 +245,110 @@ function Scene() {
     </>
   );
 }
+function EngineeringAxes() {
+  const doc = useStore((s) => s.project.document)!;
+  const xs = doc.axes.x,
+    zs = doc.axes.z;
+  const xmax = xs[xs.length - 1].value,
+    zmax = zs[zs.length - 1].value;
+  return (
+    <group>
+      {xs.map(({ label, value }) => (
+        <group key={"x" + label}>
+          <Line
+            points={[
+              [value, 0.08, -2],
+              [value, 0.08, zmax + 2],
+            ]}
+            color="#63919b"
+            lineWidth={0.6}
+            dashed
+            dashSize={0.4}
+            gapSize={0.2}
+          />
+          <AxisLabel position={[value, 0.08, -2]} label={label} />
+        </group>
+      ))}
+      {zs.map(({ label, value }) => (
+        <group key={"z" + label}>
+          <Line
+            points={[
+              [-2, 0.08, value],
+              [xmax + 2, 0.08, value],
+            ]}
+            color="#63919b"
+            lineWidth={0.6}
+            dashed
+            dashSize={0.4}
+            gapSize={0.2}
+          />
+          <AxisLabel position={[-2, 0.08, value]} label={label} />
+        </group>
+      ))}
+    </group>
+  );
+}
+function AxisLabel({
+  position,
+  label,
+}: {
+  position: [number, number, number];
+  label: string;
+}) {
+  const theme = useStore((s) => s.theme);
+  const texture = useMemo(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 64;
+    canvas.height = 64;
+    const c = canvas.getContext("2d")!;
+    c.beginPath();
+    c.arc(32, 32, 29, 0, Math.PI * 2);
+    c.fillStyle = theme === "dark" ? "#1d323c" : "#ffffff";
+    c.fill();
+    c.strokeStyle = "#63919b";
+    c.lineWidth = 2;
+    c.stroke();
+    c.font = "28px Segoe UI";
+    c.fillStyle = theme === "dark" ? "#dce5e8" : "#273e48";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText(label, 32, 33);
+    return new CanvasTexture(canvas);
+  }, [label, theme]);
+  useEffect(() => () => texture.dispose(), [texture]);
+  return (
+    <sprite position={position} scale={[0.7, 0.7, 1]} renderOrder={100}>
+      <spriteMaterial map={texture} depthTest={false} depthWrite={false} />
+    </sprite>
+  );
+}
 export default function Viewer() {
   const theme = useStore((s) => s.theme);
+  const points = useStore((s) => s.points);
   return (
-    <Canvas
-      gl={{
-        antialias: true,
-        localClippingEnabled: true,
-        preserveDrawingBuffer: true,
-      }}
-      dpr={[1, 2]}
-      style={{ background: theme === "dark" ? "#142832" : "#e5edef" }}
-      onPointerMissed={() => useStore.getState().set({ selected: null })}
-    >
-      <Scene />
-    </Canvas>
+    <>
+      <Canvas
+        gl={{
+          antialias: true,
+          localClippingEnabled: true,
+          preserveDrawingBuffer: true,
+        }}
+        dpr={[1, 2]}
+        style={{ background: theme === "dark" ? "#142832" : "#e5edef" }}
+        onPointerMissed={() => useStore.getState().set({ selected: null })}
+      >
+        <Scene />
+      </Canvas>
+      {points.length === 2 && (
+        <div className="measurement-result">
+          <span className="measure-label">
+            {Math.hypot(...points[0].map((v, i) => v - points[1][i])).toFixed(
+              3,
+            )}{" "}
+            м
+          </span>
+        </div>
+      )}
+    </>
   );
 }

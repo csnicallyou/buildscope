@@ -96,7 +96,7 @@ describe("Проекты и представление", () => {
   });
   it("отклоняет новые версии, отрицательные размеры, дубли и NaN", () => {
     const p = demo();
-    expect(() => parseProject(JSON.stringify({ ...p, version: 2 }))).toThrow();
+    expect(() => parseProject(JSON.stringify({ ...p, version: 99 }))).toThrow();
     p.elements[0].parts[0].size[0] = -1;
     expect(() => parseProject(JSON.stringify(p))).toThrow();
     const d = demo();

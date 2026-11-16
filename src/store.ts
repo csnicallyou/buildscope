@@ -17,6 +17,7 @@ type State = {
   view: "iso" | "top" | "front" | "side";
   ortho: boolean;
   cameraRevision: number;
+  rebar: boolean;
   set: (patch: Partial<Omit<State, "set" | "load" | "reset">>) => void;
   load: (p: Project) => void;
   reset: () => void;
@@ -38,6 +39,7 @@ export const useStore = create<State>((set) => ({
   view: "iso",
   ortho: false,
   cameraRevision: 0,
+  rebar: false,
   set,
   load: (project) =>
     set({
@@ -50,6 +52,8 @@ export const useStore = create<State>((set) => ({
       points: [],
       section: false,
       measure: false,
+      rebar: false,
+      opacity: 1,
     }),
   reset: () =>
     set({
