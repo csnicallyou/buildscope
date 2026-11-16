@@ -76,6 +76,7 @@ function rounded(points: Point[], radius: number): Vec3[] {
 export function createKzhDetails(): Project {
   const document = documentInfo("canopy");
   document.assembly = "Каталог гнутых деталей";
+  document.zeroAbsolute = null;
   document.materials = [];
   document.axes = {
     x: [0, 2, 4, 6, 8].map((value, i) => ({ label: String(i + 1), value })),

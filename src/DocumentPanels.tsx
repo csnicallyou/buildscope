@@ -124,8 +124,11 @@ export function SourcePanel({
         <div>
           <h1>{doc.code}</h1>
           <p>
-            {doc.assembly} · 0,000 = {f(doc.zeroAbsolute)} · 30 страниц / 25
-            листов
+            {doc.assembly} ·{" "}
+            {doc.zeroAbsolute === null
+              ? "Условная выкладка"
+              : "0,000 = " + f(doc.zeroAbsolute)}{" "}
+            · 30 страниц / 25 листов
           </p>
         </div>
         <button onClick={onOpen}>Открыть исходный PDF</button>

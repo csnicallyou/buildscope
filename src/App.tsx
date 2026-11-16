@@ -122,6 +122,7 @@ export default function App() {
     selected?.evidence?.representation === "envelope";
   const openAssembly = (assembly: Assembly, newVariant = variant) => {
     s.load(createKzh(assembly, newVariant));
+    s.set({ view: "iso", ortho: false });
     setTab("model");
     setSearch("");
     setMessage(
@@ -732,7 +733,9 @@ export default function App() {
               }{" "}
               / {s.project.elements.length} элементов
             </span>
-            <span>Σ {hasQuantities ? fmt(volume) : "—"} м³</span>
+            <span title="Итог геометрии, включая номинальные тела. Схемы исключены.">
+              Σ геом. {hasQuantities ? fmt(volume) : "—"} м³
+            </span>
             <button
               onClick={() => {
                 void exportGLB(s.project)
@@ -832,7 +835,9 @@ export default function App() {
                       . Геометрия:{" "}
                       {selected.shape.kind === "extrusion"
                         ? "экструзия профиля"
-                        : "замкнутое тело"}
+                        : selected.shape.kind === "bar"
+                          ? "гнутый стержень"
+                          : "замкнутое тело"}
                       .
                     </p>
                   )}

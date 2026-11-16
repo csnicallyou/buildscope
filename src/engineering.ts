@@ -64,7 +64,7 @@ export const evidenceSchema = z.object({
 export const documentSchema = z.object({
   code: z.string(),
   assembly: z.string(),
-  zeroAbsolute: z.number(),
+  zeroAbsolute: z.number().nullable(),
   sourceName: z.string(),
   pageCount: z.number().int(),
   variant: z.enum(["plan", "sections"]).optional(),

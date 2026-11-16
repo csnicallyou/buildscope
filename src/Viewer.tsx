@@ -149,6 +149,10 @@ function Part({ element: e }: { element: Element }) {
           geometry={p.geometry}
         >
           <meshStandardMaterial
+            key={`${s.opacity < 1}-${s.wire}-${s.section}`}
+            onUpdate={(material) => {
+              material.needsUpdate = true;
+            }}
             color={s.selected === e.id ? "#f4b85d" : e.color}
             roughness={0.82}
             metalness={e.material === "Сталь" ? 0.35 : 0}

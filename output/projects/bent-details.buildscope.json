@@ -4050,7 +4050,7 @@
   "document": {
     "code": "10-25-М-КЖ1.5",
     "assembly": "Каталог гнутых деталей",
-    "zeroAbsolute": 146.35,
+    "zeroAbsolute": null,
     "sourceName": "10-25-М-КЖ1.5 (7).pdf",
     "pageCount": 30,
     "issues": [
