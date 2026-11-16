@@ -1,3 +1,4 @@
+import QuantityBadges from "./QuantityBadges";
 import type { Project, Element } from "./model";
 const f = (v: number | null | undefined) =>
   v == null ? "—" : v.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
@@ -15,6 +16,7 @@ export function ReinforcementPanel({
   return (
     <section className="schedule">
       <h1>Армирование</h1>
+      <QuantityBadges statuses={["source"]} />
       <p>
         Позиции переписаны из спецификаций. Количества, длины и массы сохранены
         в исходных единицах. Сетка в 3D — схема размещения; гнутые детали,

@@ -30,8 +30,17 @@ const layers = [
   "Фундаменты Фм",
 ];
 function Camera() {
-  const { view, ortho, project, cameraRevision, openedObject, exploded } =
-    useStore();
+  const {
+    view,
+    ortho,
+    project,
+    cameraRevision,
+    openedObject,
+    exploded,
+    onlySelected,
+    calculatedObjects,
+  } = useStore();
+  const selectionKey = onlySelected ? calculatedObjects.join("|") : "";
   const controls = useRef<Controls>(null);
   const { camera, size } = useThree();
   useEffect(() => {
@@ -42,6 +51,7 @@ function Camera() {
       openedObject,
       state.hidden,
       state.isolated,
+      state.onlySelected ? state.calculatedObjects : null,
     )) {
       const e = item.element;
       const position = displayPosition(
@@ -100,6 +110,8 @@ function Camera() {
     cameraRevision,
     openedObject,
     exploded,
+    onlySelected,
+    selectionKey,
   ]);
   return (
     <OrbitControls
@@ -224,8 +236,22 @@ function Part({ item }: { item: SceneItem }) {
 function Scene() {
   const s = useStore();
   const items = useMemo(
-    () => visibleItems(s.project, s.openedObject, s.hidden, s.isolated),
-    [s.project, s.openedObject, s.hidden, s.isolated],
+    () =>
+      visibleItems(
+        s.project,
+        s.openedObject,
+        s.hidden,
+        s.isolated,
+        s.onlySelected ? s.calculatedObjects : null,
+      ),
+    [
+      s.project,
+      s.openedObject,
+      s.hidden,
+      s.isolated,
+      s.onlySelected,
+      s.calculatedObjects,
+    ],
   );
   const gridY = useMemo(
     () =>
@@ -267,9 +293,10 @@ function Scene() {
         ]}
         position={[0, gridY, 0]}
       />
-      {s.project.document && !s.isolated && !s.openedObject && (
-        <EngineeringAxes />
-      )}
+      {s.project.document &&
+        !s.isolated &&
+        !s.openedObject &&
+        !s.onlySelected && <EngineeringAxes />}
       {items.map((item) => (
         <Part key={item.id} item={item} />
       ))}

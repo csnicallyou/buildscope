@@ -6,6 +6,7 @@ import {
   type Vec3,
 } from "./model";
 import type { Bar } from "./engineering";
+import { elementQuantityStatus, type QuantityStatus } from "./quality";
 
 export type ModelObject = { id: string; root: Element; members: Element[] };
 export type SceneItem = {
@@ -22,6 +23,7 @@ export type MaterialAmount = {
   value: number;
   unknown: number;
   basis: string;
+  statuses: QuantityStatus[];
 };
 export const hasObjects = (p: Project) =>
   !!p.document &&
@@ -118,6 +120,7 @@ export function visibleItems(
   opened: string | null,
   hidden: string[],
   isolated: string | null,
+  onlyObjects: string[] | null = null,
 ) {
   const objects = modelObjects(project);
   return sceneItems(project, opened).filter((item) => {
@@ -127,6 +130,9 @@ export function visibleItems(
     return (
       !hidden.includes(item.id) &&
       !hidden.includes(rootId ?? item.id) &&
+      (opened ||
+        onlyObjects === null ||
+        onlyObjects.includes(rootId ?? item.id)) &&
       (!isolated || item.id === isolated || rootId === isolated)
     );
   });
@@ -144,9 +150,24 @@ export function materialAmounts(
     unit: MaterialAmount["unit"],
     value: number | null,
     basis: string,
+    status: QuantityStatus,
   ) => {
     const key = `${name}:${unit}:${basis}`;
-    const row = rows.get(key) ?? { name, unit, value: 0, unknown: 0, basis };
+    const row = rows.get(key) ?? {
+      name,
+      unit,
+      value: 0,
+      unknown: 0,
+      basis,
+      statuses: [],
+    };
+    row.statuses = [
+      ...new Set([
+        ...row.statuses,
+        status,
+        ...(value === null ? ["unknown" as const] : []),
+      ]),
+    ];
     if (value === null) row.unknown++;
     else row.value += value;
     rows.set(key, row);
@@ -166,6 +187,7 @@ export function materialAmounts(
           : e.evidence?.representation === "nominal"
             ? "Номинальная геометрия"
             : "Геометрия",
+      elementQuantityStatus(e),
     );
     for (const r of includeRebar ? (e.evidence?.reinforcement ?? []) : [])
       add(
@@ -173,6 +195,7 @@ export function materialAmounts(
         "кг",
         r.totalMass,
         "Спецификация на выбранные элементы",
+        "source",
       );
     const anchors =
       e.evidence?.bars?.filter((b) => b.label.startsWith("Анкер")) ?? [];
@@ -182,6 +205,7 @@ export function materialAmounts(
         "шт.",
         anchors.length,
         "Количество в схеме; масса не задана",
+        "scheme",
       );
   }
   return [...rows.values()];

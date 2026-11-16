@@ -1,3 +1,9 @@
+import {
+  openTree,
+  openProperties,
+  showTools,
+  modelView,
+} from "./mobile-helpers";
 import { test, expect } from "@playwright/test";
 
 for (const mobile of [false, true])
@@ -8,6 +14,7 @@ for (const mobile of [false, true])
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto("/?assembly=canopy");
+    await openTree(page);
     await page.getByLabel("Поиск конструкций").fill("Фм1 · оси 1/А");
     await page
       .getByRole("button", { name: "Фм1 Фм1 · оси 1/А", exact: true })
@@ -74,11 +81,13 @@ for (const mobile of [false, true])
       await expect(inspector).toContainText("Объект целиком");
       await expect(materials).toContainText("339,4 кг");
     }
+    await openProperties(page);
     await page
       .getByRole("button", { name: "Открыть отдельно", exact: true })
       .click();
     await expect(page.locator(".object-navigation")).toContainText("5 частей");
     await expect(page.locator(".tree-scroll .element-button")).toHaveCount(5);
+    await openTree(page);
     await page
       .getByRole("button", {
         name: "БП Бетонная подготовка Фм1 · 1/А",
@@ -94,10 +103,12 @@ for (const mobile of [false, true])
     await expect(inspector.getByTestId("material-amounts")).not.toContainText(
       "Сталь",
     );
+    await showTools(page);
     await page.getByRole("button", { name: "Разобрать", exact: true }).click();
     await expect(inspector.getByTestId("element-volume")).toHaveText(
       "0,676 м³",
     );
+    await openTree(page);
     await page
       .getByRole("button", { name: "Арматура Анкеры M24 · схема", exact: true })
       .click();
@@ -111,11 +122,13 @@ for (const mobile of [false, true])
       .click();
     await expect(inspector).toContainText("Объём в схеме");
     await expect(inspector).toContainText("Спецификация на весь Фм1");
+    await openProperties(page);
     await page.waitForLoadState("networkidle");
     await page.screenshot({
       path: `test-results/object-detail${mobile ? "-mobile" : ""}.png`,
       fullPage: true,
     });
+    await modelView(page);
     await page
       .getByRole("button", { name: "← Ко всем объектам", exact: true })
       .click();
@@ -124,6 +137,7 @@ for (const mobile of [false, true])
     await expect(inspector.getByTestId("material-amounts")).toContainText(
       "339,4 кг",
     );
+    await showTools(page);
     await expect(
       page.getByRole("button", { name: "Разобрать", exact: true }),
     ).toHaveAttribute("aria-pressed", "false");

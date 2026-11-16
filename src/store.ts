@@ -7,6 +7,12 @@ type State = {
   openedObject: string | null;
   calculatorOpen: boolean;
   calculatedObjects: string[];
+  onlySelected: boolean;
+  mobilePanel: "none" | "tree" | "inspector";
+  mobileExpanded: boolean;
+  groupVisibility: { hidden: string[]; isolated: string | null } | null;
+  toggleOnlySelected: () => void;
+  clearSelection: () => void;
   hidden: string[];
   isolated: string | null;
   offsets: Record<string, Vec3>;
@@ -34,6 +40,10 @@ export const useStore = create<State>((set, get) => ({
   openedObject: null,
   calculatorOpen: false,
   calculatedObjects: [],
+  onlySelected: false,
+  mobilePanel: "none",
+  mobileExpanded: false,
+  groupVisibility: null,
   hidden: [],
   isolated: null,
   offsets: {},
@@ -50,6 +60,39 @@ export const useStore = create<State>((set, get) => ({
   cameraRevision: 0,
   rebar: false,
   set,
+  toggleOnlySelected: () => {
+    const s = get();
+    if (!s.onlySelected && !s.calculatedObjects.length) return;
+    set(
+      s.onlySelected
+        ? {
+            onlySelected: false,
+            hidden: s.groupVisibility?.hidden ?? [],
+            isolated: s.groupVisibility?.isolated ?? null,
+            groupVisibility: null,
+            cameraRevision: s.cameraRevision + 1,
+          }
+        : {
+            onlySelected: true,
+            groupVisibility: { hidden: s.hidden, isolated: s.isolated },
+            hidden: [],
+            isolated: null,
+            cameraRevision: s.cameraRevision + 1,
+          },
+    );
+  },
+  clearSelection: () => {
+    const s = get();
+    set({
+      calculatedObjects: [],
+      selected: null,
+      onlySelected: false,
+      groupVisibility: null,
+      hidden: s.groupVisibility?.hidden ?? s.hidden,
+      isolated: s.groupVisibility?.isolated ?? s.isolated,
+      cameraRevision: s.cameraRevision + 1,
+    });
+  },
   select: (id) => {
     const s = get();
     if (hasObjects(s.project) && !s.openedObject) {
@@ -58,6 +101,14 @@ export const useStore = create<State>((set, get) => ({
         const removing = s.calculatedObjects.includes(root);
         set({
           selected: removing ? null : root,
+          ...(removing && s.calculatedObjects.length === 1 && s.onlySelected
+            ? {
+                onlySelected: false,
+                groupVisibility: null,
+                hidden: s.groupVisibility?.hidden ?? [],
+                isolated: s.groupVisibility?.isolated ?? null,
+              }
+            : {}),
           calculatedObjects: removing
             ? s.calculatedObjects.filter((x) => x !== root)
             : [...s.calculatedObjects, root],
@@ -76,6 +127,9 @@ export const useStore = create<State>((set, get) => ({
     set((s) => ({
       openedObject: id,
       calculatorOpen: false,
+      onlySelected: false,
+      groupVisibility: null,
+      mobilePanel: "none",
       selected: id ? null : s.openedObject,
       hidden: [],
       isolated: null,
@@ -95,6 +149,10 @@ export const useStore = create<State>((set, get) => ({
       openedObject: null,
       calculatorOpen: false,
       calculatedObjects: [],
+      onlySelected: false,
+      groupVisibility: null,
+      mobilePanel: "none",
+      mobileExpanded: false,
       hidden: [],
       isolated: null,
       offsets: {},
@@ -112,6 +170,9 @@ export const useStore = create<State>((set, get) => ({
       hidden: [],
       isolated: null,
       points: [],
+      onlySelected: false,
+      groupVisibility: null,
+      cameraRevision: get().cameraRevision + 1,
     }),
 }));
 export function displayPosition(

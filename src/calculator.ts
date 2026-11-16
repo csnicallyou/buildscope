@@ -1,3 +1,4 @@
+import { quantityStatuses } from "./quality";
 import type { Project } from "./model";
 import { materialAmounts, modelObjects, type MaterialAmount } from "./objects";
 
@@ -25,6 +26,7 @@ export function calculateSelection(project: Project, selectedIds: string[]) {
     row.value += r.value;
     row.unknown += r.unknown;
     row.bases.add(r.basis);
+    row.statuses = [...new Set([...row.statuses, ...r.statuses])];
     rows.set(key, row);
   }
   const materials = [...rows.values()].map(({ bases, ...row }) => ({
@@ -52,6 +54,7 @@ export function calculationCSV(project: Project, selectedIds: string[]) {
       "Известное количество",
       "Неопределённых позиций",
       "Основание",
+      "Статус",
     ],
     ...c.materials.map((r) => [
       r.name,
@@ -59,6 +62,7 @@ export function calculationCSV(project: Project, selectedIds: string[]) {
       r.value || !r.unknown ? r.value : "",
       r.unknown,
       r.basis,
+      r.statuses.map((s) => quantityStatuses[s].label).join(" / "),
     ]),
     [],
     ["Включённые объекты", "ID", "Тел и слоёв"],

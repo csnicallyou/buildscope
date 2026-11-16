@@ -3,20 +3,45 @@ import { useStore } from "./store";
 import { visibleItems, modelObjects } from "./objects";
 import { calculateSelection, calculationCSV } from "./calculator";
 import { download } from "./export";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
+import QuantityBadges from "./QuantityBadges";
 const f = (n: number) =>
   n.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
 export default function SelectionCalculator() {
   const s = useStore();
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportError, setReportError] = useState("");
+  const report = async () => {
+    setReportBusy(true);
+    setReportError("");
+    try {
+      const { createSelectionReport } = await import("./report");
+      download(
+        await createSelectionReport(s.project, [...s.calculatedObjects]),
+        "buildscope-selected-report.pdf",
+        "application/pdf",
+      );
+    } catch (e) {
+      setReportError(
+        e instanceof Error ? e.message : "Не удалось сформировать отчёт",
+      );
+    } finally {
+      setReportBusy(false);
+    }
+  };
   const c = useMemo(
     () => calculateSelection(s.project, s.calculatedObjects),
     [s.project, s.calculatedObjects],
   );
   const visible = new Set(
-    visibleItems(s.project, null, s.hidden, s.isolated).map(
-      (item) => item.element.id,
-    ),
+    visibleItems(
+      s.project,
+      null,
+      s.hidden,
+      s.isolated,
+      s.onlySelected ? s.calculatedObjects : null,
+    ).map((item) => item.element.id),
   );
   const hiddenCount = c.objects.filter(
     (o) => !o.members.some((e) => visible.has(e.id)),
@@ -50,10 +75,7 @@ export default function SelectionCalculator() {
         >
           Добавить видимые
         </button>
-        <button
-          disabled={!c.objects.length}
-          onClick={() => s.set({ calculatedObjects: [] })}
-        >
+        <button disabled={!c.objects.length} onClick={() => s.clearSelection()}>
           Очистить выбор
         </button>
         <small>
@@ -86,6 +108,7 @@ export default function SelectionCalculator() {
                       : "Не определено"
                     : `${f(r.value)} ${r.unit}`}
                 </strong>
+                <QuantityBadges statuses={r.statuses} />
                 <small>
                   {r.basis}
                   {r.unknown ? ` · ${r.unknown} поз. без количества` : ""}
@@ -117,6 +140,17 @@ export default function SelectionCalculator() {
               Скачать расчёт CSV
             </button>
           </section>
+          <section className="property-section report-actions">
+            <h3>Отчёт по выбору</h3>
+            <p>
+              Отдельный PDF: изображение выбранных объектов, материалы, состав и
+              замечания.
+            </p>
+            <button disabled={reportBusy} onClick={() => void report()}>
+              {reportBusy ? "Подготовка PDF…" : "Скачать PDF-отчёт"}
+            </button>
+            {reportError && <p role="alert">{reportError}</p>}
+          </section>
           <section className="property-section calculation-objects">
             <h3>Включённые объекты</h3>
             {hiddenCount > 0 && (
@@ -133,13 +167,7 @@ export default function SelectionCalculator() {
                 </span>
                 <button
                   aria-label={`Убрать из расчёта ${o.root.name}`}
-                  onClick={() =>
-                    s.set({
-                      calculatedObjects: s.calculatedObjects.filter(
-                        (id) => id !== o.id,
-                      ),
-                    })
-                  }
+                  onClick={() => s.select(o.id)}
                 >
                   <X size={16} />
                 </button>
@@ -149,7 +177,9 @@ export default function SelectionCalculator() {
         </>
       )}
       <section className="property-section">
-        <button onClick={() => s.set({ calculatorOpen: false })}>
+        <button
+          onClick={() => s.set({ calculatorOpen: false, mobilePanel: "none" })}
+        >
           Закрыть калькулятор
         </button>
         <p className="quantity-note">

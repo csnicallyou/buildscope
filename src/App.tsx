@@ -19,9 +19,13 @@ import {
   Move3D,
   FileBox,
   Calculator,
+  X,
 } from "lucide-react";
 import Viewer from "./Viewer";
 import SelectionCalculator from "./SelectionCalculator";
+import MobileControls, { MobilePanelHandle } from "./MobileControls";
+import QuantityBadges from "./QuantityBadges";
+import { elementQuantityStatus } from "./quality";
 import { useStore } from "./store";
 import {
   demo,
@@ -45,6 +49,7 @@ import {
   itemBounds,
   visibleItems,
 } from "./objects";
+import { calculateSelection } from "./calculator";
 import { Materials, ObjectInspector, SteelInspector } from "./ObjectInspector";
 const fmt = (n: number) =>
   n.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
@@ -99,9 +104,13 @@ function DrawingView({ drawing: d }: { drawing: Drawing }) {
 export default function App() {
   const s = useStore();
   const [search, setSearch] = useState("");
+  const [mobileTools, setMobileTools] = useState(false);
   const [tab, setTab] = useState<
     "model" | "schedule" | "drawing" | "reinforcement" | "source"
   >("model");
+  useEffect(() => {
+    if (tab !== "model") useStore.getState().set({ mobilePanel: "none" });
+  }, [tab]);
   const [variant, setVariant] = useState<"plan" | "sections">("plan");
   const [pdfUrl, setPdfUrl] = useState<string | null>(null),
     [pdfPage, setPdfPage] = useState(1);
@@ -142,21 +151,28 @@ export default function App() {
           layer: 0,
         }))
       : items;
-  const scopeElements = opened?.members ?? s.project.elements;
-  const scopeProject = opened
-    ? {
-        ...s.project,
-        name: opened.root.name,
-        elements: scopeElements,
-        document: s.project.document
-          ? {
-              ...s.project.document,
-              materials: [],
-              additionalReinforcement: [],
-            }
-          : undefined,
-      }
-    : s.project;
+  const selectionCalculation = useMemo(
+    () => calculateSelection(s.project, s.calculatedObjects),
+    [s.project, s.calculatedObjects],
+  );
+  const scopeElements =
+    opened?.members ??
+    (s.onlySelected ? selectionCalculation.elements : s.project.elements);
+  const scopeProject =
+    opened || s.onlySelected
+      ? {
+          ...s.project,
+          name: opened ? opened.root.name : "Выбранные объекты",
+          elements: scopeElements,
+          document: s.project.document
+            ? {
+                ...s.project.document,
+                materials: [],
+                additionalReinforcement: [],
+              }
+            : undefined,
+        }
+      : s.project;
   const q = useMemo(
     () => (selected ? elementQuantities(selected) : null),
     [selected],
@@ -225,12 +241,14 @@ export default function App() {
     setMessage("Проект сохранён в JSON");
   }
   return (
-    <div className={`app ${s.theme}`}>
+    <div
+      className={`app ${s.theme} mobile-${s.mobilePanel} ${s.mobileExpanded ? "mobile-expanded" : ""} ${mobileTools ? "mobile-tools-open" : ""}`}
+    >
       <header className="header">
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.4.1</span>
+          <span>0.5</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -356,6 +374,13 @@ export default function App() {
         aria-label="Загрузить DXF"
         onChange={(e) => void loadFile(e.currentTarget, "dxf")}
       />
+      {s.mobilePanel === "tree" && (
+        <button
+          className="mobile-tree-backdrop"
+          aria-label="Закрыть список конструкций"
+          onClick={() => s.set({ mobilePanel: "none" })}
+        />
+      )}
       <div className="workspace">
         <aside className="tree-panel">
           <div className="panel-heading">
@@ -367,6 +392,13 @@ export default function App() {
                   : "Конструкции"}
             </span>
             <span className="muted">{treeItems.length}</span>
+            <button
+              className="mobile-close-button"
+              aria-label="Скрыть список"
+              onClick={() => s.set({ mobilePanel: "none" })}
+            >
+              <X size={20} />
+            </button>
           </div>
           <label className="search">
             <Search size={15} />
@@ -563,6 +595,32 @@ export default function App() {
               </button>
             </div>
           )}
+          <div className="mobile-model-tools">
+            <label>
+              Вид{" "}
+              <select
+                aria-label="Вид модели"
+                value={s.view}
+                onChange={(e) =>
+                  s.set({
+                    view: e.target.value as typeof s.view,
+                    cameraRevision: s.cameraRevision + 1,
+                  })
+                }
+              >
+                <option value="iso">Изометрия</option>
+                <option value="top">Сверху</option>
+                <option value="front">Спереди</option>
+                <option value="side">Сбоку</option>
+              </select>
+            </label>
+            <button
+              aria-pressed={mobileTools}
+              onClick={() => setMobileTools(!mobileTools)}
+            >
+              Инструменты
+            </button>
+          </div>
           <div className="toolbar">
             <div className="tool-group">
               {(["iso", "top", "front", "side"] as const).map((v, i) => (
@@ -634,6 +692,8 @@ export default function App() {
                 onClick={() => {
                   s.set({
                     calculatorOpen: !s.calculatorOpen,
+                    mobilePanel: !s.calculatorOpen ? "inspector" : "none",
+                    mobileExpanded: false,
                     measure: false,
                     points: [],
                     selected: null,
@@ -660,11 +720,13 @@ export default function App() {
             {s.calculatorOpen && (
               <button
                 className="calculator-result-link"
-                onClick={() =>
-                  document
-                    .querySelector(".inspector")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                }
+                onClick={() => {
+                  s.set({ mobilePanel: "inspector" });
+                  if (window.innerWidth > 850)
+                    document
+                      .querySelector(".inspector")
+                      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
               >
                 К итогам ↓
               </button>
@@ -731,15 +793,30 @@ export default function App() {
               <button
                 disabled={!s.calculatedObjects.length}
                 onClick={() => {
-                  s.set({ calculatorOpen: true, measure: false, points: [] });
+                  s.set({
+                    calculatorOpen: true,
+                    mobilePanel: "inspector",
+                    mobileExpanded: false,
+                    measure: false,
+                    points: [],
+                  });
                   setTab("model");
                 }}
               >
                 Рассчитать выбранные
               </button>
               <button
+                disabled={!s.calculatedObjects.length && !s.onlySelected}
+                aria-pressed={s.onlySelected}
+                onClick={s.toggleOnlySelected}
+              >
+                {s.onlySelected
+                  ? "Вернуть весь проект"
+                  : "Показать только выбранные"}
+              </button>
+              <button
                 disabled={!s.calculatedObjects.length}
-                onClick={() => s.set({ calculatedObjects: [], selected: null })}
+                onClick={() => s.clearSelection()}
               >
                 Снять весь выбор
               </button>
@@ -839,7 +916,23 @@ export default function App() {
                               .length
                           }
                         </td>
-                        <td>{fmt(v)}</td>
+                        <td>
+                          {fmt(v)}
+                          {scopeElements.some(
+                            (e) =>
+                              e.material === material &&
+                              ["diagram", "envelope"].includes(
+                                e.evidence?.representation ?? "",
+                              ),
+                          )
+                            ? " + не определено"
+                            : ""}
+                          <QuantityBadges
+                            statuses={scopeElements
+                              .filter((e) => e.material === material)
+                              .map(elementQuantityStatus)}
+                          />
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -875,7 +968,10 @@ export default function App() {
                             <td>{r.name}</td>
                             <td>{r.unit}</td>
                             <td>{r.page}</td>
-                            <td>{fmt(r.value)}</td>
+                            <td>
+                              {fmt(r.value)}
+                              <QuantityBadges statuses={["source"]} />
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -909,13 +1005,22 @@ export default function App() {
             </span>
             <span>
               {
-                visibleItems(s.project, s.openedObject, s.hidden, s.isolated)
-                  .length
+                visibleItems(
+                  s.project,
+                  s.openedObject,
+                  s.hidden,
+                  s.isolated,
+                  s.onlySelected ? s.calculatedObjects : null,
+                ).length
               }{" "}
               / {items.length} {opened ? "частей" : "элементов"}
             </span>
             <span title="Итог геометрии, включая номинальные тела. Схемы исключены.">
-              {s.calculatorOpen ? "Вся модель:" : "Σ геом."}{" "}
+              {s.onlySelected
+                ? "Выбор:"
+                : s.calculatorOpen
+                  ? "Вся модель:"
+                  : "Σ геом."}{" "}
               {hasQuantities ? fmt(volume) : "—"} м³
             </span>
             <button
@@ -932,6 +1037,7 @@ export default function App() {
           </div>
         </main>
         <aside className="inspector">
+          <MobilePanelHandle />
           <div className="panel-heading">
             {s.calculatorOpen
               ? "Калькулятор материалов"
@@ -1023,19 +1129,30 @@ export default function App() {
                       ? "Объём (расчётный)"
                       : "Объём"}
                   </dt>
-                  <dd data-testid="element-volume">
-                    {quantitiesExcluded
-                      ? "Не определён"
-                      : fmt(q.volume) + " м³"}
+                  <dd>
+                    <span data-testid="element-volume">
+                      {quantitiesExcluded
+                        ? "Не определён"
+                        : fmt(q.volume) + " м³"}
+                    </span>
+                    <QuantityBadges
+                      statuses={[elementQuantityStatus(selected)]}
+                    />
                   </dd>
                   <dt>Площадь поверхности</dt>
                   <dd>
                     {quantitiesExcluded ? "Не определена" : fmt(q.area) + " м²"}
+                    <QuantityBadges
+                      statuses={[elementQuantityStatus(selected)]}
+                    />
                   </dd>
                   {selected.evidence?.reportedVolume !== undefined && (
                     <>
                       <dt>В спецификации</dt>
-                      <dd>{fmt(selected.evidence.reportedVolume)} м³</dd>
+                      <dd>
+                        {fmt(selected.evidence.reportedVolume)} м³
+                        <QuantityBadges statuses={["source"]} />
+                      </dd>
                     </>
                   )}
                   <dt>Количество</dt>
@@ -1192,6 +1309,7 @@ export default function App() {
           )}
         </aside>
       </div>
+      <MobileControls onModel={() => setTab("model")} />
       <footer
         className={`status ${message.startsWith("Ошибка") ? "error" : ""}`}
         role="status"

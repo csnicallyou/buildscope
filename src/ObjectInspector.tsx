@@ -7,6 +7,8 @@ import {
   type ModelObject,
   type SceneItem,
 } from "./objects";
+import QuantityBadges from "./QuantityBadges";
+import { elementQuantityStatus } from "./quality";
 const f = (n: number) =>
   n.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
 
@@ -33,6 +35,7 @@ export function Materials({
                 : "Не определено"
               : `${f(r.value)} ${r.unit}`}
           </strong>
+          <QuantityBadges statuses={r.statuses} />
           <small>
             {r.basis}
             {r.unknown > 0 ? ` · ${r.unknown} без расчётного количества` : ""}
@@ -101,13 +104,21 @@ export function ObjectInspector({
         </h3>
         <dl>
           <dt>Основное тело</dt>
-          <dd data-testid="element-volume">
-            {excluded ? "Не определён" : `${f(elementQuantities(e).volume)} м³`}
+          <dd>
+            <span data-testid="element-volume">
+              {excluded
+                ? "Не определён"
+                : `${f(elementQuantities(e).volume)} м³`}
+            </span>
+            <QuantityBadges statuses={[elementQuantityStatus(e)]} />
           </dd>
           {e.evidence?.reportedVolume !== undefined && (
             <>
               <dt>Тело в спецификации</dt>
-              <dd>{f(e.evidence.reportedVolume)} м³</dd>
+              <dd>
+                {f(e.evidence.reportedVolume)} м³
+                <QuantityBadges statuses={["source"]} />
+              </dd>
             </>
           )}
           <dt>Тел и слоёв</dt>
@@ -165,6 +176,7 @@ export function SteelInspector({ item }: { item: SceneItem }) {
       </div>
       <section className="property-section">
         <h3>Материал и количество части</h3>
+        <QuantityBadges statuses={["scheme"]} />
         <dl>
           <dt>Материал</dt>
           <dd>
@@ -196,6 +208,7 @@ export function SteelInspector({ item }: { item: SceneItem }) {
       {!anchors && (
         <section className="property-section">
           <h3>Спецификация на весь {item.element.mark}</h3>
+          <QuantityBadges statuses={["source"]} />
           {item.element.evidence?.reinforcement?.map((r, i) => (
             <div className="material-card" key={i}>
               <span>

@@ -1,3 +1,4 @@
+import { showTools, modelView, openTree } from "./mobile-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { elementBounds, type Project } from "../src/model";
@@ -9,6 +10,7 @@ for (const mobile of [false, true])
   }) => {
     if (mobile) await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/?assembly=canopy");
+    await showTools(page);
     await page.getByRole("button", { name: "Сверху", exact: true }).click();
     await page
       .getByRole("button", { name: "Перспектива", exact: true })
@@ -40,10 +42,20 @@ for (const mobile of [false, true])
           requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
         ),
     );
-    const rect = await canvas.boundingBox();
-    if (!rect) throw Error("Canvas unavailable");
-    const zoom = Math.min(rect.width, rect.height) / (diameter * 1.15);
-    const point = (name: string) => {
+    const point = async (name: string) => {
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() =>
+                requestAnimationFrame(() => resolve()),
+              ),
+            ),
+          ),
+      );
+      const rect = await canvas.boundingBox();
+      if (!rect) throw Error("Canvas unavailable");
+      const zoom = Math.min(rect.width, rect.height) / (diameter * 1.15);
       const e = project.elements.find((e) => e.name === name)!;
       return {
         x: rect.width / 2 + (e.position[0] - (min[0] + max[0]) / 2) * zoom,
@@ -52,18 +64,20 @@ for (const mobile of [false, true])
     };
     const tap = async (name: string) =>
       mobile
-        ? canvas.tap({ position: point(name) })
-        : canvas.click({ position: point(name) });
+        ? canvas.tap({ position: await point(name) })
+        : canvas.click({ position: await point(name) });
     await tap("Фм4 · оси 8/А");
     await expect(page.getByTestId("selection-count")).toHaveText("Выбрано: 1");
     await tap("Фм4 · оси 9/А");
     await expect(page.getByTestId("selection-count")).toHaveText("Выбрано: 2");
+    await openTree(page);
     await expect(
       page.getByLabel("В расчёт Фм4 · оси 8/А", { exact: true }),
     ).toBeChecked();
     await expect(
       page.getByLabel("В расчёт Фм4 · оси 9/А", { exact: true }),
     ).toBeChecked();
+    await modelView(page);
     await expect(page.getByTestId("selection-calculator")).toHaveCount(0);
     await page.waitForLoadState("networkidle");
     await page.screenshot({

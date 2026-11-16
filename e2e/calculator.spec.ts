@@ -1,3 +1,4 @@
+import { openTree, openCalculator } from "./mobile-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
@@ -43,11 +44,10 @@ for (const mobile of [false, true])
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto("/?assembly=canopy");
-    await page
-      .getByRole("button", { name: "Калькулятор материалов", exact: true })
-      .click();
+    await openCalculator(page);
     const calculator = page.getByTestId("selection-calculator");
     await expect(calculator).toContainText("В расчёте: 0");
+    await openTree(page);
     await page.getByLabel("Поиск конструкций").fill("Фм4");
     await page.getByLabel("В расчёт Фм4 · оси 8/А", { exact: true }).check();
     await page
@@ -61,6 +61,7 @@ for (const mobile of [false, true])
     await expect(amounts).toContainText("938,4 кг");
     await expect(amounts).toContainText("16 шт.");
     await expect(amounts).toContainText("одинаковые откосы");
+    await openCalculator(page);
     const pending = page.waitForEvent("download");
     await calculator
       .getByRole("button", { name: "Скачать расчёт CSV" })
@@ -70,12 +71,14 @@ for (const mobile of [false, true])
     expect(csv).toContain('"Анкеры M24";"шт.";"16"');
     expect(csv).toContain('"Фм4 · оси 8/А"');
     expect(csv).toContain('"Фм4 · оси 9/А"');
+    await openTree(page);
     await page
       .getByRole("button", { name: "Видимость Фм4", exact: true })
       .first()
       .click();
     await expect(calculator).toContainText("Скрыто выбранных объектов: 1");
     await expect(amounts).toContainText("938,4 кг");
+    await openCalculator(page);
     await calculator
       .getByRole("button", {
         name: "Убрать из расчёта Фм4 · оси 9/А",
@@ -96,8 +99,10 @@ for (const mobile of [false, true])
     await calculator
       .getByRole("button", { name: "Очистить выбор", exact: true })
       .click();
+    await openTree(page);
     await page.getByLabel("В расчёт Фм4 · оси 9/А", { exact: true }).check();
     await page.getByLabel("В расчёт Фм4 · оси 10/А", { exact: true }).check();
+    await openCalculator(page);
     await page.waitForLoadState("networkidle");
     await page.screenshot({
       path: `test-results/calculator${mobile ? "-mobile" : ""}.png`,
@@ -111,9 +116,7 @@ for (const mobile of [false, true])
       .getByRole("button", { name: "Кассовый павильон", exact: true })
       .click();
     await expect(calculator).toHaveCount(0);
-    await page
-      .getByRole("button", { name: "Калькулятор материалов", exact: true })
-      .click();
+    await openCalculator(page);
     await expect(calculator).toContainText("В расчёте: 0");
     expect(errors).toEqual([]);
   });

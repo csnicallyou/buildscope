@@ -9,3 +9,6 @@ drawings/
 __pycache__/
 *.pyc
 .sites/
+
+output/pdf/
+tmp/pdfs/
