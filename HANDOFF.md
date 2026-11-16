@@ -2,6 +2,8 @@
 
 ## Сначала: 0.11 — общая база на Yandex
 
+Кодовый checkpoint dd51f69 отправлен в PRIVATE origin/codex/shared-brigade-workspace; production соответствует этому коду. Main пока 0.10. После тестов 18 tracked docs/screenshots/*.png остались изменёнными локально и не включены в коммит: авто-проверка запретила очистку из-за риска потерять пользовательские изменения. Не выполнять массовый restore/reset. Также сохранены исходные untracked share-скрипты и отдельное рабочее изменение .local-share/ в .gitignore.
+
 Читать верх PROJECT_STATE 0.11 и docs/SHARED_WORKSPACE.md. Production: https://buildscope.158.160.161.138.sslip.io:8443, release 20261116T195738. SSH vpnadmin с существующим `.ssh/hostkey_vpn`; приватный ключ и пароли не читать в вывод/не коммитить. Новые реквизиты сохранены только в закрытом локальном `.deploy/access.json`. Сайт уже переключён на личную авторизацию. Не возвращать Basic Auth поверх страницы входа и не перезапускать bootstrap на рабочей БД.
 
 Архитектура: workspaceTypes/workspaceClient/useWorkspace; server/database/http/index (SQLite отдельно от Project), workProgress (операции/остаток/назначения), DailyWorkOrders/OrderWorkflow (сдача/приёмка/история/перенос), ObjectNotes (фото), WorkspacePanel (пользователи/backup). Обычный локальный запуск и браузерный архив остаются совместимы; deploy-пакет требует API. Сервер слушает только loopback. Модели общие для вошедших; права бригад распространяются на наряды/замечания/фото.
