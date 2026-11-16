@@ -12,3 +12,6 @@ __pycache__/
 
 output/pdf/
 tmp/pdfs/
+tmp/spreadsheets/
+output/xlsx/
+outputs/

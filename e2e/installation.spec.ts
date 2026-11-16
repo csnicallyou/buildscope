@@ -11,6 +11,20 @@ async function readView(page: Page) {
     return Array.from(ctx.getImageData(0, 0, 96, 96).data);
   });
 }
+async function stepByTitle(page: Page, title: string, offset = 0) {
+  const option = page
+    .getByLabel("Этап устройства", { exact: true })
+    .locator("option")
+    .filter({ hasText: title })
+    .first();
+  await page
+    .getByLabel("Этап устройства", { exact: true })
+    .selectOption((await option.getAttribute("value"))!);
+  if (offset) {
+    const range = page.getByLabel("Ход устройства", { exact: true });
+    await range.fill(String(+(await range.inputValue()) + offset));
+  }
+}
 async function choosePart(
   page: Page,
   part = "БП Бетонная подготовка Фм1 · 1/А",
@@ -74,15 +88,15 @@ for (const mobile of [false, true])
     await page
       .getByRole("button", { name: "Пауза анимации", exact: true })
       .click();
-    await page.getByLabel("Этап устройства", { exact: true }).selectOption("1");
+    await stepByTitle(page, "Установка досок", 3);
     await expect(player).toHaveAttribute("data-phase", "boards");
     const t = page.getByLabel("Ход устройства", { exact: true });
-    await t.fill("5");
+
     await page.screenshot({
       path: `docs/screenshots/installation-boards${mobile ? "-mobile" : ""}.png`,
     });
-    await page.getByLabel("Этап устройства", { exact: true }).selectOption("2");
-    await t.fill("9.5");
+    await stepByTitle(page, "Заполнение бетоном", 4);
+
     await expect(player).toHaveAttribute("data-phase", "pour");
     await expect(player).toContainText("0,676 м³");
     await expect(player.getByTestId("installation-size")).toContainText(
@@ -106,7 +120,7 @@ for (const mobile of [false, true])
     await page
       .getByRole("button", { name: "Пауза анимации", exact: true })
       .click();
-    await page.getByLabel("Этап устройства", { exact: true }).selectOption("6");
+    await stepByTitle(page, "Готовая часть");
     await expect(player).toHaveAttribute("data-phase", "ready");
     await page
       .getByRole("button", { name: "Завершить анимацию", exact: true })
@@ -155,7 +169,7 @@ test("Щебень, анкеры, смена части и reduced motion", asyn
   await expect(page.getByLabel("Этап устройства")).toHaveText(
     /Отсыпка материала/,
   );
-  await page.getByLabel("Этап устройства").selectOption("2");
+  await stepByTitle(page, "Уплотнение слоя");
   await expect(page.getByTestId("installation-player")).toHaveAttribute(
     "data-phase",
     "compact",
@@ -164,8 +178,8 @@ test("Щебень, анкеры, смена части и reduced motion", asyn
   await expect(page.getByTestId("installation-player")).not.toBeVisible();
   await page.getByRole("button", { name: /Арматура Анкеры M24/ }).click();
   await page.getByTestId("start-installation").click();
-  await page.getByLabel("Этап устройства").selectOption("1");
-  await page.getByLabel("Ход устройства").fill("7");
+  await stepByTitle(page, "Установка стержней", 3);
+
   await expect(page.getByTestId("installation-player")).toContainText(
     "стержней",
   );
@@ -196,8 +210,8 @@ test("Профиль Фм2 сохраняет вырез во время зал�
     .click();
   const volume = await page.getByTestId("element-volume").innerText();
   await page.getByTestId("start-installation").click();
-  await page.getByLabel("Этап устройства").selectOption("3");
-  await page.getByLabel("Ход устройства").fill("13.5");
+  await stepByTitle(page, "Заполнение бетоном", 4);
+
   await expect(page.getByTestId("installation-player")).toHaveAttribute(
     "data-phase",
     "pour",
@@ -205,5 +219,57 @@ test("Профиль Фм2 сохраняет вырез во время зал�
   await page.screenshot({ path: "docs/screenshots/installation-notch.png" });
   await page.getByRole("button", { name: "Завершить анимацию" }).click();
   await expect(page.getByTestId("element-volume")).toHaveText(volume);
+  expect(errors).toEqual([]);
+});
+
+test("Плёнка основания и укрытие — разные варианты, инструменты видны", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await choosePart(page);
+  await page.getByTestId("start-installation").click();
+  await page
+    .getByText("Варианты технологии и источники", { exact: true })
+    .click();
+  await page.getByLabel("Разделительная плёнка под бетоном").check();
+  await stepByTitle(page, "Разделительная плёнка", 2.5);
+  await expect(page.getByTestId("installation-player")).toHaveAttribute(
+    "data-phase",
+    "film",
+  );
+  await page
+    .getByText("Варианты технологии и источники", { exact: true })
+    .click();
+  await page.locator(".installation-stage canvas").evaluate(
+    () =>
+      new Promise<void>((r) => {
+        let n = 6;
+        const f = () => {
+          if (--n) requestAnimationFrame(f);
+          else r();
+        };
+        requestAnimationFrame(f);
+      }),
+  );
+  await page.screenshot({ path: "docs/screenshots/installation-film.png" });
+  await stepByTitle(page, "Уплотнение бетона", 3);
+  await expect(page.getByTestId("installation-player")).toHaveAttribute(
+    "data-phase",
+    "vibrate",
+  );
+  await expect(page.locator(".installation-tool-list")).toContainText(
+    "Оборудование",
+  );
+  await page.screenshot({
+    path: "docs/screenshots/installation-vibration.png",
+  });
+  await stepByTitle(page, "Уход за поверхностью", 3);
+  await expect(page.getByTestId("installation-player")).toHaveAttribute(
+    "data-phase",
+    "care",
+  );
+  await page.screenshot({ path: "docs/screenshots/installation-care.png" });
   expect(errors).toEqual([]);
 });

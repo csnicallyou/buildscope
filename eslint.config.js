@@ -9,6 +9,7 @@ export default ts.config(
       "test-results/**",
       "drawings/**",
       ".sites/**",
+      "tmp/spreadsheets/**",
     ],
   },
   js.configs.recommended,

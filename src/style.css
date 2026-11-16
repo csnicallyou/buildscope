@@ -2039,3 +2039,234 @@ tfoot {
   width: 100%;
   height: 26px;
 }
+.work-order-panel {
+  max-width: 1200px;
+  margin: auto;
+}
+.work-order-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.work-order-title p,
+.work-order-footnote,
+.work-crew > p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.work-order-title button {
+  flex-shrink: 0;
+  min-height: 38px;
+  background: var(--accent-bg);
+}
+.work-order-metadata,
+.work-order-add,
+.work-row-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.work-order-metadata {
+  border: 1px solid var(--border);
+  margin: 18px 0;
+  padding: 14px;
+}
+.work-order-metadata legend {
+  font-size: 11px;
+  color: var(--muted);
+}
+.work-order-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 0;
+}
+.work-order-panel input,
+.work-order-panel select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  font: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  color: var(--fg);
+}
+.work-order-add {
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr);
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.work-order-add p {
+  grid-column: 1/-1;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+.work-order-add button {
+  justify-content: center;
+  min-height: 38px;
+  background: var(--accent-bg);
+}
+.work-order-list h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 24px;
+}
+.work-order-row {
+  border-top: 1px solid var(--border);
+  padding: 14px 0;
+}
+.work-row-heading,
+.work-row-target {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+.work-row-heading strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.work-row-target {
+  font-size: 11px;
+  color: var(--muted);
+}
+.work-row-values {
+  display: grid;
+  grid-template-columns: 120px 120px minmax(150px, 1fr);
+  gap: 12px;
+  align-items: end;
+  margin: 12px 0;
+}
+.work-row-values > span {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.work-row-values input {
+  font-variant-numeric: tabular-nums;
+}
+.work-order-row small {
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.work-order-row details {
+  margin-top: 10px;
+  font-size: 11px;
+}
+.work-row-detail {
+  padding: 10px 0;
+}
+.work-crew {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.work-crew-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto auto;
+  gap: 10px;
+  align-items: end;
+  padding: 10px 0;
+  font-size: 12px;
+}
+.work-order-message {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--accent);
+}
+.work-order-errors {
+  color: #e7aa88;
+  font-size: 12px;
+  line-height: 1.6;
+}
+@media (max-width: 850px) {
+  .work-order-panel {
+    padding: 14px 12px;
+  }
+  .work-order-title {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .work-order-title button {
+    width: 100%;
+    justify-content: center;
+  }
+  .work-order-add {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .work-row-values {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .work-row-values > span {
+    grid-column: 1/-1;
+  }
+  .work-row-target {
+    flex-wrap: wrap;
+  }
+  .work-crew-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .work-crew-row label:first-child {
+    grid-column: 1/-1;
+  }
+}
+.installation-tool-list {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #d4bd8e;
+  margin: 4px 0 8px;
+}
+.installation-method {
+  font-size: 10px;
+  color: #b5c7cd;
+  margin: 5px 0 10px;
+  line-height: 1.6;
+}
+.installation-method summary {
+  cursor: pointer;
+  color: #a8d9d4;
+}
+.installation-method label {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin: 7px 0;
+}
+.installation-method small {
+  display: block;
+  color: #9bb0b8;
+}
+.installation-method a,
+.installation-tool-source a {
+  color: #a8d9d4;
+}
+.installation-tool-source {
+  font-size: 10px;
+  margin: 5px 0;
+}
+.work-order-active .workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+.work-order-active .tree-panel,
+.work-order-active .inspector,
+.work-order-active .toolbar,
+.work-order-active .view-controls,
+.work-order-active .mobile-model-tools,
+.work-order-active .multi-selection-bar,
+.work-order-active .object-navigation,
+.work-order-active .model-footer {
+  display: none;
+}
+.work-order-active .viewport {
+  overflow: auto;
+}

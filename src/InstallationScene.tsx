@@ -14,6 +14,7 @@ import {
   MeshBasicMaterial,
   DoubleSide,
   Raycaster,
+  CubicBezierCurve3,
 } from "three";
 import { elementBounds, type Element, type Vec3 } from "./model";
 import type { Bar } from "./engineering";
@@ -22,6 +23,7 @@ import { elementGeometries, barsGeometry } from "./geometry";
 import { dimensionData } from "./dimensionData";
 import { DimensionLabel } from "./Dimensions";
 import SectionCap from "./SectionCap";
+import ConstructionTools from "./ConstructionTools";
 import {
   boardMotion,
   fillAmount,
@@ -223,19 +225,48 @@ function PourStream({
     material.dispose();
     return found;
   }, [element, plan]);
+  const hose = useMemo(
+    () =>
+      point
+        ? new CubicBezierCurve3(
+            new Vector3(point[0] - 1.5, plan.bounds.max[1] + 1, point[2] + 0.8),
+            new Vector3(
+              point[0] - 0.8,
+              plan.bounds.max[1] + 1.2,
+              point[2] + 0.4,
+            ),
+            new Vector3(point[0], plan.bounds.max[1] + 1.1, point[2]),
+            new Vector3(
+              point[0],
+              plan.bounds.max[1] +
+                Math.min(0.6, Math.max(0.3, plan.size[0] * 0.15)),
+              point[2],
+            ),
+          )
+        : null,
+    [point, plan],
+  );
   if (!point || fill <= 0 || fill >= 1) return null;
   const bottom = plan.bounds.min[1] + plan.size[1] * fill,
     top =
       plan.bounds.max[1] + Math.min(0.6, Math.max(0.3, plan.size[0] * 0.15)),
     height = top - bottom;
   return (
-    <mesh position={[point[0], (bottom + top) / 2, point[2]]}>
-      <cylinderGeometry args={[0.025, 0.04, height, 8]} />
-      <meshStandardMaterial
-        color={plan.kind === "bulk" ? "#b5ac8e" : "#b6c1bc"}
-        roughness={1}
-      />
-    </mesh>
+    <group>
+      {plan.kind === "concrete" && hose && (
+        <mesh>
+          <tubeGeometry args={[hose, 20, 0.035, 8, false]} />
+          <meshStandardMaterial color="#344850" roughness={0.85} />
+        </mesh>
+      )}
+      <mesh position={[point[0], (bottom + top) / 2, point[2]]}>
+        <cylinderGeometry args={[0.025, 0.04, height, 8]} />
+        <meshStandardMaterial
+          color={plan.kind === "bulk" ? "#b5ac8e" : "#b6c1bc"}
+          roughness={1}
+        />
+      </mesh>
+    </group>
   );
 }
 function Camera({ plan }: { plan: InstallationPlan }) {
@@ -289,17 +320,30 @@ function Scene({
     plan.kind === "concrete"
       ? phase === "reinforce"
         ? frame.progress
-        : ["pour", "level", "wait", "strip", "ready"].includes(phase)
+        : [
+              "check",
+              "pour",
+              "vibrate",
+              "level",
+              "care",
+              "wait",
+              "strip",
+              "ready",
+            ].includes(phase)
           ? 1
           : 0
       : phase === "place"
         ? frame.progress
-        : phase === "ready"
+        : ["tie", "check", "ready"].includes(phase)
           ? 1
           : 0;
   const lift = Math.max(0.5, plan.size[1] * 1.2);
   const placement =
-    phase === "place" ? ease(frame.progress) : phase === "ready" ? 1 : 0;
+    phase === "place"
+      ? ease(frame.progress)
+      : ["check", "ready"].includes(phase)
+        ? 1
+        : 0;
   const dims = useMemo(() => dimensionData(item), [item]);
   const bars =
     item.kind === "steel" ? (item.bars ?? []) : (e.evidence?.bars ?? []);
@@ -343,6 +387,13 @@ function Scene({
             );
           })}
         <Body element={e} ghost opacity={0.055} />
+        <ConstructionTools
+          element={e}
+          bars={bars}
+          plan={plan}
+          time={time}
+          shift={center.map((v) => -v) as Vec3}
+        />
         {plan.kind === "concrete" || plan.kind === "bulk" ? (
           <>
             <Body
@@ -354,21 +405,6 @@ function Scene({
             <PourStream element={e} plan={plan} fill={fill} />
             {plan.kind === "concrete" && (
               <Steel bars={bars} progress={steelPhase} lift={lift} />
-            )}
-            {(phase === "level" || phase === "compact") && (
-              <mesh
-                position={[
-                  (plan.bounds.min[0] + plan.bounds.max[0]) / 2,
-                  plan.bounds.max[1] + 0.025,
-                  plan.bounds.min[2] + frame.progress * plan.size[2],
-                ]}
-              >
-                <boxGeometry args={[plan.size[0] + 0.08, 0.04, 0.08]} />
-                <meshStandardMaterial
-                  color={phase === "compact" ? "#d3b976" : "#b89a67"}
-                  roughness={0.85}
-                />
-              </mesh>
             )}
           </>
         ) : plan.kind === "steel" && item.kind === "steel" ? (

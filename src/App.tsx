@@ -23,6 +23,8 @@ import {
   X,
 } from "lucide-react";
 import Viewer from "./Viewer";
+import WorkOrderPanel from "./WorkOrderPanel";
+import { initialWorkDraft } from "./workOrders";
 import InstallationPlayer from "./InstallationPlayer";
 import { installationPlan } from "./installation";
 import SelectionCalculator from "./SelectionCalculator";
@@ -113,13 +115,23 @@ function DrawingView({ drawing: d }: { drawing: Drawing }) {
 export default function App() {
   const s = useStore();
   const [search, setSearch] = useState("");
+  const [workDraft, setWorkDraft] = useState(initialWorkDraft);
   const [mobileTools, setMobileTools] = useState(false);
   const [tab, setTab] = useState<
-    "model" | "schedule" | "drawing" | "reinforcement" | "source" | "audit"
+    | "model"
+    | "schedule"
+    | "drawing"
+    | "reinforcement"
+    | "source"
+    | "audit"
+    | "workorder"
   >("model");
   useEffect(() => {
     if (tab !== "model") useStore.getState().set({ mobilePanel: "none" });
   }, [tab]);
+  useEffect(() => {
+    if (tab === "workorder" && s.mobilePanel !== "none") setTab("model");
+  }, [tab, s.mobilePanel]);
   const [compareOpen, setCompareOpen] = useState(false);
   const [inspection, setInspection] = useState<InspectionResult | null>(null);
   useEffect(() => {
@@ -426,13 +438,13 @@ export default function App() {
   }
   return (
     <div
-      className={`app ${workActive ? "installation-active" : ""} ${s.theme} mobile-${s.mobilePanel} ${s.mobileExpanded ? "mobile-expanded" : ""} ${mobileTools ? "mobile-tools-open" : ""}`}
+      className={`app ${tab === "workorder" ? "work-order-active" : ""} ${workActive ? "installation-active" : ""} ${s.theme} mobile-${s.mobilePanel} ${s.mobileExpanded ? "mobile-expanded" : ""} ${mobileTools ? "mobile-tools-open" : ""}`}
     >
       <header className="header">
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.7.1</span>
+          <span>0.8</span>
         </div>
         <div className="project-name">
           {s.project.name}
@@ -712,6 +724,15 @@ export default function App() {
         </aside>
         <main className="main">
           <nav className="tabs">
+            <button
+              className={tab === "workorder" ? "active" : ""}
+              onClick={() => {
+                s.set({ mobilePanel: "none" });
+                setTab("workorder");
+              }}
+            >
+              Наряд
+            </button>
             <button
               className={tab === "model" ? "active" : ""}
               onClick={() => setTab("model")}
@@ -1117,6 +1138,28 @@ export default function App() {
                   />
                 )}
               </>
+            ) : tab === "workorder" ? (
+              <WorkOrderPanel
+                project={s.project}
+                opened={s.openedObject}
+                selected={s.selected}
+                selectedRoots={s.calculatedObjects}
+                draft={workDraft}
+                onDraft={setWorkDraft}
+                onFocus={(id) => {
+                  const object = objectFor(s.project, id);
+                  if (object) {
+                    s.openObject(object.id);
+                    useStore.getState().set({
+                      selected: id,
+                      mobilePanel: "none",
+                      cameraRevision: useStore.getState().cameraRevision + 1,
+                    });
+                    setSearch("");
+                    setTab("model");
+                  }
+                }}
+              />
             ) : tab === "audit" ? (
               <InspectionPanel
                 project={s.project}

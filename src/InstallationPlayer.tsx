@@ -3,6 +3,12 @@ import { Play, Pause, RotateCcw, SkipBack, SkipForward, X } from "lucide-react";
 import type { Element } from "./model";
 import type { SceneItem } from "./objects";
 import { workFrame, stepStart, type InstallationPlan } from "./installation";
+import {
+  constructionSources,
+  defaultInstallationOptions,
+  toolNames,
+} from "./constructionKnowledge";
+import { installationPlan } from "./installation";
 import InstallationScene from "./InstallationScene";
 import { dimensionData } from "./dimensionData";
 import QuantityBadges from "./QuantityBadges";
@@ -12,7 +18,7 @@ const f = (n: number) =>
 export default function InstallationPlayer({
   item,
   members,
-  plan,
+  plan: initialPlan,
   onClose,
   schemeLevels,
 }: {
@@ -22,6 +28,18 @@ export default function InstallationPlayer({
   onClose: () => void;
   schemeLevels: boolean;
 }) {
+  const [options, setOptions] = useState(() =>
+    defaultInstallationOptions(/подготовка|подбет/i.test(item.element.name)),
+  );
+  const plan = useMemo(
+    () => installationPlan(item, options) ?? initialPlan,
+    [item, options, initialPlan],
+  );
+  const changeOptions = (patch: Partial<typeof options>) => {
+    setOptions((o) => ({ ...o, ...patch }));
+    setTime(0);
+    setPlaying(false);
+  };
   const [time, setTime] = useState(0),
     [playing, setPlaying] = useState(
       () => !matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -134,6 +152,13 @@ export default function InstallationPlayer({
         >
           {frame.step.description}
         </p>
+        <p className="installation-tool-list">
+          Инструменты:{" "}
+          {(frame.step.phase === "tie" && /анкер/i.test(item.label)
+            ? ["Монтажный шаблон (схема)", "Ключ"]
+            : (toolNames[frame.step.phase] ?? [])
+          ).join(", ")}
+        </p>
         <div className="installation-transport">
           <button
             aria-label="Предыдущий этап"
@@ -203,6 +228,70 @@ export default function InstallationPlayer({
             setTime(+e.target.value);
           }}
         />
+        {plan.kind === "concrete" && (
+          <details className="installation-method">
+            <summary>Варианты технологии и источники</summary>
+            <label>
+              <input
+                type="checkbox"
+                aria-label="Разделительная плёнка под бетоном"
+                checked={options.baseFilm}
+                onChange={(e) => changeOptions({ baseFilm: e.target.checked })}
+              />
+              Нижняя плёнка — вариант по проекту/ППР
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                aria-label="Укрытие бетона плёнкой"
+                checked={options.curingCover}
+                onChange={(e) =>
+                  changeOptions({ curingCover: e.target.checked })
+                }
+              />
+              Верхнее укрытие для ухода — пример
+            </label>
+            <label>
+              Уплотнение
+              <select
+                aria-label="Способ уплотнения бетона"
+                value={options.vibration}
+                onChange={(e) =>
+                  changeOptions({
+                    vibration: e.target.value as "surface" | "internal",
+                  })
+                }
+              >
+                <option value="surface">Виброрейка — пример</option>
+                <option value="internal">Глубинный вибратор — пример</option>
+              </select>
+            </label>
+            <p>
+              Это технологические варианты, не добавленные проектные слои.
+              Толщина плёнки, нахлёсты, крепёж и режимы не назначаются. Нижняя
+              плёнка, гидроизоляция и верхнее укрытие выполняют разные задачи.
+            </p>
+            {constructionSources.map((s) => (
+              <p key={s.id}>
+                <a href={s.url} target="_blank" rel="noreferrer">
+                  {s.title}
+                </a>
+                <small>{s.scope}</small>
+              </p>
+            ))}
+          </details>
+        )}
+        {plan.kind === "bulk" && (
+          <p className="installation-tool-source">
+            <a
+              href={constructionSources[2].url}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Оборудование уплотнения: Wacker Neuson
+            </a>
+          </p>
+        )}
         <div className="installation-metrics">
           <span>{plan.quantity}</span>
           <QuantityBadges

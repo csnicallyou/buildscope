@@ -27,9 +27,14 @@ describe("Сценарии устройства частей", () => {
     expect(p.kind).toBe("concrete");
     expect(p.steps.map((s) => s.phase)).toEqual([
       "layout",
+      "base",
       "boards",
+      "seal",
+      "check",
       "pour",
+      "vibrate",
       "level",
+      "care",
       "wait",
       "strip",
       "ready",
@@ -121,8 +126,10 @@ describe("Сценарии устройства частей", () => {
     expect(p.boards).toHaveLength(0);
     expect(p.steps.map((s) => s.phase)).toEqual([
       "layout",
+      "base",
       "spread",
       "compact",
+      "check",
       "ready",
     ]);
     expect(p.volume).toBeCloseTo(elementQuantities(gravel.element).volume);
@@ -147,6 +154,35 @@ describe("Сценарии устройства частей", () => {
     const e = project.elements.find((e) => e.category === "ФБС")!;
     const p = installationPlan(body(e))!;
     expect(p.kind).toBe("placement");
-    expect(p.steps.map((s) => s.phase)).toEqual(["layout", "place", "ready"]);
+    expect(p.steps.map((s) => s.phase)).toEqual([
+      "layout",
+      "place",
+      "check",
+      "ready",
+    ]);
   });
+});
+
+it("плёнка основания включается явно, отличается от укрытия и не меняет объём", () => {
+  const base = installationPlan(prep)!;
+  expect(base.steps.some((s) => s.phase === "film")).toBe(false);
+  const withFilm = installationPlan(prep, {
+    baseFilm: true,
+    curingCover: true,
+    vibration: "surface",
+  })!;
+  expect(withFilm.steps.some((s) => s.phase === "film")).toBe(true);
+  expect(withFilm.steps.some((s) => s.phase === "care")).toBe(true);
+  expect(withFilm.volume).toBe(base.volume);
+  expect(withFilm.steps.findIndex((s) => s.phase === "film")).toBeLessThan(
+    withFilm.steps.findIndex((s) => s.phase === "pour"),
+  );
+});
+it("у анкеров показан монтажный шаблон, а не выдуманная сварка", () => {
+  const item = items.find(
+    (i) => i.kind === "steel" && i.label.startsWith("Анкер"),
+  )!;
+  expect(
+    installationPlan(item)!.steps.find((s) => s.phase === "tie")!.title,
+  ).toBe("Фиксация анкеров");
 });
