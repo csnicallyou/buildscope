@@ -8,6 +8,7 @@ export default ts.config(
       "playwright-report/**",
       "test-results/**",
       "drawings/**",
+      ".sites/**",
     ],
   },
   js.configs.recommended,

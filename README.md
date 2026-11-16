@@ -2,6 +2,8 @@
 
 Локальный инженерный 3D-просмотрщик на React / TypeScript / Three.js. Windows 10/11, без Docker, Blender и платных API.
 
+Приватный просмотр с телефона: [BuildScope](https://buildscope-kzh-mobile.csnicallyou.chatgpt.site). Войти тем же аккаунтом ChatGPT; компьютер не требуется. Обновления GitHub сами по себе не публикуются в Sites.
+
 ## Реконструкция предоставленного КЖ1.5
 
 По предоставленному PDF подготовлены три представления:

@@ -8,3 +8,4 @@ drawings/
 *.tsbuildinfo
 __pycache__/
 *.pyc
+.sites/
