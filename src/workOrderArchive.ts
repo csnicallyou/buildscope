@@ -60,6 +60,8 @@ const draftSchema = z.object({
         contractor: text,
         shift: text,
         name: text,
+        startSignatureNoteId: z.string().min(1).max(200).nullable().optional(),
+        endSignatureNoteId: z.string().min(1).max(200).nullable().optional(),
         start: text,
         end: text,
         breakMinutes: z.number().finite().nonnegative(),
@@ -106,6 +108,8 @@ export function issueWorkOrder(draft: WorkDraft): SavedWorkOrder {
         start: "",
         end: "",
         breakMinutes: 0,
+        startSignatureNoteId: null,
+        endSignatureNoteId: null,
       })),
       rows: draft.rows.map((r) => ({
         ...structuredClone(r),
@@ -118,6 +122,11 @@ export function issueWorkOrder(draft: WorkDraft): SavedWorkOrder {
 export function handoffErrors(order: SavedWorkOrder): string[] {
   return [
     ...reportErrors(order.draft),
+    ...order.draft.crew.flatMap((person, i) =>
+      !!person.start !== !!person.end
+        ? [`Табель ${i + 1}: перед сдачей укажите начало и конец смены`]
+        : [],
+    ),
     ...order.draft.rows.flatMap((row, i) =>
       row.completed && row.actual === null
         ? [`Работа ${i + 1}: укажите факт выполненной работы`]

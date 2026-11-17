@@ -14,33 +14,46 @@ export type EvidenceContext = {
   orderId?: string;
   brigade: string;
 };
-async function imagePayload(file: File) {
+async function imagePayload(file: File, signature = false) {
   if (
     !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
     file.size > 20 * 1024 * 1024
   )
     throw Error("Выберите фотографию JPEG, PNG или WebP до 20 МБ");
   const bitmap = await createImageBitmap(file);
-  const ratio = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const ratio = Math.min(
+    1,
+    (signature ? 3200 : 1600) / Math.max(bitmap.width, bitmap.height),
+  );
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
   canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
+  const base64 = canvas
+    .toDataURL("image/jpeg", signature ? 0.95 : 0.85)
+    .split(",")[1];
+  if ((base64.length * 3) / 4 > 5 * 1024 * 1024)
+    throw Error(
+      "Фото после обработки больше 5 МБ. Выберите фото меньшего размера или снимите лист отдельно.",
+    );
   return {
     mime: "image/jpeg" as const,
-    base64: canvas.toDataURL("image/jpeg", 0.85).split(",")[1],
+    base64,
   };
 }
 export default function ObjectNotes({
   context,
   user,
   onClose,
+  readonly = false,
 }: {
   context: EvidenceContext;
   user: WorkspaceUser;
   onClose: () => void;
+  readonly?: boolean;
 }) {
+  const signature = context.model.startsWith("shift-signatures-");
   const dialog = useRef<HTMLElement>(null),
     fileInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -101,11 +114,15 @@ export default function ObjectNotes({
         ref={dialog}
         role="dialog"
         aria-modal="true"
-        aria-label="Фото и замечания объекта"
+        aria-label={
+          signature ? "Фото подписей смены" : "Фото и замечания объекта"
+        }
       >
         <header>
           <div>
-            <h2>Фото и замечания</h2>
+            <h2>
+              {signature ? "Фотографии подписных листов" : "Фото и замечания"}
+            </h2>
             <p>{context.label}</p>
           </div>
           <button aria-label="Закрыть фото и замечания" onClick={onClose}>
@@ -113,7 +130,7 @@ export default function ObjectNotes({
           </button>
         </header>
         {error && <p role="alert">{error}</p>}
-        {user.role !== "viewer" && (
+        {user.role !== "viewer" && !readonly && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -124,7 +141,7 @@ export default function ObjectNotes({
                   await api("/api/notes", "POST", {
                     ...context,
                     text,
-                    image: file ? await imagePayload(file) : null,
+                    image: file ? await imagePayload(file, signature) : null,
                   });
                   setText("");
                   setFile(null);
@@ -153,20 +170,32 @@ export default function ObjectNotes({
               Фотография
               <input
                 ref={fileInput}
-                aria-label="Фотография объекта"
+                aria-label={
+                  signature ? "Фото подписного листа" : "Фотография объекта"
+                }
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               />
             </label>
-            <button disabled={busy || (!text.trim() && !file)}>
+            <button
+              disabled={busy || (signature ? !file : !text.trim() && !file)}
+            >
               <Camera size={16} />
-              {busy ? "Сохранение…" : "Добавить к объекту"}
+              {busy
+                ? "Сохранение…"
+                : signature
+                  ? "Прикрепить фото подписей"
+                  : "Добавить к объекту"}
             </button>
           </form>
         )}
         {!notes.length && (
-          <p>К этому объекту пока нет фотографий и замечаний.</p>
+          <p>
+            {signature
+              ? "Фото подписного листа пока не приложены."
+              : "К этому объекту пока нет фотографий и замечаний."}
+          </p>
         )}
         {notes.map((note) => (
           <article className="object-note" key={note.id}>

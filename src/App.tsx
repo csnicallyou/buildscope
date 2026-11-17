@@ -607,7 +607,7 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.12</span>
+          <span>0.12.1</span>
         </div>
         <div className="project-name">
           {tab === "management" ? "Управление строительством" : s.project.name}
@@ -1621,6 +1621,7 @@ export default function App() {
                 orders={workArchive.orders}
                 error={workArchive.error}
                 onSave={persistWorkOrder}
+                onSaveSignatures={workspace.saveSignatures}
                 onNew={openWorkOrder}
               />
             ) : tab === "progress" ? (

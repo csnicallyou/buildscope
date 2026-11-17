@@ -1,4 +1,95 @@
 /* Construction operations: quiet slate navigation, open work surface, amber blockers. */
+.shift-signatures {
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 16px;
+  margin: 22px 0;
+}
+.shift-signatures summary {
+  cursor: pointer;
+  font-size: 14px;
+}
+.shift-signatures > p,
+.shift-signatures small {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.signature-albums {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin: 20px 0;
+}
+.signature-albums section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 16px;
+  background: var(--panel);
+}
+.signature-albums h3 {
+  font-size: 14px;
+  margin: 0;
+}
+.signature-albums a {
+  font-size: 11px;
+  color: var(--accent);
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.signature-person {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 2fr 2fr;
+  gap: 20px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.signature-person > div {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.signature-person label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.5;
+}
+.signature-person input {
+  min-width: 18px;
+  min-height: 18px;
+  accent-color: var(--accent);
+}
+.signature-person select {
+  max-width: 100%;
+  min-height: 36px;
+  padding: 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg);
+  font: inherit;
+}
+@media (max-width: 850px) {
+  .signature-albums,
+  .signature-person {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .signature-albums section {
+    padding: 14px;
+  }
+  .shift-signatures {
+    padding: 14px;
+  }
+  .signature-person {
+    gap: 18px;
+  }
+}
 .app {
   --nav-width: 218px;
   --bg: #14252e;

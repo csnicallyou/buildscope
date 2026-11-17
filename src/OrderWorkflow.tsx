@@ -233,6 +233,7 @@ export default function OrderWorkflow({
                     "progress-saved": "Изменение факта",
                     "imported-local": "Перенос из браузера",
                     "object-note": "Фото / замечание",
+                    "signatures-verified": "Проверка подписей по фото",
                   } as Record<string, string>
                 )[e.action] ?? e.action}
               </summary>
@@ -242,6 +243,15 @@ export default function OrderWorkflow({
                   {r.work} · план {r.plan ?? "не указан"} {r.unit} · факт{" "}
                   {r.actual ?? "не указан"} {r.unit} ·{" "}
                   {r.completed ? "выполнено" : "не завершено"}
+                </p>
+              ))}
+              {e.snapshot?.draft.crew.map((p) => (
+                <p key={p.id}>
+                  {p.name} · выход {p.start || "не указан"} · окончание{" "}
+                  {p.end || "не указано"} · проверка подписи на фото: выход{" "}
+                  {p.startSignatureNoteId ? "подтверждена" : "не отмечена"},
+                  окончание{" "}
+                  {p.endSignatureNoteId ? "подтверждена" : "не отмечена"}
                 </p>
               ))}
             </details>

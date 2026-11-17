@@ -14,6 +14,8 @@ import {
 } from "./workOrders";
 import type { SharedOrder, WorkspaceUser } from "./workspaceTypes";
 import OrderWorkflow from "./OrderWorkflow";
+import ShiftSignatures from "./ShiftSignatures";
+import { signatureFields } from "./signatures";
 const f = (n: number | null) =>
   n === null
     ? "Не определён"
@@ -23,6 +25,7 @@ export default function DailyWorkOrders({
   orders,
   error,
   onSave,
+  onSaveSignatures,
   onNew,
   user = null,
   shared,
@@ -33,6 +36,7 @@ export default function DailyWorkOrders({
   orders: SavedWorkOrder[];
   error: string;
   onSave: (order: SavedWorkOrder) => Promise<SavedWorkOrder | null>;
+  onSaveSignatures: (order: SavedWorkOrder) => Promise<SavedWorkOrder | null>;
   onNew: () => void;
   user?: WorkspaceUser | null;
   shared?: SharedOrder[];
@@ -52,6 +56,36 @@ export default function DailyWorkOrders({
   const errors = editing ? handoffErrors(editing) : [];
   const canIssue = !user || user.role === "admin",
     canEdit = !user || user.role !== "viewer";
+  const checks = (order: SavedWorkOrder | undefined | null) =>
+    order?.draft.crew.map((p) => ({
+      id: p.id,
+      start: p.startSignatureNoteId ?? null,
+      end: p.endSignatureNoteId ?? null,
+    }));
+  const signatureChanges =
+    !!editing &&
+    JSON.stringify(checks(editing)) !==
+      JSON.stringify(checks(orders.find((o) => o.id === editing.id)));
+  const saveSignatureChecks = async () => {
+    if (!editing) return null;
+    setBusy(true);
+    try {
+      const saved = await onSaveSignatures(editing);
+      if (saved) {
+        setEditing(saved);
+        setMessage("Проверка подписей по фото сохранена");
+      }
+      return saved;
+    } finally {
+      setBusy(false);
+    }
+  };
+  const persistCurrent = async () => {
+    if (!editing || !canEdit) return true;
+    if (editing.submittedAt)
+      return !signatureChanges || !!(await saveSignatureChecks());
+    return !!(await onSave(editing));
+  };
   const [brigadeFilter, setBrigadeFilter] = useState(""),
     [shiftFilter, setShiftFilter] = useState("");
   const filteredOrders = orders.filter(
@@ -118,8 +152,7 @@ export default function DailyWorkOrders({
           className="primary"
           disabled={!canIssue || busy}
           onClick={async () => {
-            if (!editing || editing.submittedAt || (await onSave(editing)))
-              onNew();
+            if (await persistCurrent()) onNew();
           }}
         >
           <Plus size={17} />
@@ -137,7 +170,7 @@ export default function DailyWorkOrders({
         <>
           <button
             onClick={async () => {
-              if (editing.submittedAt || !canEdit || (await onSave(editing))) {
+              if (await persistCurrent()) {
                 setEditing(null);
                 setMessage("");
               }
@@ -151,6 +184,11 @@ export default function DailyWorkOrders({
               entry={shared.find((e) => e.order.id === editing.id)!}
               user={user}
               onAction={async (...args) => {
+                if (editing.submittedAt && signatureChanges) {
+                  const saved = await saveSignatureChecks();
+                  if (!saved) return null;
+                  args[3] = saved;
+                }
                 const saved = await onAction(...args);
                 if (saved) setEditing(saved);
                 return saved;
@@ -331,14 +369,56 @@ export default function DailyWorkOrders({
               ))}
             </details>
           )}
+          {user && (
+            <ShiftSignatures
+              order={editing}
+              user={user}
+              disabled={busy}
+              accepted={
+                shared?.find((e) => e.order.id === editing.id)?.stage ===
+                "accepted"
+              }
+              onChange={(personId, phase, noteId) =>
+                setEditing(
+                  (o) =>
+                    o && {
+                      ...o,
+                      draft: {
+                        ...o.draft,
+                        crew: o.draft.crew.map((p) =>
+                          p.id === personId
+                            ? { ...p, [signatureFields[phase]]: noteId }
+                            : p,
+                        ),
+                      },
+                    },
+                )
+              }
+            />
+          )}
           {errors.length > 0 && (
-            <ul className="work-order-errors">
+            <ul
+              className="work-order-errors"
+              aria-label="Что нужно заполнить перед сдачей"
+            >
               {errors.map((e) => (
                 <li key={e}>{e}</li>
               ))}
             </ul>
           )}
           <div className="handoff-actions">
+            {editing.submittedAt &&
+              user?.role === "admin" &&
+              shared?.find((e) => e.order.id === editing.id)?.stage !==
+                "accepted" && (
+                <button
+                  className="primary"
+                  disabled={busy || !signatureChanges}
+                  onClick={() => void saveSignatureChecks()}
+                >
+                  Сохранить проверку подписей
+                </button>
+              )}
             {!editing.submittedAt && canEdit && (
               <>
                 <button disabled={busy} onClick={() => void save(false)}>
@@ -356,7 +436,7 @@ export default function DailyWorkOrders({
             )}
             <button
               onClick={() => void exportReport()}
-              disabled={busy || errors.length > 0}
+              disabled={busy || reportErrors(editing.draft).length > 0}
             >
               <Download size={17} />
               Скачать Excel

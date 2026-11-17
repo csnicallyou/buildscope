@@ -18,6 +18,7 @@ import { savedSchema } from "../src/workOrderArchive";
 import { initialWorkDraft } from "../src/workOrders";
 import { ConstructionStore } from "./construction-store";
 import { unitKey } from "../src/workProgress";
+import { signatureModels } from "../src/signatures";
 
 type Options = {
   store: WorkspaceDatabase;
@@ -143,7 +144,7 @@ export async function createWorkspaceServer(options: Options) {
         json(res, {
           service: "buildscope-workspace",
           version: 2,
-          appVersion: "0.12.0",
+          appVersion: "0.12.1",
         });
         return;
       }
@@ -334,10 +335,35 @@ export async function createWorkspaceServer(options: Options) {
         return;
       }
       const orderRoute = path.match(
-        /^\/api\/orders\/([^/]+)\/(history|action|carryover)$/,
+        /^\/api\/orders\/([^/]+)\/(history|action|carryover|signatures)$/,
       );
       if (orderRoute) {
         const [, id, action] = orderRoute;
+        if (action === "signatures" && req.method === "PUT") {
+          const input = z
+            .object({
+              revision: z.number().int().positive(),
+              checks: z
+                .array(
+                  z.object({
+                    id: z.string().min(1),
+                    startSignatureNoteId: z.string().min(1).max(200).nullable(),
+                    endSignatureNoteId: z.string().min(1).max(200).nullable(),
+                  }),
+                )
+                .max(200),
+            })
+            .parse(await body(req));
+          json(res, {
+            saved: store.saveSignatureChecks(
+              user,
+              id,
+              input.revision,
+              input.checks,
+            ),
+          });
+          return;
+        }
         if (action === "history" && req.method === "GET") {
           json(res, { events: store.history(user, id) });
           return;
@@ -413,6 +439,8 @@ export async function createWorkspaceServer(options: Options) {
                 start: "",
                 end: "",
                 breakMinutes: 0,
+                startSignatureNoteId: null,
+                endSignatureNoteId: null,
               })),
             },
           });
@@ -435,6 +463,12 @@ export async function createWorkspaceServer(options: Options) {
         return;
       }
       if (path === "/api/notes" && req.method === "GET") {
+        if (
+          Object.values(signatureModels).some(
+            (model) => model === url.searchParams.get("model"),
+          )
+        )
+          store.get(user, url.searchParams.get("element") ?? "");
         const rows = store.db
           .prepare(
             "SELECT * FROM notes WHERE model=? AND element_id=? ORDER BY created_at DESC",
@@ -465,8 +499,32 @@ export async function createWorkspaceServer(options: Options) {
         const input = noteInput.parse(await body(req));
         if (!input.text.trim() && !input.image)
           throw new WorkspaceError(400, "Добавьте комментарий или фотографию");
-        if (input.orderId) store.get(user, input.orderId);
-        const brigade = user.brigade ?? input.brigade;
+        const order = input.orderId ? store.get(user, input.orderId) : null;
+        const signature = Object.values(signatureModels).some(
+          (model) => model === input.model,
+        );
+        if (
+          signature &&
+          (!order || input.elementId !== order.order.id || !input.image)
+        )
+          throw new WorkspaceError(
+            400,
+            "Прикрепите фото подписного листа к этому наряду",
+          );
+        if (signature && order?.stage === "submitted" && user.role !== "admin")
+          throw new WorkspaceError(
+            403,
+            "После сдачи проверку подписей выполняет руководитель",
+          );
+        if (signature && order?.stage === "accepted")
+          throw new WorkspaceError(
+            409,
+            "Для добавления подписных листов руководитель должен вернуть принятый наряд в работу",
+          );
+        const brigade =
+          signature && order
+            ? order.order.draft.brigade
+            : (user.brigade ?? input.brigade);
         let image: Buffer | null = null;
         if (input.image) {
           image = Buffer.from(input.image.base64, "base64");

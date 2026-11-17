@@ -6,7 +6,7 @@ import {
   timingSafeEqual,
   createHash,
 } from "node:crypto";
-import { promisify } from "node:util";
+import { promisify, isDeepStrictEqual } from "node:util";
 import { mkdir, chmod, readdir, unlink } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
@@ -23,6 +23,11 @@ import {
 } from "../src/workOrderArchive";
 import { reportErrors } from "../src/workOrders";
 import { allocationErrors } from "../src/workProgress";
+import {
+  signatureModels,
+  signatureFields,
+  type SignaturePhase,
+} from "../src/signatures";
 
 const scrypt = promisify(derive);
 const now = () => new Date().toISOString();
@@ -367,12 +372,15 @@ export class WorkspaceDatabase {
               start: "",
               end: "",
               breakMinutes: 0,
+              startSignatureNoteId: null,
+              endSignatureNoteId: null,
             })),
           },
         });
         return this.write(user, order, 1, "issued", "issued");
       }
       const current = this.get(user, incoming.id);
+      this.inheritSignatureChecks(incoming, current.order);
       if (current.revision !== expected)
         throw new WorkspaceError(
           409,
@@ -383,26 +391,27 @@ export class WorkspaceDatabase {
           409,
           "Сданный наряд может вернуть на исправление руководитель",
         );
-      const immutable = (o: SavedWorkOrder) =>
-        JSON.stringify({
-          ...o,
-          submittedAt: null,
-          draft: {
-            ...o.draft,
-            rows: o.draft.rows.map((r) => ({
-              ...r,
-              actual: null,
-              completed: false,
-            })),
-            crew: o.draft.crew.map((r) => ({
-              ...r,
-              start: "",
-              end: "",
-              breakMinutes: 0,
-            })),
-          },
-        });
-      if (immutable(current.order) !== immutable(incoming))
+      const immutable = (o: SavedWorkOrder) => ({
+        ...o,
+        submittedAt: null,
+        draft: {
+          ...o.draft,
+          rows: o.draft.rows.map((r) => ({
+            ...r,
+            actual: null,
+            completed: false,
+          })),
+          crew: o.draft.crew.map((r) => ({
+            ...r,
+            start: "",
+            end: "",
+            breakMinutes: 0,
+            startSignatureNoteId: null,
+            endSignatureNoteId: null,
+          })),
+        },
+      });
+      if (!isDeepStrictEqual(immutable(current.order), immutable(incoming)))
         throw new WorkspaceError(
           403,
           "При сдаче можно менять только факт, выполнение и фактическое время. План изменяет руководитель с указанием причины.",
@@ -411,6 +420,7 @@ export class WorkspaceDatabase {
         const errors = handoffErrors(incoming);
         if (errors.length) throw new WorkspaceError(400, errors.join("; "));
       }
+      this.validateSignatures(incoming);
       const order = {
         ...incoming,
         submittedAt: incoming.submittedAt ? now() : null,
@@ -423,6 +433,111 @@ export class WorkspaceDatabase {
         order.submittedAt ? "submitted" : "progress-saved",
       );
     });
+  }
+  private inheritSignatureChecks(
+    order: SavedWorkOrder,
+    previous: SavedWorkOrder,
+  ) {
+    for (const person of order.draft.crew) {
+      const old = previous.draft.crew.find((p) => p.id === person.id);
+      if (!old) continue;
+      if (person.startSignatureNoteId === undefined)
+        person.startSignatureNoteId = old.startSignatureNoteId;
+      if (person.endSignatureNoteId === undefined)
+        person.endSignatureNoteId = old.endSignatureNoteId;
+    }
+  }
+  saveSignatureChecks(
+    user: WorkspaceUser,
+    id: string,
+    revision: number,
+    checks: {
+      id: string;
+      startSignatureNoteId: string | null;
+      endSignatureNoteId: string | null;
+    }[],
+  ) {
+    if (user.role === "viewer")
+      throw new WorkspaceError(403, "Доступен только просмотр");
+    return this.transaction(() => {
+      const current = this.get(user, id);
+      if (current.revision !== revision)
+        throw new WorkspaceError(
+          409,
+          "Наряд изменён другим пользователем. Загрузите актуальную версию.",
+        );
+      if (current.stage === "accepted")
+        throw new WorkspaceError(
+          409,
+          "Для изменения принятого наряда руководитель должен вернуть его в работу",
+        );
+      if (current.stage === "submitted" && user.role !== "admin")
+        throw new WorkspaceError(
+          403,
+          "После сдачи проверку подписей выполняет руководитель",
+        );
+      if (
+        checks.length !== current.order.draft.crew.length ||
+        new Set(checks.map((p) => p.id)).size !== checks.length ||
+        checks.some(
+          (p) => !current.order.draft.crew.some((person) => person.id === p.id),
+        )
+      )
+        throw new WorkspaceError(
+          400,
+          "Проверка должна относиться к сотрудникам этого наряда",
+        );
+      const order = {
+        ...current.order,
+        draft: {
+          ...current.order.draft,
+          crew: current.order.draft.crew.map((person) => {
+            const check = checks.find((p) => p.id === person.id)!;
+            return {
+              ...person,
+              startSignatureNoteId: check.startSignatureNoteId,
+              endSignatureNoteId: check.endSignatureNoteId,
+            };
+          }),
+        },
+      };
+      this.validateSignatures(order);
+      return this.write(
+        user,
+        order,
+        current.revision + 1,
+        current.stage,
+        "signatures-verified",
+      );
+    });
+  }
+  validateSignatures(order: SavedWorkOrder) {
+    for (const person of order.draft.crew)
+      for (const phase of ["start", "end"] as SignaturePhase[]) {
+        const noteId = person[signatureFields[phase]];
+        if (!noteId) continue;
+        if (!person[phase])
+          throw new WorkspaceError(
+            400,
+            `${person.name}: укажите время ${phase === "start" ? "выхода" : "окончания"} перед подтверждением подписи`,
+          );
+        const note = this.db
+          .prepare(
+            "SELECT n.* FROM notes n JOIN images i ON i.id=n.image_id AND i.note_id=n.id WHERE n.id=?",
+          )
+          .get(noteId);
+        if (
+          !note ||
+          note.order_id !== order.id ||
+          note.element_id !== order.id ||
+          note.model !== signatureModels[phase] ||
+          note.brigade !== order.draft.brigade
+        )
+          throw new WorkspaceError(
+            400,
+            `${person.name}: выберите фото подписного листа этой смены для ${phase === "start" ? "выхода" : "окончания"}`,
+          );
+      }
   }
   action(
     user: WorkspaceUser,
@@ -438,6 +553,7 @@ export class WorkspaceDatabase {
       if (current.revision !== revision)
         throw new WorkspaceError(409, "Запись уже изменена. Обновите список.");
       if (action === "accept") {
+        this.validateSignatures(current.order);
         if (current.stage !== "submitted")
           throw new WorkspaceError(400, "Сначала бригадир должен сдать наряд");
         return this.write(
@@ -454,6 +570,7 @@ export class WorkspaceDatabase {
         action === "replan"
           ? savedSchema.parse(raw)
           : { ...current.order, submittedAt: null };
+      this.inheritSignatureChecks(order, current.order);
       if (order.id !== id || order.createdAt !== current.order.createdAt)
         throw new WorkspaceError(400, "Некорректный снимок наряда");
       if (action === "replan" && current.stage !== "issued")
@@ -463,6 +580,7 @@ export class WorkspaceDatabase {
         ...allocationErrors(order, this.list(user)),
       ];
       if (errors.length) throw new WorkspaceError(409, errors.join("; "));
+      this.validateSignatures(order);
       return this.write(
         user,
         { ...order, submittedAt: null },
@@ -501,6 +619,7 @@ export class WorkspaceDatabase {
           continue;
         const errors = reportErrors(order.draft);
         if (errors.length) throw new WorkspaceError(400, errors.join("; "));
+        this.validateSignatures(order);
         this.write(
           user,
           order,

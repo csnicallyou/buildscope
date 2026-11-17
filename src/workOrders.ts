@@ -277,6 +277,8 @@ export function workQuantityElementIds(target: WorkTarget, id: WorkId) {
     : target.elements.map((e) => e.id);
 }
 export type CrewRow = {
+  startSignatureNoteId?: string | null;
+  endSignatureNoteId?: string | null;
   id: string;
   date: string;
   site: string;
@@ -400,8 +402,8 @@ export function reportErrors(d: WorkDraft) {
       errors.push(`Табель ${i + 1}: заполните ФИО и дату`);
     if ((h !== null && h < 0) || r.breakMinutes < 0)
       errors.push(`Табель ${i + 1}: перерыв превышает продолжительность смены`);
-    if (!!r.start !== !!r.end)
-      errors.push(`Табель ${i + 1}: укажите начало и конец смены`);
+    if ([r.start, r.end].some((t) => t && !/^([01]\d|2[0-3]):[0-5]\d$/.test(t)))
+      errors.push(`Табель ${i + 1}: укажите время в формате ЧЧ:ММ`);
   });
   return errors;
 }

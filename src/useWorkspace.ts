@@ -291,6 +291,36 @@ export function useWorkspace(
       return null;
     }
   };
+  const saveSignatures = async (
+    order: SavedWorkOrder,
+  ): Promise<SavedWorkOrder | null> => {
+    try {
+      if (mode !== "server" || !order.serverRevision)
+        throw Error("Для проверки подписей подключитесь к общей базе");
+      const result = await api<{ saved: unknown }>(
+        `/api/orders/${encodeURIComponent(order.id)}/signatures`,
+        "PUT",
+        {
+          revision: order.serverRevision,
+          checks: order.draft.crew.map((p) => ({
+            id: p.id,
+            startSignatureNoteId: p.startSignatureNoteId ?? null,
+            endSignatureNoteId: p.endSignatureNoteId ?? null,
+          })),
+        },
+      );
+      const saved = sharedOrderSchema.parse(result.saved);
+      await refresh();
+      return clientOrder(saved);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Не удалось сохранить проверку подписей",
+      );
+      return null;
+    }
+  };
   const importLocal = async () => {
     try {
       const values = parseWorkOrders(
@@ -328,6 +358,7 @@ export function useWorkspace(
     error,
     shared: allShared,
     save,
+    saveSignatures,
     action,
     refresh,
     importLocal,

@@ -161,7 +161,17 @@ export async function createWorkOrder(draft: WorkDraft) {
       formula: `IF(COUNT(G${i + 2}:H${i + 2})<2,"",MOD(H${i + 2}-G${i + 2},1)*24-K${i + 2}/60)`,
       cached: crewHours(r) ?? "",
     },
-    r.note,
+    [
+      r.note,
+      ...(r.startSignatureNoteId !== undefined ||
+      r.endSignatureNoteId !== undefined
+        ? [
+            `Проверка подписей по фото: выход — ${r.startSignatureNoteId ? "подтверждена" : "не отмечена"}; окончание — ${r.endSignatureNoteId ? "подтверждена" : "не отмечена"}. Фото хранятся в карточке наряда.`,
+          ]
+        : []),
+    ]
+      .filter(Boolean)
+      .join("\n"),
     r.breakMinutes,
   ]);
   const groups = [
