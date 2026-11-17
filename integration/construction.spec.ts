@@ -139,6 +139,8 @@ test("Панель стройки: объекты, задачи, бригады,
     .click();
   await page.getByLabel("Состояние замечания").selectOption("closed");
   await save(page);
+  await expect(page.locator(".cm-task")).toHaveCount(0);
+  await page.getByLabel("Фильтр замечаний").selectOption("all");
   await expect(page.locator(".cm-task")).toContainText("Закрыто");
   await openSection(page, "Документы");
   await page

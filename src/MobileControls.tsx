@@ -7,13 +7,11 @@ import {
   ChevronDown,
   GripHorizontal,
   ClipboardList,
-  LayoutDashboard,
   Building2,
   CalendarDays,
 } from "lucide-react";
 import { useRef } from "react";
 import { useStore } from "./store";
-import { hasObjects } from "./objects";
 
 export function MobilePanelHandle() {
   const s = useStore();
@@ -55,8 +53,6 @@ export default function MobileControls({
   onWorkOrder,
   modelActive,
   workOrderActive,
-  managementActive = false,
-  onManagement,
   onHome,
   onShifts,
   onMore,
@@ -76,8 +72,8 @@ export default function MobileControls({
   shiftsActive?: boolean;
 }) {
   const s = useStore();
-  if (!modelActive && onHome && onShifts && onMore)
-    return (
+  return (
+    <>
       <nav
         className="mobile-dock personal-dock"
         aria-label="Управление стройкой"
@@ -87,6 +83,19 @@ export default function MobileControls({
           Объекты
         </button>
         <button
+          aria-pressed={modelActive}
+          onClick={() =>
+            modelActive ? s.set({ mobilePanel: "none" }) : onModel()
+          }
+        >
+          <Box size={20} />
+          Модель
+        </button>
+        <button aria-pressed={shiftsActive} onClick={onShifts}>
+          <CalendarDays size={20} />
+          Смены
+        </button>
+        <button
           aria-label="Открыть наряды"
           aria-pressed={workOrderActive}
           onClick={onWorkOrder}
@@ -94,105 +103,58 @@ export default function MobileControls({
           <ClipboardList size={20} />
           Наряды
         </button>
-        <button aria-pressed={shiftsActive} onClick={onShifts}>
-          <CalendarDays size={20} />
-          Смены
-        </button>
-        <button onClick={onModel}>
-          <Box size={20} />
-          Модель
-        </button>
-        <button onClick={onMore}>
+        <button aria-label="Все разделы" onClick={onMore}>
           <ListTree size={20} />
           Ещё
         </button>
       </nav>
-    );
-  if (managementActive && onManagement)
-    return (
-      <nav className="mobile-dock" aria-label="Управление стройкой">
-        <button onClick={() => onManagement("overview")}>
-          <LayoutDashboard size={19} />
-          Обзор
-        </button>
-        <button onClick={() => onManagement("objects")}>
-          <Building2 size={19} />
-          Объекты
-        </button>
-        <button onClick={() => onManagement("planning")}>
-          <CalendarDays size={19} />
-          План
-        </button>
-        <button onClick={onWorkOrder}>
-          <ClipboardList size={19} />
-          Наряды
-        </button>
-        <button onClick={onModel}>
-          <Box size={19} />
-          Модель
-        </button>
-      </nav>
-    );
-  return (
-    <nav className="mobile-dock" aria-label="Панели просмотра">
-      <button
-        aria-pressed={modelActive && s.mobilePanel === "none"}
-        onClick={() => {
-          s.set({ mobilePanel: "none" });
-          onModel();
-        }}
-      >
-        <Box size={19} />
-        Модель
-      </button>
-      <button
-        aria-label="Открыть наряды"
-        aria-pressed={workOrderActive}
-        onClick={onWorkOrder}
-      >
-        <ClipboardList size={19} /> Наряды
-      </button>
-      <button
-        aria-pressed={s.mobilePanel === "tree"}
-        onClick={() =>
-          s.set({ mobilePanel: s.mobilePanel === "tree" ? "none" : "tree" })
-        }
-      >
-        <ListTree size={19} />
-        Конструкции
-      </button>
-      <button
-        aria-pressed={s.mobilePanel === "inspector" && !s.calculatorOpen}
-        onClick={() => {
-          s.set({
-            mobilePanel: "inspector",
-            calculatorOpen: false,
-            mobileExpanded: false,
-          });
-          onModel();
-        }}
-      >
-        <Box size={19} />
-        Свойства
-      </button>
-      <button
-        disabled={!!s.openedObject || !hasObjects(s.project)}
-        aria-pressed={s.mobilePanel === "inspector" && s.calculatorOpen}
-        onClick={() => {
-          s.set({
-            mobilePanel: "inspector",
-            calculatorOpen: true,
-            mobileExpanded: false,
-          });
-          onModel();
-        }}
-      >
-        <Calculator size={19} />
-        Расчёт
-        {s.calculatedObjects.length > 0 && (
-          <span>{s.calculatedObjects.length}</span>
-        )}
-      </button>
-    </nav>
+      {modelActive && (
+        <nav className="model-panel-tabs" aria-label="Панели просмотра">
+          <button
+            aria-pressed={s.mobilePanel === "none"}
+            onClick={() =>
+              s.set({ mobilePanel: "none", mobileExpanded: false })
+            }
+          >
+            Модель
+          </button>
+          <button
+            aria-pressed={s.mobilePanel === "tree"}
+            onClick={() =>
+              s.set({ mobilePanel: "tree", mobileExpanded: false })
+            }
+          >
+            <ListTree size={16} />
+            Конструкции
+          </button>
+          <button
+            aria-pressed={s.mobilePanel === "inspector" && !s.calculatorOpen}
+            onClick={() =>
+              s.set({
+                mobilePanel: "inspector",
+                calculatorOpen: false,
+                mobileExpanded: false,
+              })
+            }
+          >
+            <Box size={16} />
+            Свойства
+          </button>
+          <button
+            aria-pressed={s.mobilePanel === "inspector" && s.calculatorOpen}
+            onClick={() =>
+              s.set({
+                mobilePanel: "inspector",
+                calculatorOpen: true,
+                mobileExpanded: false,
+              })
+            }
+          >
+            <Calculator size={16} />
+            Расчёт {s.calculatedObjects.length || ""}
+          </button>
+        </nav>
+      )}
+    </>
   );
 }

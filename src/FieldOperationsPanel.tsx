@@ -71,6 +71,9 @@ const field = (label: string, child: ReactNode) => (
 type Entry = ConstructionRecord & { payload: FieldPayload };
 export default function FieldOperationsPanel({
   view,
+  scopeNode,
+  contextDate,
+  contextShift,
   onView,
   user,
   enabled,
@@ -78,6 +81,9 @@ export default function FieldOperationsPanel({
   onCompose,
 }: {
   view: FieldKind;
+  scopeNode?: string;
+  contextDate?: string;
+  contextShift?: "День" | "Ночь";
   onView: (v: FieldKind) => void;
   user: WorkspaceUser | null;
   enabled: boolean;
@@ -91,10 +97,11 @@ export default function FieldOperationsPanel({
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
     [query, setQuery] = useState(""),
-    [node, setNode] = useState(""),
+    [node, setNode] = useState(scopeNode ?? ""),
     [history, setHistory] = useState<
       { actor: string; created_at: string; after_payload: string }[] | null
     >(null);
+  useEffect(() => setNode(scopeNode ?? ""), [scopeNode]);
   const admin = user?.role === "admin";
   const items = records
     .filter((r): r is Entry => r.payload.kind === view)
@@ -170,7 +177,7 @@ export default function FieldOperationsPanel({
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
       >
-        <option value="">Без участка</option>
+        <option value="">Все объекты</option>
         {nodes.map((n) => (
           <option key={n.id} value={n.id}>
             {nodePath(records, n.id)}
@@ -196,9 +203,10 @@ export default function FieldOperationsPanel({
       setBusy(false);
     }
   };
-  const saveForm = async () => {
-    if (!form) return;
-    const saved = await save(form, record);
+  const saveForm = async (next?: FieldPayload) => {
+    const payload = next ?? form;
+    if (!payload) return;
+    const saved = await save(payload, record);
     setRecord(saved as Entry);
     if (file) {
       setRecord((await uploadConstructionFile(saved, file)) as Entry);
@@ -249,11 +257,15 @@ export default function FieldOperationsPanel({
               setForm(
                 blankField(
                   view,
-                  today(),
+                  contextDate ?? today(),
                   user?.brigade ?? "Наша бригада",
                   node || null,
                 ),
               );
+              if (contextShift)
+                setForm((p) =>
+                  p && "shift" in p ? { ...p, shift: contextShift } : p,
+                );
               setFile(null);
               setHistory(null);
             }}
@@ -360,13 +372,13 @@ export default function FieldOperationsPanel({
                 {p.kind === "contractor" && (
                   <p>
                     {p.contact} {p.phone} ·{" "}
-                    {p.active ? "Работает" : "Неактивен"}
+                    {p.active ? "В справочнике" : "Неактивен"}
                   </p>
                 )}
                 {p.kind === "machine" && (
                   <p>
                     {p.plate} · {p.owner} ·{" "}
-                    {p.active ? "В работе" : "Неактивна"}
+                    {p.active ? "Доступна" : "Неактивна"}
                   </p>
                 )}
                 {p.kind === "waybill" && (
@@ -423,7 +435,17 @@ export default function FieldOperationsPanel({
       {form && (
         <aside className="field-editor">
           <header>
-            <h2>{record ? "Карточка записи" : "Новая запись"}</h2>
+            <h2>
+              {record
+                ? fieldLabels[form.kind]
+                : {
+                    contractor: "Новый подрядчик",
+                    machine: "Добавить технику",
+                    waybill: "Новый путевой лист",
+                    request: "Новая заявка",
+                    proposal: "Предложить работу",
+                  }[form.kind]}
+            </h2>
             <button
               aria-label="Закрыть рабочую карточку"
               onClick={() => setForm(null)}
@@ -442,16 +464,39 @@ export default function FieldOperationsPanel({
             }}
           >
             <fieldset disabled={!admin || busy}>
+              <legend>Основные сведения</legend>{" "}
+              {["waybill", "request", "proposal"].includes(form.kind) &&
+                (!record?.file ? (
+                  field(
+                    "Оригинал документа",
+                    <input
+                      aria-label="Оригинал рабочей записи"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx,.mp4,.webm,.mov"
+                      onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                    />,
+                  )
+                ) : (
+                  <a href={`/api/construction-files/${record.file.id}`}>
+                    Оригинал: {record.file.name}
+                  </a>
+                ))}
               {input(
                 form.kind === "waybill"
                   ? "Номер путевого листа"
-                  : "Название рабочей записи",
+                  : form.kind === "contractor"
+                    ? "Подрядчик"
+                    : form.kind === "machine"
+                      ? "Название техники"
+                      : form.kind === "request"
+                        ? "Что требуется"
+                        : "Предлагаемая работа",
                 form.title,
                 (v) => patch({ title: v }),
                 true,
               )}
               {input(
-                "Бригада рабочей записи",
+                "Бригада",
                 form.brigade,
                 (v) =>
                   patch({
@@ -460,12 +505,12 @@ export default function FieldOperationsPanel({
                   }),
                 !["contractor", "machine"].includes(form.kind),
               )}
-              {nodeSelect("Участок рабочей записи", form.nodeId, (v) =>
+              {nodeSelect("Объект и участок", form.nodeId, (v) =>
                 patch({ nodeId: v }),
               )}
               {"date" in form &&
                 input(
-                  "Дата рабочей записи",
+                  "Дата",
                   form.date,
                   (v) =>
                     patch({
@@ -477,9 +522,9 @@ export default function FieldOperationsPanel({
                 )}
               {"shift" in form &&
                 field(
-                  "Смена рабочей записи",
+                  "Смена",
                   <select
-                    aria-label="Смена рабочей записи"
+                    aria-label="Смена"
                     value={form.shift}
                     onChange={(e) =>
                       patch({
@@ -693,11 +738,11 @@ export default function FieldOperationsPanel({
                 )}
               {"quantity" in form && (
                 <>
-                  {number("Количество рабочей записи", form.quantity, (v) =>
+                  {number("Количество", form.quantity, (v) =>
                     patch({ quantity: v }),
                   )}
                   {input(
-                    "Единица рабочей записи",
+                    "Единица измерения",
                     form.unit,
                     (v) => patch({ unit: v }),
                     true,
@@ -713,9 +758,9 @@ export default function FieldOperationsPanel({
                 )}
               {"status" in form &&
                 field(
-                  "Состояние рабочей записи",
+                  "Состояние",
                   <select
-                    aria-label="Состояние рабочей записи"
+                    aria-label="Состояние"
                     value={form.status}
                     onChange={(e) => patch({ status: e.target.value })}
                   >
@@ -733,33 +778,61 @@ export default function FieldOperationsPanel({
               {field(
                 "Примечание / причина",
                 <textarea
-                  aria-label="Примечание рабочей записи"
+                  aria-label="Примечание"
                   value={form.note}
                   onChange={(e) => patch({ note: e.target.value })}
                 />,
               )}
-              {["waybill", "request", "proposal"].includes(form.kind) &&
-                (!record?.file ? (
-                  field(
-                    "Оригинал документа",
-                    <input
-                      aria-label="Оригинал рабочей записи"
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.xlsx,.docx,.mp4,.webm,.mov"
-                      onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    />,
-                  )
-                ) : (
-                  <a href={`/api/construction-files/${record.file.id}`}>
-                    Оригинал: {record.file.name}
-                  </a>
-                ))}
               {form.kind === "request" && (
                 <small>
                   Получение по заявке не создаёт складскую операцию. Поступление
                   зарегистрируйте в разделе «Материалы» с его основанием.
                 </small>
               )}
+              {record &&
+                form.kind === "request" &&
+                form.status !== "received" &&
+                form.status !== "cancelled" && (
+                  <button
+                    type="button"
+                    className="primary"
+                    disabled={busy || !admin}
+                    onClick={() =>
+                      void perform(() =>
+                        saveForm({
+                          ...form,
+                          status:
+                            form.status === "draft"
+                              ? "approved"
+                              : form.status === "approved"
+                                ? "ordered"
+                                : "received",
+                        }),
+                      )
+                    }
+                  >
+                    {form.status === "draft"
+                      ? "Согласовать заявку"
+                      : form.status === "approved"
+                        ? "Отметить заказ / назначение"
+                        : "Отметить получение"}
+                  </button>
+                )}
+              {record &&
+                form.kind === "proposal" &&
+                form.status === "proposed" && (
+                  <button
+                    type="button"
+                    disabled={busy || !admin}
+                    onClick={() =>
+                      void perform(() =>
+                        saveForm({ ...form, status: "approved" }),
+                      )
+                    }
+                  >
+                    Согласовать работу
+                  </button>
+                )}
               <button className="primary" disabled={busy}>
                 Сохранить рабочую запись
               </button>

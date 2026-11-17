@@ -48,7 +48,7 @@ export default function OrderReview({
   );
   return (
     <div className="order-review">
-      <details>
+      <details open>
         <summary>План, заявленный и проверенный объём</summary>
         <p>
           Проверка не изменяет сообщение подрядчика. Для каждого проверенного

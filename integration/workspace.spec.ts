@@ -1,3 +1,4 @@
+import { openSection } from "../e2e/navigation-helpers";
 import { test, expect, type Page } from "@playwright/test";
 async function login(page: Page, role: string) {
   await page.goto("/login");
@@ -30,7 +31,7 @@ test("Общая база: черновик, выдача, сдача други
   await page
     .getByRole("button", { name: "Фм1 Фм1 · оси 1/А", exact: true })
     .click();
-  await page.getByRole("button", { name: "Наряд", exact: true }).click();
+  await openSection(page, "Наряд");
   await page.getByLabel("Тип работы наряда").selectOption("concrete");
   await page
     .getByRole("button", { name: "Добавить работу", exact: true })
@@ -40,7 +41,7 @@ test("Общая база: черновик, выдача, сдача други
     "Черновик сохранён",
   );
   await page.reload();
-  await page.getByRole("button", { name: "Наряд", exact: true }).click();
+  await openSection(page, "Наряд");
   await expect(page.getByLabel("План работы 1")).toHaveValue("2.592");
   await page.getByRole("button", { name: "Выдать наряд", exact: true }).click();
   await expect(page.locator(".daily-order-card")).toHaveCount(1);
@@ -50,9 +51,7 @@ test("Общая база: черновик, выдача, сдача други
   });
   const worker = await foreman.newPage();
   await login(worker, "foreman");
-  await worker
-    .getByRole("button", { name: "Наряды по дням", exact: true })
-    .click();
+  await openSection(worker, "Наряды по дням");
   await worker.locator(".daily-order-card").click();
   await expect(
     worker.getByRole("button", { name: "Новый наряд", exact: true }),
@@ -88,9 +87,7 @@ test("Общая база: черновик, выдача, сдача други
     "ожидает проверки",
   );
   await page.reload();
-  await page
-    .getByRole("button", { name: "Наряды по дням", exact: true })
-    .click();
+  await openSection(page, "Наряды по дням");
   await page.locator(".daily-order-card").click();
   await page
     .getByRole("button", { name: "Принять наряд", exact: true })
@@ -113,12 +110,10 @@ test("Общая база: черновик, выдача, сдача други
   await expect(page.getByLabel("План работы 1")).toHaveValue("1.392");
   await page.getByRole("button", { name: "Выдать наряд", exact: true }).click();
   await expect(page.locator(".daily-order-card")).toHaveCount(2);
-  await page.getByRole("button", { name: "Ход работ", exact: true }).click();
+  await openSection(page, "Ход работ");
   await expect(page.locator(".schedule table")).toContainText("1,392");
   await page.screenshot({ path: ".deploy/screenshots/progress.png" });
-  await page
-    .getByRole("button", { name: "Команда и доступ", exact: true })
-    .click();
+  await openSection(page, "Команда и доступ");
   await expect(page.locator(".team-users > div")).toHaveCount(3);
   await page.screenshot({ path: ".deploy/screenshots/team.png" });
   await foreman.close();

@@ -23,6 +23,7 @@ test("Конструкция связана с задачей и выдавае�
   await page
     .getByRole("button", { name: "Фм4 Фм4 · оси 8/А", exact: true })
     .click();
+  await page.locator(".object-secondary > summary").click();
   await page
     .getByRole("button", { name: "Запланировать работу", exact: true })
     .click();
@@ -62,7 +63,7 @@ test("Конструкция связана с задачей и выдавае�
     .click();
   await expect(page.getByLabel("План работы 1")).not.toHaveValue("");
   await page.getByRole("button", { name: "Выдать наряд", exact: true }).click();
-  await expect(page.locator(".daily-order-card").first()).toContainText("День");
+  await expect(page.locator(".daily-order-card").first()).toContainText("Ночь");
   const entries = (await (await page.request.get("/api/orders")).json()) as {
     orders: { order: { draft: { taskId?: string | null } } }[];
   };

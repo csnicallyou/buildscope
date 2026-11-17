@@ -1,3 +1,7 @@
+import WorkbenchNavigation from "./WorkbenchNavigation";
+import WorkContextBar from "./WorkContextBar";
+import { useConstruction } from "./useConstruction";
+import { ofKind, inNode } from "./construction";
 import FieldOperationsPanel from "./FieldOperationsPanel";
 import { fieldLabels, type FieldKind } from "./fieldOperations";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -181,6 +185,9 @@ export default function App() {
   const [shiftSignal, setShiftSignal] = useState<OrderSignal>("all");
   const [siteContext, setSiteContext] = useState<SiteContext | null>(null);
   const workspace = useWorkspace(workDraft, setWorkDraft);
+  const construction = useConstruction(workspace.mode === "server");
+  const [workDate, setWorkDate] = useState(initialWorkDraft().date);
+  const [workShift, setWorkShift] = useState<"День" | "Ночь">("Ночь");
   const workArchive = { orders: workspace.orders, error: workspace.error };
   const persistWorkOrder = workspace.save;
   const [mobileTools, setMobileTools] = useState(false);
@@ -214,7 +221,6 @@ export default function App() {
     }
   }, [workspace.mode]);
   const goManagement = (view: ManagementView) => {
-    setSiteContext(null);
     setManagementView(view);
     setTab("management");
     setNavigationOpen(false);
@@ -392,11 +398,19 @@ export default function App() {
     setTab("model");
     s.set({ mobilePanel: "none" });
   };
-  const openWorkOrder = () => {
+  const openWorkOrder = (seedContext = true) => {
     if (workspace.mode === "server" && workspace.user?.role !== "admin") {
       setTab("workdays");
       return;
     }
+    if (seedContext && !workDraft.rows.length)
+      setWorkDraft((d) => ({
+        ...d,
+        nodeId: siteContext?.id ?? d.nodeId,
+        date: workDate,
+        shift: workShift,
+        site: siteContext?.title ?? d.site,
+      }));
     s.set({
       mobilePanel: "none",
       filters: emptyFilters,
@@ -516,6 +530,20 @@ export default function App() {
       "Загружена ручная реконструкция КЖ. Неустранённые расхождения — в разделе «Источник».",
     );
   };
+  const savedDrawing = ofKind(construction.records, "document").find(
+    (r) =>
+      r.file &&
+      r.payload.category === "drawing" &&
+      r.payload.number === s.project.document?.code &&
+      (!siteContext ||
+        !r.payload.nodeId ||
+        siteContext.nodeIds.includes(r.payload.nodeId)),
+  );
+  const connectedPdfUrl =
+    pdfUrl ??
+    (savedDrawing?.file
+      ? "/api/construction-files/" + savedDrawing.file.id
+      : null);
   const focusConstructionModel = (model: string, ids: string[]) => {
     if (model !== projectModelKey(useStore.getState().project)) {
       if (model === "kzh-canopy")
@@ -563,7 +591,7 @@ export default function App() {
         zone: p.title,
       });
     }
-    openWorkOrder();
+    openWorkOrder(!task);
     setNavigationOpen(false);
   };
   const projectNotice =
@@ -685,59 +713,74 @@ export default function App() {
           </button>
         </div>
       </header>
-      <div className="project-switcher">
-        <span>Комплект КЖ1.5</span>
-        <button
-          className={
-            s.project.document?.assembly === "Каталог гнутых деталей"
-              ? "active"
-              : ""
-          }
-          onClick={() => {
-            s.load(createKzhDetails());
-            setTab("model");
-            setSearch("");
-          }}
-        >
-          Гнутые детали
-        </button>
-        <button
-          className={
-            s.project.document?.assembly === "Кассовый павильон" ? "active" : ""
-          }
-          onClick={() => openAssembly("pavilion")}
-        >
-          Кассовый павильон
-        </button>
-        <button
-          className={
-            s.project.document?.assembly.includes("Навес") ? "active" : ""
-          }
-          onClick={() => openAssembly("canopy")}
-        >
-          Навес «сухие ноги»
-        </button>
-        {s.project.document?.assembly.includes("Навес") && (
-          <label>
-            Отметки{" "}
-            <select
-              aria-label="Вариант отметок"
-              value={s.project.document.variant ?? variant}
-              onChange={(e) => {
-                const v = e.target.value as "plan" | "sections";
-                setVariant(v);
-                openAssembly("canopy", v);
-              }}
-            >
-              <option value="plan">По плану</option>
-              <option value="sections">По разрезам</option>
-            </select>
-          </label>
+      <WorkbenchNavigation
+        active={
+          tab === "home"
+            ? "home"
+            : tab === "shifts"
+              ? "shifts"
+              : tab === "workorder" || tab === "workdays"
+                ? "orders"
+                : tab === "field" ||
+                    (tab === "management" &&
+                      ["materials", "crews"].includes(managementView))
+                  ? "resources"
+                  : tab === "management" && managementView === "documents"
+                    ? "documents"
+                    : "model"
+        }
+        onHome={() => {
+          setSiteContext(null);
+          setTab("home");
+        }}
+        onModel={() =>
+          siteContext?.model
+            ? focusConstructionModel(siteContext.model, siteContext.elementIds)
+            : setTab("model")
+        }
+        onShifts={() => setTab("shifts")}
+        onOrders={() => setTab("workdays")}
+        onResources={() => {
+          setFieldView("machine");
+          setTab("field");
+        }}
+        onDocuments={() => goManagement("documents")}
+        onMore={() => setNavigationOpen(true)}
+      />
+      <WorkContextBar
+        sites={ofKind(construction.records, "node").filter(
+          (n) => !n.payload.parentId,
         )}
-        <button className="source-shortcut" onClick={() => setTab("source")}>
-          Источники и расхождения
-        </button>
-      </div>
+        siteId={siteContext?.id ?? ""}
+        date={workDate}
+        shift={workShift}
+        onDate={setWorkDate}
+        onShift={setWorkShift}
+        onSite={(id) => {
+          const target = ofKind(construction.records, "node").find(
+            (n) => n.id === id,
+          );
+          if (!target) {
+            setSiteContext(null);
+            return;
+          }
+          const context = {
+            id: target.id,
+            title: target.payload.title,
+            nodeIds: ofKind(construction.records, "node")
+              .filter((n) => inNode(construction.records, n.id, target.id))
+              .map((n) => n.id),
+            model: target.payload.model,
+            elementIds: target.payload.elementIds,
+          };
+          setSiteContext(context);
+          if (tab === "home" || tab === "model") {
+            if (context.model)
+              focusConstructionModel(context.model, context.elementIds);
+            else setTab("shifts");
+          }
+        }}
+      />
       <button
         className="navigation-toggle"
         aria-label="Разделы управления стройкой"
@@ -812,7 +855,6 @@ export default function App() {
               key={view}
               className={tab === "field" && fieldView === view ? "active" : ""}
               onClick={() => {
-                setSiteContext(null);
                 setFieldView(view);
                 setTab("field");
               }}
@@ -823,11 +865,45 @@ export default function App() {
           );
         })}
         <div className="navigation-heading">Работы и модель</div>
+        <button onClick={() => openAssembly("pavilion")}>
+          Кассовый павильон
+        </button>
+        <button onClick={() => openAssembly("canopy")}>
+          Навес «сухие ноги»
+        </button>
+        {s.project.document?.assembly.includes("Навес") && (
+          <label>
+            Отметки модели
+            <select
+              aria-label="Вариант отметок"
+              value={s.project.document.variant ?? variant}
+              onChange={(e) => {
+                const value = e.target.value as "plan" | "sections";
+                setVariant(value);
+                openAssembly("canopy", value);
+                setNavigationOpen(false);
+              }}
+            >
+              <option value="plan">По плану</option>
+              <option value="sections">По разрезам</option>
+            </select>
+          </label>
+        )}
+        <button
+          onClick={() => {
+            s.load(createKzhDetails());
+            setTab("model");
+            setSearch("");
+          }}
+        >
+          Гнутые детали
+        </button>
         <button
           className={tab === "model" ? "active" : ""}
           onClick={() => {
-            setSiteContext(null);
-            setTab("model");
+            if (siteContext?.model)
+              focusConstructionModel(siteContext.model, siteContext.elementIds);
+            else setTab("model");
           }}
         >
           <Box size={17} /> 3D-модель
@@ -837,7 +913,7 @@ export default function App() {
           disabled={
             workspace.mode === "server" && workspace.user?.role !== "admin"
           }
-          onClick={openWorkOrder}
+          onClick={() => openWorkOrder()}
         >
           <ClipboardList size={17} /> Наряд
         </button>
@@ -897,26 +973,46 @@ export default function App() {
             Чертёж DXF
           </button>
         )}
-        <div className="layout-actions">
-          <button
-            aria-label={treeCollapsed ? "Показать дерево" : "Свернуть дерево"}
-            aria-pressed={!treeCollapsed}
-            onClick={() => setTreeCollapsed(!treeCollapsed)}
-          >
-            <PanelLeft size={17} />
-          </button>
-          <button
-            aria-label={
-              inspectorCollapsed ? "Показать свойства" : "Свернуть свойства"
-            }
-            aria-pressed={!inspectorCollapsed}
-            onClick={() => setInspectorCollapsed(!inspectorCollapsed)}
-          >
-            <PanelRight size={17} />
-          </button>
-        </div>
         <span className="demo-badge">{projectNotice}</span>
       </nav>
+      {(tab === "field" ||
+        (tab === "management" &&
+          ["crews", "materials"].includes(managementView))) && (
+        <nav className="resource-navigation" aria-label="Ресурсы стройки">
+          <button
+            aria-pressed={tab === "management" && managementView === "crews"}
+            onClick={() => goManagement("crews")}
+          >
+            Люди и бригады
+          </button>
+          <button
+            aria-pressed={tab === "field" && fieldView === "machine"}
+            onClick={() => {
+              setFieldView("machine");
+              setTab("field");
+            }}
+          >
+            Техника
+          </button>
+          <button
+            aria-pressed={
+              tab === "management" && managementView === "materials"
+            }
+            onClick={() => goManagement("materials")}
+          >
+            Материалы
+          </button>
+          <button
+            aria-pressed={tab === "field" && fieldView === "request"}
+            onClick={() => {
+              setFieldView("request");
+              setTab("field");
+            }}
+          >
+            Заявки
+          </button>
+        </nav>
+      )}
       {siteContext && tab !== "home" && (
         <div className="station-context">
           <div>
@@ -1273,6 +1369,29 @@ export default function App() {
               </button>
             </div>
             <div className="toolbar">
+              {" "}
+              <div className="layout-actions">
+                <button
+                  aria-label={
+                    treeCollapsed ? "Показать дерево" : "Свернуть дерево"
+                  }
+                  aria-pressed={!treeCollapsed}
+                  onClick={() => setTreeCollapsed(!treeCollapsed)}
+                >
+                  <PanelLeft size={17} />
+                </button>
+                <button
+                  aria-label={
+                    inspectorCollapsed
+                      ? "Показать свойства"
+                      : "Свернуть свойства"
+                  }
+                  aria-pressed={!inspectorCollapsed}
+                  onClick={() => setInspectorCollapsed(!inspectorCollapsed)}
+                >
+                  <PanelRight size={17} />
+                </button>
+              </div>
               <div className="tool-group">
                 {(["iso", "top", "front", "side"] as const).map((v, i) => (
                   <button
@@ -1591,7 +1710,10 @@ export default function App() {
             ) : tab === "home" ? (
               <OperationsHome
                 enabled={workspace.mode === "server"}
-                orders={workspace.orders}
+                orders={workspace.orders.filter(
+                  (o) =>
+                    o.draft.date === workDate && o.draft.shift === workShift,
+                )}
                 shared={workspace.shared}
                 modelName={s.project.name}
                 onManage={() => goManagement("objects")}
@@ -1614,6 +1736,12 @@ export default function App() {
                 key={`${shiftSignal}:${siteContext?.id ?? "all"}`}
                 orders={workspace.orders}
                 shared={workspace.shared}
+                contextDate={workDate}
+                contextShift={workShift}
+                onContextDate={setWorkDate}
+                onContextShift={(v) =>
+                  setWorkShift(v === "День" ? "День" : "Ночь")
+                }
                 initialSignal={shiftSignal}
                 siteIds={siteContext?.nodeIds}
                 siteTitle={siteContext?.title}
@@ -1625,6 +1753,9 @@ export default function App() {
               />
             ) : tab === "field" ? (
               <FieldOperationsPanel
+                scopeNode={siteContext?.id ?? ""}
+                contextDate={workDate}
+                contextShift={workShift}
                 view={fieldView}
                 onView={setFieldView}
                 user={workspace.user}
@@ -1632,11 +1763,16 @@ export default function App() {
                 orders={workspace.shared}
                 onCompose={(draft) => {
                   setWorkDraft(draft);
-                  openWorkOrder();
+                  openWorkOrder(false);
                 }}
               />
             ) : tab === "management" ? (
               <ConstructionPanel
+                scopeNode={siteContext?.id ?? ""}
+                contextDate={workDate}
+                contextShift={workShift}
+                onContextDate={setWorkDate}
+                onContextShift={setWorkShift}
                 view={managementView}
                 onView={goManagement}
                 user={workspace.user}
@@ -1731,6 +1867,8 @@ export default function App() {
                     try {
                       const order = issueWorkOrder(draft);
                       if (await persistWorkOrder(order)) {
+                        setWorkDate(draft.date);
+                        setWorkShift(draft.shift === "День" ? "День" : "Ночь");
                         setWorkIssueError("");
                         setWorkDraft(initialWorkDraft());
                         setTab("workdays");
@@ -1773,6 +1911,12 @@ export default function App() {
               </div>
             ) : tab === "workdays" ? (
               <DailyWorkOrders
+                contextDate={workDate}
+                contextShift={workShift}
+                onContextDate={setWorkDate}
+                onContextShift={(v) =>
+                  setWorkShift(v === "День" ? "День" : "Ночь")
+                }
                 initialOrderId={orderToOpen}
                 onInitialOpened={() => setOrderToOpen(null)}
                 user={workspace.user}
@@ -1782,7 +1926,7 @@ export default function App() {
                 onAction={workspace.action}
                 onCarry={(draft) => {
                   setWorkDraft(draft);
-                  openWorkOrder();
+                  openWorkOrder(false);
                 }}
                 onEvidence={(order, row) =>
                   setEvidence({
@@ -1808,7 +1952,13 @@ export default function App() {
                 onNew={openWorkOrder}
               />
             ) : tab === "progress" ? (
-              <ProgressPanel orders={workspace.shared} />
+              <ProgressPanel
+                orders={workspace.shared.filter(
+                  (o) =>
+                    !siteContext ||
+                    siteContext.nodeIds.includes(o.order.draft.nodeId ?? ""),
+                )}
+              />
             ) : tab === "workspace" && workspace.user ? (
               <WorkspacePanel
                 user={workspace.user}
@@ -1827,7 +1977,7 @@ export default function App() {
             ) : tab === "source" ? (
               <SourcePanel
                 project={s.project}
-                pdfUrl={pdfUrl}
+                pdfUrl={connectedPdfUrl}
                 page={pdfPage}
                 onPage={setPdfPage}
                 onOpen={() => pdf.current?.click()}
@@ -2017,93 +2167,6 @@ export default function App() {
                   : "Свойства элемента"}
             <Box size={16} />
           </div>
-          {s.selected && !s.calculatorOpen && (
-            <button className="object-work-order" onClick={openWorkOrder}>
-              <ClipboardList size={16} /> Работы по выбранному объекту
-            </button>
-          )}
-          {selectedItem && workspace.user && (
-            <button
-              className="object-work-order"
-              onClick={() =>
-                setEvidence({
-                  model: projectModelKey(s.project),
-                  elementId: selectedItem.id,
-                  label:
-                    selectedItem.kind === "steel"
-                      ? selectedItem.label
-                      : selectedItem.element.name,
-                  brigade: workspace.user?.brigade ?? workDraft.brigade,
-                })
-              }
-            >
-              Фото и замечания объекта
-            </button>
-          )}
-          {s.selected && workspace.user?.role === "admin" && (
-            <div className="construction-object-actions">
-              <button
-                onClick={() => {
-                  goManagement("planning");
-                  setInitialManagementKind("task");
-                }}
-              >
-                Запланировать работу
-              </button>
-              <button
-                onClick={() => {
-                  goManagement("quality");
-                  setInitialManagementKind("issue");
-                }}
-              >
-                Зафиксировать замечание
-              </button>
-              <button
-                onClick={() => {
-                  goManagement("documents");
-                  setInitialManagementKind("document");
-                }}
-              >
-                Добавить документ объекта
-              </button>
-            </div>
-          )}
-          {tab === "model" && s.selected && workspace.user && (
-            <ConstructionObjectContext
-              model={projectModelKey(s.project)}
-              ids={
-                selectedObject
-                  ? selectedObject.members.map((e) => e.id)
-                  : [s.selected]
-              }
-              orders={workspace.shared}
-              onOrders={() => setTab("workdays")}
-              onRecord={(record) => {
-                const views = {
-                  node: "objects",
-                  task: "planning",
-                  crew: "crews",
-                  movement: "materials",
-                  issue: "quality",
-                  document: "documents",
-                } as const;
-                const kind = record.payload.kind;
-                if (
-                  kind === "contractor" ||
-                  kind === "machine" ||
-                  kind === "waybill" ||
-                  kind === "request" ||
-                  kind === "proposal"
-                ) {
-                  setFieldView(kind);
-                  setTab("field");
-                  return;
-                }
-                goManagement(views[kind]);
-                setManagementRecordId(record.id);
-              }}
-            />
-          )}
           {s.calculatorOpen ? (
             <SelectionCalculator />
           ) : selectedObject ? (
@@ -2386,6 +2449,101 @@ export default function App() {
               </div>
             </div>
           )}
+          {!s.calculatorOpen && (
+            <details className="object-secondary">
+              <summary>Работы, документы и действия</summary>{" "}
+              {s.selected && !s.calculatorOpen && (
+                <button
+                  className="object-work-order"
+                  onClick={() => openWorkOrder()}
+                >
+                  <ClipboardList size={16} /> Работы по выбранному объекту
+                </button>
+              )}
+              {selectedItem && workspace.user && (
+                <button
+                  className="object-work-order"
+                  onClick={() =>
+                    setEvidence({
+                      model: projectModelKey(s.project),
+                      elementId: selectedItem.id,
+                      label:
+                        selectedItem.kind === "steel"
+                          ? selectedItem.label
+                          : selectedItem.element.name,
+                      brigade: workspace.user?.brigade ?? workDraft.brigade,
+                    })
+                  }
+                >
+                  Фото и замечания объекта
+                </button>
+              )}
+              {s.selected && workspace.user?.role === "admin" && (
+                <div className="construction-object-actions">
+                  <button
+                    onClick={() => {
+                      goManagement("planning");
+                      setInitialManagementKind("task");
+                    }}
+                  >
+                    Запланировать работу
+                  </button>
+                  <button
+                    onClick={() => {
+                      goManagement("quality");
+                      setInitialManagementKind("issue");
+                    }}
+                  >
+                    Зафиксировать замечание
+                  </button>
+                  <button
+                    onClick={() => {
+                      goManagement("documents");
+                      setInitialManagementKind("document");
+                    }}
+                  >
+                    Добавить документ объекта
+                  </button>
+                </div>
+              )}
+              {tab === "model" && s.selected && workspace.user && (
+                <ConstructionObjectContext
+                  model={projectModelKey(s.project)}
+                  ids={
+                    selectedObject
+                      ? selectedObject.members.map((e) => e.id)
+                      : [s.selected]
+                  }
+                  orders={workspace.shared}
+                  onOrders={() => setTab("workdays")}
+                  onRecord={(record) => {
+                    const views = {
+                      node: "objects",
+                      task: "planning",
+                      crew: "crews",
+                      movement: "materials",
+                      issue: "quality",
+                      document: "documents",
+                    } as const;
+                    const kind = record.payload.kind;
+                    if (
+                      kind === "contractor" ||
+                      kind === "machine" ||
+                      kind === "waybill" ||
+                      kind === "request" ||
+                      kind === "proposal"
+                    ) {
+                      setFieldView(kind);
+                      setTab("field");
+                      return;
+                    }
+                    goManagement(views[kind]);
+                    setManagementRecordId(record.id);
+                  }}
+                />
+              )}
+            </details>
+          )}
         </aside>
       </div>
       {s.workStatusColors && tab === "model" && (
@@ -2423,8 +2581,9 @@ export default function App() {
         managementActive={tab === "management"}
         onManagement={goManagement}
         onModel={() => {
-          setSiteContext(null);
-          setTab("model");
+          if (siteContext?.model)
+            focusConstructionModel(siteContext.model, siteContext.elementIds);
+          else setTab("model");
         }}
         onWorkOrder={() => setTab("workdays")}
         modelActive={tab === "model"}

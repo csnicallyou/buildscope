@@ -1,3 +1,5 @@
+import ConstructionTree from "./ConstructionTree";
+import PdfCanvas from "./PdfCanvas";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowUpRight,
@@ -43,7 +45,7 @@ export const managementLabels: Record<ManagementView, string> = {
   planning: "Планирование",
   crews: "Бригады",
   materials: "Материалы",
-  quality: "Контроль качества",
+  quality: "Замечания",
   documents: "Документы",
 };
 const viewKind: Partial<Record<ManagementView, Kind>> = {
@@ -71,6 +73,11 @@ const f = (n: number) =>
   n.toLocaleString("ru-RU", { maximumFractionDigits: 3 });
 type ModelContext = { model: string; elementIds: string[]; label: string };
 type Props = {
+  scopeNode?: string;
+  contextDate?: string;
+  contextShift?: "День" | "Ночь";
+  onContextDate?: (value: string) => void;
+  onContextShift?: (value: "День" | "Ночь") => void;
   view: ManagementView;
   onView: (view: ManagementView) => void;
   user: WorkspaceUser | null;
@@ -944,9 +951,13 @@ export default function ConstructionPanel(props: Props) {
     onEvidence,
     modelContext,
   } = props;
+  const [previewDocument, setPreviewDocument] = useState<string | null>(null);
+  const [previewPage, setPreviewPage] = useState(1);
+  const [issueFilter, setIssueFilter] = useState("open");
+  const [documentCategory, setDocumentCategory] = useState("");
   const data = useConstruction(enabled),
     { records } = data;
-  const [node, setNode] = useState(""),
+  const [node, setNode] = useState(props.scopeNode ?? ""),
     [query, setQuery] = useState(""),
     [brigade, setBrigade] = useState(""),
     [date, setDate] = useState(today()),
@@ -958,6 +969,28 @@ export default function ConstructionPanel(props: Props) {
       seed?: Payload;
     } | null>(null),
     [error, setError] = useState("");
+  useEffect(() => {
+    setNode(props.scopeNode ?? "");
+  }, [props.scopeNode]);
+  useEffect(() => {
+    if (props.contextDate) setDate(props.contextDate);
+    if (props.contextShift) setShift(props.contextShift);
+  }, [props.contextDate, props.contextShift]);
+  function newSeed(kind: Kind, bindModel = false): Payload {
+    const selectedShift = props.contextShift ?? shift;
+    const value = blankPayload(
+      kind,
+      props.contextDate ?? date,
+      node || null,
+      user?.brigade ?? "Наша бригада",
+      bindModel ? modelContext.model : "",
+      bindModel ? modelContext.elementIds : [],
+    );
+    return value.kind === "task" &&
+      (selectedShift === "День" || selectedShift === "Ночь")
+      ? { ...value, shift: selectedShift }
+      : value;
+  }
   useEffect(() => {
     if (props.initialRecordId) {
       const record = records.find((r) => r.id === props.initialRecordId);
@@ -972,14 +1005,7 @@ export default function ConstructionPanel(props: Props) {
       setEditor({
         record: null,
         kind: props.initialKind,
-        seed: blankPayload(
-          props.initialKind,
-          today(),
-          node || null,
-          user?.brigade ?? "Наша бригада",
-          modelContext.model,
-          modelContext.elementIds,
-        ),
+        seed: newSeed(props.initialKind, true),
       });
       props.onInitialHandled();
     }
@@ -1113,7 +1139,11 @@ export default function ConstructionPanel(props: Props) {
               <button
                 className="primary"
                 onClick={() =>
-                  setEditor({ record: null, kind: viewKind[view]! })
+                  setEditor({
+                    record: null,
+                    kind: viewKind[view]!,
+                    seed: newSeed(viewKind[view]!),
+                  })
                 }
               >
                 <Plus size={16} />
@@ -1180,7 +1210,10 @@ export default function ConstructionPanel(props: Props) {
                     aria-label="Дата рабочей сводки"
                     type="date"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={(e) => {
+                      setDate(e.target.value);
+                      if (e.target.value) props.onContextDate?.(e.target.value);
+                    }}
                   />
                 </div>
                 <div className="cm-quick-actions">
@@ -1351,34 +1384,15 @@ export default function ConstructionPanel(props: Props) {
                 Создать структуру по доступным моделям КЖ
               </button>
             )}
-            {ofKind(scoped, "node")
-              .filter((r) => !node || inNode(records, r.id, node))
-              .map((r) => (
-                <article
-                  key={r.id}
-                  className="cm-object-row"
-                  style={{
-                    paddingLeft:
-                      20 + nodePath(records, r.id).split(" / ").length * 12,
-                  }}
-                >
-                  <div>
-                    <small>{levelLabels[r.payload.level]}</small>
-                    <h3>{r.payload.title}</h3>
-                    <p>{r.payload.description}</p>
-                    <small>{nodePath(records, r.id)}</small>
-                  </div>
-                  <div className="cm-row-actions">
-                    <button onClick={() => setNode(r.id)}>
-                      Открыть участок
-                    </button>
-                    {binding(r)}
-                    <button onClick={() => edit(r)}>
-                      {admin ? "Изменить объект" : "Свойства"}
-                    </button>
-                  </div>
-                </article>
-              ))}
+            <ConstructionTree
+              records={records}
+              scope={node}
+              query={query}
+              onOpen={setNode}
+              onEdit={edit}
+              onModel={onModel}
+              admin={admin}
+            />
           </>
         )}
         {view === "planning" && (
@@ -1389,13 +1403,21 @@ export default function ConstructionPanel(props: Props) {
                   aria-label="Дата плана"
                   type="date"
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  onChange={(e) => {
+                    setDate(e.target.value);
+                    if (e.target.value) props.onContextDate?.(e.target.value);
+                  }}
                 />
               </Field>
               <Field label="Смена плана">
                 <select
                   value={shift}
-                  onChange={(e) => setShift(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setShift(value);
+                    if (value === "День" || value === "Ночь")
+                      props.onContextShift?.(value);
+                  }}
                 >
                   <option value="">Обе смены</option>
                   <option>День</option>
@@ -1472,7 +1494,7 @@ export default function ConstructionPanel(props: Props) {
               расходам. Это складской учёт; потребность модели и факт наряда
               учитываются отдельно.
             </p>
-            <div className="cm-table-wrap">
+            <div className="cm-table-wrap material-balance">
               <table>
                 <thead>
                   <tr>
@@ -1486,15 +1508,15 @@ export default function ConstructionPanel(props: Props) {
                 <tbody>
                   {inventory(scoped).map((r, i) => (
                     <tr key={i}>
-                      <td>{r.title}</td>
-                      <td>{nodePath(records, r.nodeId)}</td>
-                      <td>
+                      <td data-label="Материал">{r.title}</td>
+                      <td data-label="Объект">{nodePath(records, r.nodeId)}</td>
+                      <td data-label="Приход / начальный">
                         {f(r.incoming)} {r.unit}
                       </td>
-                      <td>
+                      <td data-label="Расход">
                         {f(r.consumed)} {r.unit}
                       </td>
-                      <td>
+                      <td data-label="Остаток">
                         <strong>
                           {f(r.balance)} {r.unit}
                         </strong>
@@ -1527,36 +1549,95 @@ export default function ConstructionPanel(props: Props) {
               ))}
           </>
         )}
-        {view === "quality" &&
-          ofKind(scoped, "issue").map((r) => (
-            <article
-              className={`cm-task ${r.payload.severity === "critical" && r.payload.status !== "closed" ? "status-blocked" : ""}`}
-              key={r.id}
+        {view === "quality" && (
+          <label className="section-filter">
+            Показать замечания
+            <select
+              aria-label="Фильтр замечаний"
+              value={issueFilter}
+              onChange={(e) => setIssueFilter(e.target.value)}
             >
-              <div>
-                <span className="cm-tag">
-                  {r.payload.status === "open"
-                    ? "Открыто"
-                    : r.payload.status === "corrected"
-                      ? "Ожидает проверки"
-                      : "Закрыто"}
-                </span>
-                <h3>{r.payload.title}</h3>
-                <p>{r.payload.description}</p>
-                <small>
-                  {nodePath(records, r.payload.nodeId)} · {r.payload.owner} · до{" "}
-                  {r.payload.due}
-                </small>
-                {r.payload.evidence && <p>Устранение: {r.payload.evidence}</p>}
-              </div>
-              <div className="cm-row-actions">
-                {binding(r)}
-                <button onClick={() => edit(r)}>Открыть замечание</button>
-              </div>
-            </article>
-          ))}
+              <option value="open">Незакрытые</option>
+              <option value="overdue">Просроченные</option>
+              <option value="critical">Критические</option>
+              <option value="all">Все</option>
+            </select>
+          </label>
+        )}
+        {view === "quality" &&
+          ofKind(scoped, "issue")
+            .filter(
+              ({ payload: p }) =>
+                issueFilter === "all" ||
+                (p.status !== "closed" &&
+                  (issueFilter === "open" ||
+                    (issueFilter === "overdue" && !!p.due && p.due < today()) ||
+                    (issueFilter === "critical" && p.severity === "critical"))),
+            )
+            .map((r) => (
+              <article
+                className={`cm-task ${r.payload.severity === "critical" && r.payload.status !== "closed" ? "status-blocked" : ""}`}
+                key={r.id}
+              >
+                <div>
+                  <span className="cm-tag">
+                    {r.payload.status === "open"
+                      ? "Открыто"
+                      : r.payload.status === "corrected"
+                        ? "Ожидает проверки"
+                        : "Закрыто"}
+                  </span>
+                  <h3>{r.payload.title}</h3>
+                  <p>{r.payload.description}</p>
+                  <small>
+                    {nodePath(records, r.payload.nodeId)} · {r.payload.owner} ·
+                    до {r.payload.due}
+                  </small>
+                  {r.payload.evidence && (
+                    <p>Устранение: {r.payload.evidence}</p>
+                  )}
+                </div>
+                <div className="cm-row-actions">
+                  {binding(r)}
+                  <button onClick={() => edit(r)}>Открыть замечание</button>
+                </div>
+              </article>
+            ))}
+        {view === "documents" && (
+          <label className="section-filter">
+            Категория документов
+            <select
+              aria-label="Категория документов"
+              value={documentCategory}
+              onChange={(e) => setDocumentCategory(e.target.value)}
+            >
+              <option value="">Все категории</option>
+              {Array.from(
+                new Set(
+                  ofKind(scoped, "document").map((r) => r.payload.category),
+                ),
+              ).map((category) => (
+                <option key={category} value={category}>
+                  {(
+                    {
+                      drawing: "Чертежи",
+                      report: "Отчёты",
+                      photo: "Фото",
+                      video: "Видео",
+                      other: "Другие документы",
+                    } as Record<string, string>
+                  )[category] ?? category}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {view === "documents" &&
           ofKind(scoped, "document")
+            .filter(
+              (r) =>
+                !documentCategory || r.payload.category === documentCategory,
+            )
             .slice()
             .reverse()
             .map((r) => (
@@ -1584,6 +1665,42 @@ export default function ConstructionPanel(props: Props) {
                       style={{ width: "100%", maxWidth: 600 }}
                       src={`/api/construction-files/${r.file.id}`}
                     />
+                  )}
+                  {r.file && /\.pdf$/i.test(r.file.name) && (
+                    <div className="document-inline-preview">
+                      <button
+                        onClick={() => {
+                          setPreviewDocument(
+                            previewDocument === r.id ? null : r.id,
+                          );
+                          setPreviewPage(1);
+                        }}
+                      >
+                        {previewDocument === r.id
+                          ? "Закрыть просмотр"
+                          : "Просмотреть документ"}
+                      </button>
+                      {previewDocument === r.id && (
+                        <>
+                          <label>
+                            Страница
+                            <input
+                              aria-label="Страница документа"
+                              type="number"
+                              min={1}
+                              value={previewPage}
+                              onChange={(e) =>
+                                setPreviewPage(Math.max(1, +e.target.value))
+                              }
+                            />
+                          </label>
+                          <PdfCanvas
+                            url={"/api/construction-files/" + r.file.id}
+                            page={previewPage}
+                          />
+                        </>
+                      )}
+                    </div>
                   )}
                   {r.file ? (
                     <p>
@@ -1639,7 +1756,16 @@ export default function ConstructionPanel(props: Props) {
           user={user}
           node={node}
           modelContext={modelContext}
-          onSave={data.save}
+          onSave={async (payload, record) => {
+            const result = await data.save(payload, record);
+            if (payload.kind === "task") {
+              setDate(payload.start);
+              setShift(payload.shift);
+              props.onContextDate?.(payload.start);
+              props.onContextShift?.(payload.shift);
+            }
+            return result;
+          }}
           seed={editor.seed}
           onClose={() => {
             setEditor(null);

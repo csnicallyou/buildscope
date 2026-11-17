@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { test, expect } from "@playwright/test";
 import { jsPDF } from "jspdf";
-import { openSection } from "../e2e/navigation-helpers";
+import { openSection, openDisclosure } from "../e2e/navigation-helpers";
 test("Координатор: техника, путевой лист, заявка, предложение, наряд, проверка и видео", async ({
   page,
   browser,
@@ -30,15 +30,13 @@ test("Координатор: техника, путевой лист, заяв�
   };
   await openSection(page, "Подрядчики");
   await add();
-  await page
-    .getByLabel("Название рабочей записи", { exact: true })
-    .fill("ООО Тест-014");
+  await page.getByLabel("Подрядчик", { exact: true }).fill("ООО Тест-014");
   await page.getByLabel("Контактное лицо").fill("Тестовый представитель");
   await save();
   await openSection(page, "Техника");
   await add();
   await page
-    .getByLabel("Название рабочей записи", { exact: true })
+    .getByLabel("Название техники", { exact: true })
     .fill("Тестовый экскаватор");
   await page.getByLabel("Государственный / инвентарный номер").fill("ТЕСТ-014");
   await page.getByLabel("Собственник техники").fill("Тестовый собственник");
@@ -49,8 +47,8 @@ test("Координатор: техника, путевой лист, заяв�
   await page
     .getByLabel("Техника путевого листа")
     .selectOption({ label: "Тестовый экскаватор · ТЕСТ-014" });
-  await page.getByLabel("Смена рабочей записи").selectOption("Ночь");
-  const date = await page.getByLabel("Дата рабочей записи").inputValue();
+  await page.getByLabel("Смена", { exact: true }).selectOption("Ночь");
+  const date = await page.getByLabel("Дата", { exact: true }).inputValue();
   const tomorrow = new Date(date + "T12:00:00Z");
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
   await page.getByLabel("Начало работы техники").fill(date + "T20:00");
@@ -79,7 +77,7 @@ test("Координатор: техника, путевой лист, заяв�
     .filter({ hasText: "ПЛ-014" })
     .getByRole("button", { name: "Открыть карточку" })
     .click();
-  await page.getByLabel("Состояние рабочей записи").selectOption("checked");
+  await page.getByLabel("Состояние").selectOption("checked");
   await save();
   await expect(
     page.locator(".field-card").filter({ hasText: "ПЛ-014" }),
@@ -88,9 +86,9 @@ test("Координатор: техника, путевой лист, заяв�
   await openSection(page, "Заявки");
   await add();
   await page
-    .getByLabel("Название рабочей записи", { exact: true })
+    .getByLabel("Что требуется", { exact: true })
     .fill("Тестовая заявка на щебень");
-  await page.getByLabel("Количество рабочей записи").fill("3");
+  await page.getByLabel("Количество", { exact: true }).fill("3");
   await page.getByLabel("Источник сведений").fill("Сообщение подрядчика");
   await save();
   for (const status of ["approved", "ordered", "received"]) {
@@ -99,24 +97,24 @@ test("Координатор: техника, путевой лист, заяв�
       .filter({ hasText: "Тестовая заявка" })
       .getByRole("button", { name: "Открыть карточку" })
       .click();
-    await page.getByLabel("Состояние рабочей записи").selectOption(status);
+    await page.getByLabel("Состояние").selectOption(status);
     await save();
   }
   await openSection(page, "Предложения работ");
   await add();
   await page
-    .getByLabel("Название рабочей записи", { exact: true })
+    .getByLabel("Предлагаемая работа", { exact: true })
     .fill("Тестовое бетонирование 014");
   await page
     .getByLabel("Подрядчик предложения")
     .selectOption({ label: "ООО Тест-014" });
   await page
-    .getByLabel("Участок рабочей записи")
+    .getByLabel("Объект и участок")
     .selectOption({ label: "Маленковская" });
-  await page.getByLabel("Смена рабочей записи").selectOption("Ночь");
-  await page.getByLabel("Количество рабочей записи").fill("3");
+  await page.getByLabel("Смена", { exact: true }).selectOption("Ночь");
+  await page.getByLabel("Количество", { exact: true }).fill("3");
   await page.getByLabel("Источник сведений").fill("Предложение из переписки");
-  await page.getByLabel("Состояние рабочей записи").selectOption("approved");
+  await page.getByLabel("Состояние").selectOption("approved");
   await save();
   await page
     .locator(".field-card")
@@ -124,7 +122,7 @@ test("Координатор: техника, путевой лист, заяв�
     .getByRole("button", { name: "Составить наряд" })
     .click();
   await expect(page.getByLabel("План работы 1")).toHaveValue("3");
-  await page.locator(".work-crew summary").click();
+  await openDisclosure(page.locator(".work-crew summary"));
   await page
     .getByRole("button", { name: "Добавить сотрудника", exact: true })
     .click();
@@ -135,13 +133,19 @@ test("Координатор: техника, путевой лист, заяв�
     .filter({ hasText: "ООО Тест-014" })
     .click();
   await page.getByLabel("Факт работы 1", { exact: true }).fill("2");
+  await page
+    .getByRole("button", { name: "Люди и подписи", exact: true })
+    .click();
   await page.getByLabel("Заявлено людей на смену").fill("2");
   await page
     .getByRole("button", { name: "Сохранить выполнение", exact: true })
     .click();
-  await page
-    .getByText("План, заявленный и проверенный объём", { exact: true })
-    .click();
+  await page.getByRole("button", { name: "Проверка", exact: true }).click();
+  await openDisclosure(
+    page
+      .locator(".order-review > details > summary")
+      .filter({ hasText: "План, заявленный и проверенный объём" }),
+  );
   await page.getByLabel("Проверенный объём 1").fill("1.5");
   await page
     .getByLabel("Основание проверки 1")
@@ -170,17 +174,24 @@ test("Координатор: техника, путевой лист, заяв�
       exact: true,
     })
     .click();
+  await page.getByRole("button", { name: "Работы", exact: true }).click();
   await page.getByLabel("Факт работы 2", { exact: true }).fill("0");
   await page
     .getByRole("button", { name: "Сохранить выполнение", exact: true })
     .click();
+  await page
+    .getByRole("button", { name: "Люди и подписи", exact: true })
+    .click();
   await expect(
     page.getByText(/Заявленное количество отличается/),
   ).toBeVisible();
-  await page.locator(".handoff-crew summary").click();
+  await page
+    .getByRole("button", { name: "Люди и подписи", exact: true })
+    .click();
+  await openDisclosure(page.locator(".handoff-crew summary"));
   await page.getByLabel("Начало смены 1").fill("20:00");
   await page.getByLabel("Конец смены 1").fill("08:00");
-  await page.locator(".shift-signatures summary").click();
+  await openDisclosure(page.locator(".shift-signatures summary"));
   await page
     .getByRole("button", { name: "Фото подписей: выход", exact: true })
     .click();
@@ -219,7 +230,8 @@ test("Координатор: техника, путевой лист, заяв�
     page.getByLabel("Подпись при выходе 1", { exact: true }),
   ).not.toBeChecked();
   await page.screenshot({ path: ".deploy/screenshots/operations-review.png" });
-  await page.locator(".order-media summary").click();
+  await page.getByRole("button", { name: "Вложения", exact: true }).click();
+  await openDisclosure(page.locator(".order-media summary"));
   const video = await readFile(
     new URL("./fixtures/synthetic-report.webm", import.meta.url),
   );

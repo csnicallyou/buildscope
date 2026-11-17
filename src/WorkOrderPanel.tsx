@@ -182,6 +182,24 @@ export default function WorkOrderPanel({
           )}
         </button>
       </div>
+      <nav className="order-steps" aria-label="Этапы наряда">
+        {[
+          ["shift", "1. Смена"],
+          ["work", "2. Работы"],
+          ["crew", "3. Люди и техника"],
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => {
+              const el = document.getElementById("order-step-" + id);
+              if (el instanceof HTMLDetailsElement) el.open = true;
+              el?.scrollIntoView({ block: "start", behavior: "smooth" });
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
       {archiveError && <p role="alert">{archiveError}</p>}
       {shared && (
         <details className="work-order-shift">
@@ -252,23 +270,9 @@ export default function WorkOrderPanel({
           {management.error && <p role="alert">{management.error}</p>}
         </details>
       )}
-      <button
-        className="issue-work-order primary"
-        disabled={busy || !draft.rows.length || errors.length > 0}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            await onIssue(draft);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        Выдать наряд
-      </button>
-      <details className="work-order-shift">
+      <details open className="work-order-shift" id="order-step-shift">
         <summary>
-          Параметры смены{" "}
+          1. Параметры смены{" "}
           <span>
             {draft.date} · {draft.shift} · {draft.site}
           </span>
@@ -380,7 +384,7 @@ export default function WorkOrderPanel({
         </fieldset>
       </details>
       <ManualWorkComposer draft={draft} onDraft={onDraft} />
-      <div className="work-order-add">
+      <div className="work-order-add" id="order-step-work">
         <label>
           Объект или часть
           <select
@@ -557,6 +561,35 @@ export default function WorkOrderPanel({
             </small>
             <details>
               <summary>Параметры строки, техника и примечание</summary>
+              {shared && (
+                <label>
+                  Техника из справочника
+                  <select
+                    aria-label={`Техника для работы ${index + 1}`}
+                    value=""
+                    onChange={(e) => {
+                      const machine = ofKind(
+                        management.records,
+                        "machine",
+                      ).find((m) => m.id === e.target.value);
+                      if (machine)
+                        updateRow(r.id, {
+                          equipment: machine.payload.title,
+                          plate: machine.payload.plate,
+                        });
+                    }}
+                  >
+                    <option value="">Выбрать технику</option>
+                    {ofKind(management.records, "machine")
+                      .filter((m) => m.payload.active)
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.payload.title} · {m.payload.plate}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              )}
               <div className="work-row-detail">
                 {(
                   [
@@ -600,7 +633,7 @@ export default function WorkOrderPanel({
           </article>
         ))}
       </div>
-      <details className="work-crew">
+      <details open className="work-crew" id="order-step-crew">
         <summary>Табель ({draft.crew.length})</summary>
         <p>
           Добавьте сотрудников бригады. Фактическое время и часы заполняются при
@@ -631,6 +664,62 @@ export default function WorkOrderPanel({
           <Plus size={16} />
           Добавить сотрудника
         </button>
+        {shared && (
+          <label>
+            Состав из справочника
+            <select
+              aria-label="Добавить состав бригады"
+              value=""
+              onChange={(e) => {
+                const crew = ofKind(management.records, "crew").find(
+                  (c) => c.id === e.target.value,
+                );
+                if (!crew) return;
+                onDraft((d) => ({
+                  ...d,
+                  brigade: crew.payload.title,
+                  crew: [
+                    ...d.crew,
+                    ...crew.payload.members
+                      .filter(
+                        (m) =>
+                          !d.crew.some(
+                            (p) =>
+                              p.name.trim().toLocaleLowerCase("ru") ===
+                              m.name.trim().toLocaleLowerCase("ru"),
+                          ),
+                      )
+                      .map((m) => ({
+                        id: crypto.randomUUID(),
+                        date: d.date,
+                        site: d.site,
+                        contractor: d.contractor,
+                        shift: d.shift,
+                        name: m.name,
+                        start: "",
+                        end: "",
+                        breakMinutes: 0,
+                        note: m.role,
+                      })),
+                  ],
+                }));
+              }}
+            >
+              <option value="">Выберите бригаду для добавления людей</option>
+              {ofKind(management.records, "crew")
+                .filter((c) => c.payload.active)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.payload.title} · {c.payload.members.length} сотрудников
+                  </option>
+                ))}
+            </select>
+            <small>
+              Добавляются только имена. Время выхода, окончания и подписи
+              заполняются по фактическому отчёту.
+            </small>
+          </label>
+        )}
         {draft.crew.map((r, i) => (
           <div className="work-crew-row" key={r.id}>
             <label>
@@ -659,6 +748,30 @@ export default function WorkOrderPanel({
       {errors.length > 0 && draft.rows.length > 0 && (
         <p className="work-order-errors">{errors.join(" · ")}</p>
       )}
+      <div className="work-order-submit">
+        {" "}
+        <button
+          className="issue-work-order primary"
+          disabled={busy || !draft.rows.length || errors.length > 0}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              await onIssue(draft);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          Выдать наряд
+        </button>
+        {(!draft.rows.length || errors.length > 0) && (
+          <small>
+            {!draft.rows.length
+              ? "Добавьте хотя бы одну работу, затем проверьте параметры и состав смены."
+              : errors[0]}
+          </small>
+        )}
+      </div>
       <p className="work-order-footnote">
         Excel: «ОБЪЕМ», «ТАБЕЛЬ», «ИТОГИ». В итогах работы разделены по
         наименованию и единице. Неизвестное количество не заменяется нулём.

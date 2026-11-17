@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import QuantityBadges from "./QuantityBadges";
 import PdfCanvas from "./PdfCanvas";
 import type { Project, Element } from "./model";
@@ -10,6 +11,8 @@ export function ReinforcementPanel({
   project: Project;
   selected?: Element;
 }) {
+  const [mark, setMark] = useState("");
+  useEffect(() => setMark(""), [project.name]);
   const candidates = selected?.evidence?.reinforcement
     ? [selected]
     : project.elements.filter((e) => e.evidence?.reinforcement);
@@ -17,6 +20,21 @@ export function ReinforcementPanel({
   return (
     <section className="schedule">
       <h1>Армирование</h1>
+      <label>
+        Конструкция
+        <select
+          aria-label="Марка армирования"
+          value={mark}
+          onChange={(e) => setMark(e.target.value)}
+        >
+          <option value="">Все марки</option>
+          {types.map((e) => (
+            <option key={e.mark} value={e.mark}>
+              {e.mark} · {e.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <QuantityBadges statuses={["source"]} />
       <p>
         Позиции переписаны из спецификаций. Количества, длины и массы сохранены
@@ -26,47 +44,49 @@ export function ReinforcementPanel({
       {types.length === 0 ? (
         <p>Для выбранного проекта спецификация армирования отсутствует.</p>
       ) : (
-        types.map((e) => {
-          const count = selected
-            ? 1
-            : project.elements.filter((x) => x.mark === e.mark).length;
-          return (
-            <div key={e.mark}>
-              <h2>
-                {e.mark}{" "}
-                <small>× {count} · значения ниже на один элемент</small>
-              </h2>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Поз.</th>
-                    <th>Сталь / Ø мм</th>
-                    <th>Кол., шт.</th>
-                    <th>L, м</th>
-                    <th>ΣL, м</th>
-                    <th>Масса, кг</th>
-                    <th>PDF</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {e.evidence!.reinforcement!.map((r, i) => (
-                    <tr key={i}>
-                      <td>{r.position}</td>
-                      <td>
-                        {r.grade} / {r.diameter}
-                      </td>
-                      <td>{f(r.count)}</td>
-                      <td>{f(r.length)}</td>
-                      <td>{f(r.totalLength)}</td>
-                      <td>{f(r.totalMass)}</td>
-                      <td>{r.page}</td>
+        types
+          .filter((e) => !mark || e.mark === mark)
+          .map((e) => {
+            const count = selected
+              ? 1
+              : project.elements.filter((x) => x.mark === e.mark).length;
+            return (
+              <div key={e.mark}>
+                <h2>
+                  {e.mark}{" "}
+                  <small>× {count} · значения ниже на один элемент</small>
+                </h2>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Поз.</th>
+                      <th>Сталь / Ø мм</th>
+                      <th>Кол., шт.</th>
+                      <th>L, м</th>
+                      <th>ΣL, м</th>
+                      <th>Масса, кг</th>
+                      <th>PDF</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          );
-        })
+                  </thead>
+                  <tbody>
+                    {e.evidence!.reinforcement!.map((r, i) => (
+                      <tr key={i}>
+                        <td>{r.position}</td>
+                        <td>
+                          {r.grade} / {r.diameter}
+                        </td>
+                        <td>{f(r.count)}</td>
+                        <td>{f(r.length)}</td>
+                        <td>{f(r.totalLength)}</td>
+                        <td>{f(r.totalMass)}</td>
+                        <td>{r.page}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })
       )}
       {project.document?.additionalReinforcement && (
         <>
@@ -156,9 +176,9 @@ export function SourcePanel({
       ) : (
         <div className="pdf-empty">
           <p>
-            PDF остаётся на вашем компьютере. Выберите исходный файл для
-            просмотра листов рядом с моделью. Он не отправляется в сеть и не
-            включён в репозиторий.
+            Выберите исходный файл, если он ещё не сохранён в документах. Он
+            используется для просмотра листов рядом с моделью. Он не
+            отправляется в сеть и не включён в репозиторий.
           </p>
           <button onClick={onOpen}>Выбрать PDF</button>
         </div>

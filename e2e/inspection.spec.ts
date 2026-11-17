@@ -1,7 +1,7 @@
 import { openSection } from "./navigation-helpers";
 import { test, expect } from "@playwright/test";
 import { jsPDF } from "jspdf";
-import { openTree, modelView } from "./mobile-helpers";
+import { openTree, modelView, showTools } from "./mobile-helpers";
 for (const mobile of [false, true])
   test(`Инструменты проверки и чертежа${mobile ? " телефон" : ""}`, async ({
     page,
@@ -10,6 +10,7 @@ for (const mobile of [false, true])
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto("/?assembly=canopy");
+    await showTools(page);
     await page.getByRole("button", { name: "Фильтры", exact: true }).click();
     await page.getByLabel("Фильтр по материалу").selectOption("Щебень");
     await expect(page.locator(".model-footer")).toContainText("17 / 234");

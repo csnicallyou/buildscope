@@ -8,6 +8,14 @@ export default defineConfig({
       "/auth": "http://127.0.0.1:8780",
       "/login": "http://127.0.0.1:8780",
     },
-    watch: { ignored: ["**/output/**", "**/drawings/**", "**/.sites/**"] },
+    watch: {
+      ignored: [
+        "**/output/**",
+        "**/drawings/**",
+        "**/.sites/**",
+        "**/.deploy/**",
+        "**/test-results/**",
+      ],
+    },
   },
 });

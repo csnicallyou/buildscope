@@ -165,7 +165,7 @@ export default function InstallationPlayer({
             </select>
           </label>
         </div>
-        <details className="installation-description">
+        <details open className="installation-description">
           <summary>Пояснение этапа и инструменты</summary>
           <p
             className="installation-explanation"

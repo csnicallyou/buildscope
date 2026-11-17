@@ -64,7 +64,6 @@ export default function OrderWorkflow({
           : entry.stage === "submitted"
             ? "Сдан, ожидает проверки"
             : "Выдан"}{" "}
-        · версия {entry.revision} · {entry.updatedBy}
       </p>
       {error && <p role="alert">{error}</p>}
       {user.role === "admin" && (

@@ -1,3 +1,4 @@
+import { openSection } from "./navigation-helpers";
 import { openTree, openCalculator, enableMultiple } from "./mobile-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
@@ -113,9 +114,7 @@ for (const mobile of [false, true])
       expect(
         await page.evaluate(() => document.documentElement.scrollWidth),
       ).toBeLessThanOrEqual(390);
-    await page
-      .getByRole("button", { name: "Кассовый павильон", exact: true })
-      .click();
+    await openSection(page, "Кассовый павильон");
     await expect(calculator).toHaveCount(0);
     await openCalculator(page);
     await expect(calculator).toContainText("В расчёте: 0");

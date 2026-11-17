@@ -25,9 +25,7 @@ test("Каталог деталей: выбор, крупный вид, длин
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(390);
-  await page
-    .getByRole("button", { name: "Навес «сухие ноги»", exact: true })
-    .click();
+  await openSection(page, "Навес «сухие ноги»");
   await page.getByLabel("Сменить тему").click();
   await expect(page.locator("canvas")).toBeVisible();
   await page.screenshot({
@@ -109,9 +107,7 @@ test("Навес: Фм2 с вырезом, лестница, источники 
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/?assembly=pavilion");
-  await page
-    .getByRole("button", { name: "Навес «сухие ноги»", exact: true })
-    .click();
+  await openSection(page, "Навес «сухие ноги»");
   await page.getByLabel("Поиск конструкций").fill("Фм2");
   await page
     .getByRole("button", { name: "Фм2 Фм2 · оси 2–3/А–Б", exact: true })
@@ -129,11 +125,10 @@ test("Навес: Фм2 с вырезом, лестница, источники 
     .click();
   await expect(page.getByTestId("element-volume")).toHaveText("Не определён");
   await expect(page.locator(".inspector")).toContainText("5,45");
+  await page.getByRole("button", { name: "Все разделы", exact: true }).click();
   await page.getByLabel("Вариант отметок").selectOption("sections");
   await expect(page.locator(".project-name")).toContainText("по разрезам");
-  await page
-    .getByRole("button", { name: "Источники и расхождения", exact: true })
-    .click();
+  await openSection(page, "Источник");
   await expect(page.locator(".source-review")).toContainText("−0,050");
   await expect(page.locator(".source-review")).toContainText("−0,100");
   await expect(page.locator(".review-content tbody tr")).toHaveCount(25);
@@ -143,9 +138,7 @@ test("Навес: экспорт GLB, обратная загрузка v2 и в
   page,
 }) => {
   await page.goto("/?assembly=pavilion");
-  await page
-    .getByRole("button", { name: "Навес «сухие ноги»", exact: true })
-    .click();
+  await openSection(page, "Навес «сухие ноги»");
   await openSection(page, "Ведомость материалов");
   await expect(page.locator(".schedule")).toContainText("54,2");
   await expect(page.locator(".schedule")).toContainText("7 183,8");

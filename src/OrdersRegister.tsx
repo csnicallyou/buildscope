@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import type { SavedWorkOrder } from "./workOrderArchive";
 import type { SharedOrder } from "./workspaceTypes";
@@ -6,11 +6,19 @@ import { orderSignals, shiftCaption } from "./operations";
 
 export default function OrdersRegister({
   orders,
+  contextDate,
+  contextShift,
+  onContextDate,
+  onContextShift,
   shared,
   selected,
   onSelect,
 }: {
   orders: SavedWorkOrder[];
+  contextDate?: string;
+  contextShift?: string;
+  onContextDate?: (v: string) => void;
+  onContextShift?: (v: string) => void;
   shared: SharedOrder[];
   selected?: string;
   onSelect: (order: SavedWorkOrder) => void;
@@ -18,7 +26,13 @@ export default function OrdersRegister({
   const [query, setQuery] = useState("");
   const [shift, setShift] = useState("");
   const [state, setState] = useState("");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(contextDate ?? "");
+  useEffect(() => {
+    if (contextDate) setDate(contextDate);
+  }, [contextDate]);
+  useEffect(() => {
+    if (contextShift) setShift(contextShift);
+  }, [contextShift]);
   const filtered = orders
     .filter((o) => {
       const s = orderSignals(o, shared);
@@ -59,7 +73,10 @@ export default function OrdersRegister({
             aria-label="Дата наряда"
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              setDate(e.target.value);
+              if (e.target.value) onContextDate?.(e.target.value);
+            }}
           />
         </label>
         <label>
@@ -67,7 +84,10 @@ export default function OrdersRegister({
           <select
             aria-label="Фильтр смены наряда"
             value={shift}
-            onChange={(e) => setShift(e.target.value)}
+            onChange={(e) => {
+              setShift(e.target.value);
+              if (e.target.value) onContextShift?.(e.target.value);
+            }}
           >
             <option value="">Все смены</option>
             <option>День</option>

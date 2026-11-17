@@ -151,8 +151,8 @@ export default function OperationsHome({
         </button>
       </div>
       <p className="operations-scope-note">
-        По всем сохранённым нарядам. Выберите дату и смену в разделе «Контроль
-        смены».
+        По выбранной рабочей дате и смене. Проверить сведения можно в разделе
+        «Контроль смены».
       </p>
       {error && <p role="alert">{error}</p>}
       <div className="portfolio-layout">

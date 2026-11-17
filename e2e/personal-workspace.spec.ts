@@ -63,6 +63,7 @@ for (const mobile of [false, true])
     await expect(
       page.getByRole("heading", { name: "Объекты строительства", exact: true }),
     ).toBeVisible();
+    await page.getByLabel("Рабочая дата", { exact: true }).fill("2026-11-16");
     await expect(page.locator(".portfolio-local-model")).toContainText(
       "Инженерная модель",
     );

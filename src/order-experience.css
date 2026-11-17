@@ -1,0 +1,420 @@
+.app [hidden] {
+  display: none !important;
+}
+.app .installation-player {
+  inset: 8px;
+  z-index: 200;
+}
+.app .installation-controls {
+  box-sizing: border-box;
+  max-height: 30dvh;
+  padding: 12px 16px;
+}
+.app .installation-description {
+  font-size: 14px;
+}
+.app .installation-description summary {
+  color: #d0dce2;
+}
+.app .installation-scene-note {
+  font-size: 12px;
+}
+.app .handoff-heading {
+  margin: 4px 0;
+  padding: 12px;
+}
+.app .handoff-heading p {
+  margin: 4px 0;
+}
+.app .order-detail > .order-detail-tabs {
+  margin: 4px 0 8px;
+}
+.app .construction-tree-node > .cm-object-row {
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.app .construction-tree-node h3 {
+  margin: 0;
+}
+.app .construction-tree-node h3 button {
+  font-weight: 600;
+  font-size: 16px;
+  text-align: left;
+}
+.app .construction-tree-node .cm-row-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.app .construction-tree-node .tree-expand {
+  width: 32px;
+  min-width: 32px;
+  min-height: 36px;
+  padding: 0;
+}
+.app .construction-tree-children {
+  margin-left: 18px;
+  padding-left: 15px;
+  border-left: 1px solid var(--border);
+}
+.app .document-inline-preview {
+  margin: 12px 0;
+}
+.app .document-inline-preview canvas {
+  max-width: 100%;
+  height: auto;
+}
+.app .document-inline-preview input {
+  max-width: 90px;
+  margin: 8px;
+}
+.app .document-inline-preview > button {
+  background: var(--accent-bg);
+  color: var(--accent);
+  min-height: 42px;
+}
+.app .field-editor fieldset > legend {
+  font-size: 13px;
+  color: var(--muted);
+}
+.app .order-steps {
+  display: flex;
+  gap: 6px;
+  position: sticky;
+  top: 0;
+  background: var(--panel);
+  z-index: 8;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+.app .order-steps button {
+  padding: 8px 12px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 13px;
+  min-height: 40px;
+}
+.app .work-order-submit {
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  background: var(--panel);
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.app .work-order-submit .issue-work-order {
+  margin: 0;
+  min-height: 46px;
+}
+.app .work-order-submit small {
+  font-size: 12px;
+  max-width: 50ch;
+}
+.app .order-detail-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  padding: 8px 0;
+  margin-bottom: 12px;
+}
+.app .order-detail-tabs button {
+  flex: 1;
+  min-height: 42px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.app .order-detail-tabs button[aria-pressed="true"] {
+  background: var(--accent-bg);
+  color: var(--accent);
+  box-shadow: inset 0 -2px var(--accent);
+}
+.app .review-side-tabs {
+  display: none;
+}
+.app .order-evidence-pane {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  min-width: 0;
+}
+.app .order-evidence-pane header h3 {
+  margin: 0 0 6px;
+}
+.app .order-evidence-pane header small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.app .order-evidence-pane select {
+  width: 100%;
+  margin: 14px 0;
+}
+.app .order-evidence-stage {
+  height: 55dvh;
+  min-height: 240px;
+  overflow: auto;
+  background: #243447;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+}
+.app .order-evidence-stage img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center;
+}
+.app .order-evidence-stage video {
+  max-width: 100%;
+  max-height: 100%;
+}
+.app .order-evidence-stage canvas {
+  max-width: 100%;
+}
+.app .evidence-inline-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.app .evidence-inline-controls button {
+  min-height: 36px;
+}
+.app .evidence-inline-controls input {
+  max-width: 70px;
+}
+.app .order-detail.detail-review {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(320px, 1.1fr);
+  gap: 12px;
+  align-content: start;
+}
+.app .detail-review > .handoff-heading,
+.app .detail-review > .order-detail-tabs,
+.app .detail-review > button {
+  grid-column: 1/-1;
+}
+.app .detail-review > .order-evidence-pane {
+  grid-column: 1;
+  position: sticky;
+  top: 60px;
+  align-self: start;
+}
+.app .detail-review > .order-detail-fields {
+  grid-column: 2;
+  grid-row: auto;
+  min-width: 0;
+}
+.app .daily-work-orders:has(.detail-review) .orders-work-area {
+  grid-template-columns: minmax(0, 1fr);
+}
+.app .daily-work-orders:has(.detail-review) .orders-register {
+  display: none;
+}
+.app .order-detail-fields > .order-workflow {
+  font-size: 13px;
+}
+.app .order-detail-fields > .order-workflow > details {
+  margin: 8px 0;
+}
+.app .order-detail-fields > .order-workflow > p {
+  font-size: 12px;
+  margin: 6px 0;
+}
+.app .order-detail-fields > .order-workflow > button {
+  min-height: 40px;
+}
+.app .order-media,
+.app .order-review > details {
+  border: 0;
+}
+.app .order-media summary,
+.app .order-review summary,
+.app .shift-signatures summary {
+  font-size: 15px;
+  font-weight: 600;
+}
+@media (max-width: 850px) {
+  .app .shift-table td[data-label]::before {
+    content: attr(data-label);
+    font-size: 12px;
+  }
+  .app .header .file-actions > button {
+    font-size: 0;
+    min-width: 32px;
+  }
+  .app .header .file-actions > button svg {
+    width: 19px;
+    height: 19px;
+  }
+  .app.mode-model:not(.mobile-tools-open)
+    .model-work-tools
+    > :not(.mobile-model-tools):not(.object-navigation):not(
+      .multi-selection-bar
+    ) {
+    display: none;
+  }
+  .app.mode-model:not(.mobile-tools-open) .work-status-toggle {
+    display: none;
+  }
+  .app .multi-selection-bar {
+    min-height: 40px;
+    padding: 4px 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow: auto;
+    align-items: center;
+  }
+  .app .multi-selection-bar button:disabled {
+    display: none;
+  }
+  .app .multi-selection-bar strong {
+    white-space: nowrap;
+  }
+  .app .construction-tree-node > .cm-object-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .app .construction-tree-node .cm-row-actions {
+    margin-left: 32px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .app .construction-tree-node .cm-row-actions button {
+    font-size: 12px;
+    min-height: 36px;
+  }
+  .app .construction-tree-children {
+    margin-left: 8px;
+    padding-left: 7px;
+  }
+  .app .material-balance table,
+  .app .material-balance tbody,
+  .app .material-balance tr {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+  .app .material-balance thead {
+    display: none;
+  }
+  .app .material-balance tr {
+    padding: 12px;
+    margin: 10px 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .app .material-balance td {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 14px;
+    border: 0;
+    white-space: normal;
+  }
+  .app .material-balance td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .app .order-steps {
+    gap: 3px;
+  }
+  .app .order-steps button {
+    font-size: 12px;
+    padding: 6px;
+    flex: 1;
+  }
+  .app .work-order-submit {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .app .order-detail-tabs {
+    gap: 2px;
+  }
+  .app .order-detail-tabs button {
+    font-size: 12px;
+    padding: 5px;
+    min-height: 44px;
+  }
+  .app .order-detail.detail-review {
+    display: block;
+  }
+  .app .review-side-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .app .review-side-tabs button {
+    flex: 1;
+    min-height: 40px;
+  }
+  .app .review-side-tabs button[aria-pressed="true"] {
+    background: var(--accent);
+    color: #fff;
+  }
+  .app .detail-review.review-data > .order-evidence-pane,
+  .app .detail-review.review-photo > .order-detail-fields {
+    display: none;
+  }
+  .app .detail-review > .order-evidence-pane {
+    position: static;
+  }
+  .app .order-evidence-stage {
+    height: 48dvh;
+  }
+  .app .progress-panel .table-scroll {
+    overflow: visible;
+  }
+  .app .progress-panel table,
+  .app .progress-panel tbody,
+  .app .progress-panel tr {
+    display: block;
+    min-width: 0;
+  }
+  .app .progress-panel thead {
+    display: none;
+  }
+  .app .progress-panel tr {
+    padding: 12px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    margin: 12px 0;
+    border-radius: 8px;
+  }
+  .app .progress-panel td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+    border: 0;
+    padding: 7px 0;
+    font-size: 14px;
+  }
+  .app .progress-panel td::before {
+    content: attr(data-label);
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 100px;
+  }
+}

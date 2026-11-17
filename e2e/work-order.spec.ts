@@ -1,4 +1,4 @@
-import { openSection } from "./navigation-helpers";
+import { openSection, openDisclosure } from "./navigation-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile, mkdir } from "node:fs/promises";
 import { unzipSync, strFromU8 } from "fflate";
@@ -35,7 +35,7 @@ for (const mobile of [false, true])
     await expect(page.locator(".work-order-add")).toContainText(
       "введите вручную",
     );
-    await page.locator(".work-order-shift summary").click();
+    await openDisclosure(page.locator("#order-step-shift > summary"));
     await page.getByLabel("Дата наряда").fill("2026-11-16");
     await page.getByLabel("Подрядчик наряда").fill("=2+2");
     await page.getByLabel("Бригада наряда").fill("Тестовая бригада");
@@ -58,7 +58,7 @@ for (const mobile of [false, true])
       .click();
     await expect(page.getByLabel("План работы 2")).toHaveValue("2.592");
     await page.getByLabel("Смена наряда").selectOption("Ночь");
-    await page.getByText("Табель (0)", { exact: true }).click();
+    await openDisclosure(page.locator(".work-crew > summary"));
     await page
       .getByRole("button", { name: "Добавить сотрудника", exact: true })
       .click();
@@ -71,7 +71,7 @@ for (const mobile of [false, true])
       .click();
     await expect(page.locator(".model-stage canvas")).toBeVisible();
     await expect(page.getByLabel("План работы 1")).toHaveValue("0.676");
-    await page.locator(".work-order-shift summary").click();
+    await openDisclosure(page.locator("#order-step-shift > summary"));
     await page.locator(".work-order-panel").evaluate((el) => {
       el.scrollTop = 0;
     });
@@ -89,11 +89,15 @@ for (const mobile of [false, true])
       "Тестовая бригада",
     );
     await page.locator(".daily-order-card").click();
-    await page.locator(".handoff-crew summary").click();
+
+    await page
+      .getByRole("button", { name: "Люди и подписи", exact: true })
+      .click();
     await page.getByLabel("Начало смены 1").fill("20:00");
     await page.getByLabel("Конец смены 1").fill("08:00");
     await page.getByLabel("Перерыв 1").fill("60");
     await expect(page.locator(".work-crew-row")).toContainText("11 ч");
+    await page.getByRole("button", { name: "Работы", exact: true }).click();
     await expect(page.getByLabel("Факт работы 1")).toHaveValue("");
     await page.getByLabel("Выполнена работа 1").check();
     await expect(
@@ -104,12 +108,8 @@ for (const mobile of [false, true])
       .getByRole("button", { name: "Сохранить выполнение", exact: true })
       .click();
     await page.reload();
-    await page
-      .getByRole("button", {
-        name: mobile ? "Открыть наряды" : "Наряды по дням",
-        exact: true,
-      })
-      .click();
+    await openSection(page, "Наряды по дням");
+    await page.getByLabel("Дата наряда", { exact: true }).fill("2026-11-16");
     await page.locator(".daily-order-card").click();
     await expect(page.getByLabel("Факт работы 1")).toHaveValue("0");
     await expect(page.getByLabel("Выполнена работа 1")).toBeChecked();
@@ -158,11 +158,14 @@ for (const mobile of [false, true])
     await page
       .getByRole("button", { name: "Добавить работу", exact: true })
       .click();
-    await page.locator(".work-order-shift summary").click();
+    await openDisclosure(page.locator("#order-step-shift > summary"));
     await page.getByLabel("Дата наряда").fill("2026-11-17");
+    await page.getByLabel("Смена наряда").selectOption("День");
     await page
       .getByRole("button", { name: "Выдать наряд", exact: true })
       .click();
+    await page.getByLabel("Дата наряда", { exact: true }).fill("");
+    await page.getByLabel("Фильтр смены наряда").selectOption("");
     await expect(page.locator(".orders-register tbody tr")).toHaveCount(2);
     await expect(page.locator(".daily-order-card")).toHaveCount(2);
     await expect(

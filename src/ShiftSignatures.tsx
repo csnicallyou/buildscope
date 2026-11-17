@@ -83,7 +83,7 @@ export default function ShiftSignatures({
     void refresh();
   }, [refresh]);
   return (
-    <details className="shift-signatures">
+    <details open className="shift-signatures">
       <summary>
         Подписи сотрудников · выход{" "}
         {

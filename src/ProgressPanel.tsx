@@ -7,7 +7,7 @@ const f = (v: number | null) =>
 export default function ProgressPanel({ orders }: { orders: SharedOrder[] }) {
   const groups = progressGroups(orders);
   return (
-    <section className="schedule">
+    <section className="schedule progress-panel">
       <h1>Ход работ</h1>
       <p>
         Остаток рассчитан по сданным нарядам и потребности модели. Неизвестный
@@ -34,11 +34,11 @@ export default function ProgressPanel({ orders }: { orders: SharedOrder[] }) {
             <tbody>
               {groups.map((g) => (
                 <tr key={g.key}>
-                  <td>{g.target}</td>
-                  <td>{g.work}</td>
-                  <td>{g.unit}</td>
-                  <td>{f(g.need)}</td>
-                  <td>
+                  <td data-label="Объект">{g.target}</td>
+                  <td data-label="Работа">{g.work}</td>
+                  <td data-label="Единица">{g.unit}</td>
+                  <td data-label="Нужно по модели">{f(g.need)}</td>
+                  <td data-label="Заявлено">
                     {g.conflict
                       ? "Разные основания"
                       : g.hasActuals
@@ -47,16 +47,18 @@ export default function ProgressPanel({ orders }: { orders: SharedOrder[] }) {
                           ? "Не заполнен"
                           : "Нет сданного факта"}
                   </td>
-                  <td>
+                  <td data-label="Проверено">
                     {g.conflict
                       ? "Разные основания"
                       : g.hasVerified
                         ? `${f(g.verified)}${g.verifiedIncomplete ? " + не проверено" : ""}`
                         : "Не проверено"}
                   </td>
-                  <td>{f(g.verifiedRemaining)}</td>
-                  <td>{f(g.remaining)}</td>
-                  <td>{f(g.reserved)}</td>
+                  <td data-label="Проверенный остаток">
+                    {f(g.verifiedRemaining)}
+                  </td>
+                  <td data-label="Остаток по заявленному">{f(g.remaining)}</td>
+                  <td data-label="План в работе">{f(g.reserved)}</td>
                 </tr>
               ))}
             </tbody>

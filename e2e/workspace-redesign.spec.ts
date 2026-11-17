@@ -15,10 +15,10 @@ for (const mobile of [false, true]) {
     await expect(
       mobile
         ? page.getByRole("button", {
-            name: "Разделы управления стройкой",
+            name: "Все разделы",
             exact: true,
           })
-        : page.getByRole("navigation", { name: "Режимы работы" }),
+        : page.getByRole("navigation", { name: "Основная навигация" }),
     ).toBeVisible();
     const scene = page.locator(".model-stage canvas");
     await expect(scene).toBeVisible();

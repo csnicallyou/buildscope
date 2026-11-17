@@ -29,6 +29,10 @@ export default function ShiftControl({
   initialSignal = "all",
   siteTitle = "",
   siteIds,
+  contextDate,
+  contextShift,
+  onContextDate,
+  onContextShift,
 }: {
   orders: SavedWorkOrder[];
   shared: SharedOrder[];
@@ -37,13 +41,29 @@ export default function ShiftControl({
   initialSignal?: OrderSignal;
   siteTitle?: string;
   siteIds?: string[];
+  contextDate?: string;
+  contextShift?: string;
+  onContextDate?: (v: string) => void;
+  onContextShift?: (v: string) => void;
 }) {
-  const [date, setDate] = useState(today());
-  const [shift, setShift] = useState("Ночь");
+  const [localDate, setLocalDate] = useState(today());
+  const [localShift, setLocalShift] = useState("Ночь");
+  const date = contextDate ?? localDate,
+    shift = contextShift ?? localShift;
+  const setDate = (v: string) => {
+    setLocalDate(v);
+    onContextDate?.(v);
+  };
+  const setShift = (v: string) => {
+    setLocalShift(v);
+    onContextShift?.(v);
+  };
   const [signal, setSignal] = useState<OrderSignal>(initialSignal);
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState("");
-  const [allDates, setAllDates] = useState(initialSignal !== "all");
+  const [allDates, setAllDates] = useState(
+    contextDate ? false : initialSignal !== "all",
+  );
   const current = useMemo(
     () =>
       orders.filter(
@@ -176,6 +196,7 @@ export default function ShiftControl({
                   <th>Выход по табелю</th>
                   <th>Работы</th>
                   <th>Объёмы</th>
+                  <th>Техника в наряде</th>
                   <th>Отчёт</th>
                   <th>Подписи</th>
                   <th>Приёмка</th>
@@ -188,7 +209,7 @@ export default function ShiftControl({
                   const present = o.draft.crew.filter((p) => p.start).length;
                   return (
                     <tr key={o.id}>
-                      <td>
+                      <td data-label="Подрядчик / бригада">
                         <strong>
                           {o.draft.contractor || "Подрядчик не указан"}
                         </strong>
@@ -199,7 +220,7 @@ export default function ShiftControl({
                           {shiftCaption(o.draft.date, o.draft.shift)}
                         </small>
                       </td>
-                      <td>
+                      <td data-label="Выход по табелю">
                         <small>
                           План / заявлено: {o.draft.plannedPeople ?? "—"} /{" "}
                           {o.draft.reportedPeople ?? "—"}
@@ -213,14 +234,14 @@ export default function ShiftControl({
                             : "Начало указано у всех"}
                         </small>
                       </td>
-                      <td>
+                      <td data-label="Работы">
                         {o.draft.rows.length}
                         <small>
                           {o.draft.rows.filter((r) => r.actual !== null).length}{" "}
                           с фактом
                         </small>
                       </td>
-                      <td>
+                      <td data-label="Объёмы">
                         <span className="operation-status neutral">
                           {
                             o.draft.rows.filter(
@@ -232,21 +253,30 @@ export default function ShiftControl({
                           / {o.draft.rows.length} проверено
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Техника в наряде">
+                        {Array.from(
+                          new Set(
+                            o.draft.rows
+                              .map((r) => r.equipment)
+                              .filter(Boolean),
+                          ),
+                        ).join(", ") || "Не указана"}
+                      </td>
+                      <td data-label="Отчёт">
                         <span
                           className={`operation-status ${state.received ? "good" : "pending"}`}
                         >
                           {state.received ? "Сдан" : "Ещё не сдан"}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Подписи">
                         <span
                           className={`operation-status ${state.signatures ? "pending" : "good"}`}
                         >
                           {signatureSummary(o.draft.crew)}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Приёмка">
                         <span
                           className={`operation-status ${state.accepted ? "good" : "neutral"}`}
                         >

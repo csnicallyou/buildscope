@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { unzipSync, strFromU8 } from "fflate";
-import { openSection } from "../e2e/navigation-helpers";
+import { openSection, openDisclosure } from "../e2e/navigation-helpers";
 async function login(page: Page, user: "admin" | "foreman" | "viewer") {
   await page.goto("/login");
   await page.getByLabel("Логин", { exact: true }).fill(user);
@@ -17,8 +17,11 @@ async function openOrder(page: Page) {
     .locator(".daily-order-card")
     .filter({ hasText: "Подписи-тест" })
     .click();
-  await page.locator(".handoff-crew summary").click();
-  await page.locator(".shift-signatures summary").click();
+  await page
+    .getByRole("button", { name: "Люди и подписи", exact: true })
+    .click();
+  await openDisclosure(page.locator(".handoff-crew summary"));
+  await openDisclosure(page.locator(".shift-signatures summary"));
 }
 async function photo(page: Page, phase: "выход" | "окончание") {
   await page
@@ -107,10 +110,7 @@ test("Подписи смены: фото, утренний выход без о
     .getByRole("button", { name: "Фм4 Фм4 · оси 8/А", exact: true })
     .click();
   await openSection(page, "Наряд");
-  await page
-    .locator(".work-order-shift summary")
-    .filter({ hasText: "Параметры смены" })
-    .click();
+  await openDisclosure(page.locator("#order-step-shift > summary"));
   await page.getByLabel("Подрядчик наряда").fill("Подписи-тест");
   await page.getByLabel("Смена наряда").selectOption("Ночь");
   await page.getByLabel("Тип работы наряда").selectOption("film");
@@ -118,7 +118,7 @@ test("Подписи смены: фото, утренний выход без о
     .getByRole("button", { name: "Добавить работу", exact: true })
     .click();
   await page.getByLabel("План работы 1").fill("1");
-  await page.getByText("Табель (0)", { exact: true }).click();
+  await openDisclosure(page.locator(".work-crew summary"));
   await page
     .getByRole("button", { name: "Добавить сотрудника", exact: true })
     .click();

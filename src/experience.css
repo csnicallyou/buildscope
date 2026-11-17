@@ -1,0 +1,765 @@
+/* A work surface with a permanent place/date/shift and task-level navigation. */
+.app .resource-navigation {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  margin-left: var(--nav-width);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+.app .resource-navigation button {
+  white-space: nowrap;
+  min-height: 40px;
+}
+.app .resource-navigation button[aria-pressed="true"] {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.app .section-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+}
+@media (max-width: 800px) {
+  .app .resource-navigation {
+    margin-left: 0;
+  }
+}
+.app {
+  --nav-width: 180px;
+  font-size: 15px;
+  --accent: #145de0;
+  --accent-bg: #eaf0ff;
+}
+.app.light {
+  --bg: #f3f5f8;
+  --panel: #fff;
+  --fg: #192c40;
+  --muted: #53657a;
+  --border: #d8e0e8;
+}
+.app .header {
+  height: 54px;
+  min-height: 54px;
+  gap: 16px;
+}
+.app .brand strong {
+  font-size: 23px;
+}
+.app button,
+.app input,
+.app select,
+.app textarea {
+  font-size: 14px;
+}
+.app :is(input, select, textarea) {
+  min-height: 40px;
+}
+.app :is(button, summary) {
+  touch-action: manipulation;
+}
+.app :is(p, small, label) {
+  line-height: 1.5;
+}
+.app .workbench-primary {
+  position: fixed;
+  left: 0;
+  top: 54px;
+  bottom: 0;
+  width: var(--nav-width);
+  padding: 20px 10px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 22;
+}
+.app .workbench-primary button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  min-height: 48px;
+  padding: 10px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 15px;
+}
+.app .workbench-primary button.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+.app .workbench-primary .workbench-more {
+  margin-top: auto;
+}
+.app .workspace-modes {
+  display: none;
+  position: fixed;
+  z-index: 81;
+  top: 64px;
+  left: calc(var(--nav-width) + 12px);
+  right: 20px;
+  bottom: auto;
+  width: auto;
+  height: auto;
+  max-height: 80dvh;
+  overflow: auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 20px;
+  box-shadow: 0 15px 70px #10243b40;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.app .workspace-modes.is-open {
+  display: grid;
+}
+.app .workspace-modes .navigation-heading {
+  grid-column: 1/-1;
+  padding: 10px 0 6px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.app .workspace-modes button {
+  min-height: 44px;
+  font-size: 14px;
+}
+.app .navigation-toggle {
+  display: none;
+}
+.navigation-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: #172d4940;
+  border: 0;
+}
+.app .workspace-modes :is(.layout-actions, .demo-badge) {
+  display: none;
+}
+.app .work-context-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: var(--nav-width);
+  padding: 8px 20px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  min-height: 64px;
+}
+.context-site {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 220px;
+  max-width: 380px;
+  flex: 1;
+}
+.context-site > span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.app .context-site select {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: 17px;
+  font-weight: 600;
+  min-height: 28px;
+}
+.context-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+.app .context-date input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px;
+  max-width: 155px;
+}
+.context-shift {
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  gap: 3px;
+}
+.app .context-shift button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  min-height: 36px;
+  background: transparent;
+}
+.app .context-shift button[aria-pressed="true"] {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.context-night {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.app .station-context {
+  padding: 5px 20px;
+  min-height: 0;
+  gap: 12px;
+  background: var(--bg);
+}
+.app .multi-selection-bar {
+  min-height: 40px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.app .multi-selection-bar > :is(button, strong) {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.app .multi-selection-bar > span {
+  display: none;
+}
+.app .model-work-tools .toolbar {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.app .model-work-tools .tool-group {
+  flex-shrink: 0;
+}
+.app .model-work-tools .toolbar .layout-actions {
+  order: 5;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.app .station-context > div:first-child {
+  display: none;
+}
+.app .station-workspaces {
+  display: flex;
+  gap: 8px;
+}
+.app .station-workspaces button {
+  padding: 5px 14px;
+  min-height: 32px;
+  font-size: 13px;
+}
+.app .project-switcher {
+  min-height: 0;
+  height: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+}
+.app .workspace-sync {
+  display: none;
+}
+.app.work-order-active .workspace-sync,
+.app .workspace-sync:has(button:first-child) {
+  display: flex;
+  padding: 5px 16px;
+  font-size: 12px;
+}
+.app .status {
+  height: 20px;
+  font-size: 11px;
+}
+.app .operations-home,
+.app .shift-control,
+.app .construction-panel,
+.app .field-operations,
+.app .schedule {
+  padding: 24px;
+}
+.app h1 {
+  font-size: 26px;
+  line-height: 1.25;
+}
+.app h2 {
+  font-size: 20px;
+}
+.app h3 {
+  font-size: 17px;
+}
+.app .schedule :is(th, td),
+.app .construction-panel :is(th, td),
+.app .shift-table :is(th, td),
+.app .orders-register :is(th, td) {
+  font-size: 13px;
+  padding: 14px 12px;
+}
+.app
+  :is(.cm-intro, .storage-note, .work-order-title p, .daily-orders-heading p) {
+  font-size: 13px;
+  max-width: 75ch;
+  color: var(--muted);
+}
+.app .daily-work-orders .storage-note {
+  display: none;
+}
+.app :is(.field-card, .daily-order-card, .cm-object-row) {
+  font-size: 15px;
+}
+.app :is(.field-card, .daily-order-card, .cm-object-row) small {
+  font-size: 12px;
+}
+.app .cm-object-row {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+.app .field-card footer > small {
+  display: none;
+}
+.app .field-card {
+  box-shadow: none;
+  border-radius: 8px;
+}
+.app .field-tabs {
+  margin-bottom: 12px;
+}
+.app .object-secondary {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+.app .object-secondary summary {
+  cursor: pointer;
+  font-size: 14px;
+}
+.app .object-secondary .construction-object-actions {
+  margin: 10px 0;
+}
+.app .inspector .object-title {
+  font-size: 26px;
+}
+.app .inspector :is(p, small, dt, dd) {
+  font-size: 13px;
+}
+.app .inspector .panel-heading {
+  font-size: 15px;
+}
+.app :is(.cm-editor, .field-editor) {
+  padding: 24px;
+}
+.app :is(.cm-editor, .field-editor) label {
+  font-size: 13px;
+}
+.app :is(.cm-editor, .field-editor) :is(input, textarea, select) {
+  font-size: 15px;
+  min-height: 42px;
+}
+.app .field-editor form > fieldset > button.primary,
+.app .cm-editor button.primary {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  min-height: 46px;
+  box-shadow: 0 -10px 20px var(--panel);
+}
+.app .handoff-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  padding: 12px;
+  z-index: 7;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.app .handoff-actions button {
+  min-height: 44px;
+}
+.app .order-detail .order-workflow {
+  margin: 0 0 12px;
+}
+.app .handoff-heading {
+  padding: 14px;
+  border: 0;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-bg);
+}
+.app .order-detail > button:first-child {
+  margin-bottom: 8px;
+}
+.app .daily-orders-heading p {
+  display: none;
+}
+.app
+  .order-detail
+  :is(.handoff-row, .shift-signatures, .order-review, .order-media) {
+  margin-top: 14px;
+}
+.app .preview-counts {
+  margin: 12px 0;
+}
+.app .operation-kpi .kpi-label {
+  font-size: 13px;
+}
+.app .operation-kpi strong {
+  font-size: 26px;
+}
+.app .portfolio-layout {
+  grid-template-columns: 190px minmax(260px, 1fr) 270px;
+}
+.app .portfolio-list .portfolio-site {
+  min-height: 62px;
+}
+.app .portfolio-list .portfolio-local-model {
+  display: none;
+}
+.app .portfolio-site strong {
+  font-size: 14px;
+}
+.app .shift-scope {
+  margin-bottom: 12px;
+}
+.app .pdf-preview {
+  background: var(--panel);
+}
+.app .field-editor h2 {
+  font-size: 22px;
+}
+.app .field-editor form fieldset {
+  gap: 14px;
+}
+.app .order-detail-open .orders-work-area {
+  grid-template-columns: minmax(240px, 0.65fr) minmax(480px, 1.35fr);
+}
+@media (max-width: 1100px) and (min-width: 851px) {
+  .app {
+    --nav-width: 150px;
+  }
+  .app .portfolio-layout {
+    grid-template-columns: 180px minmax(260px, 1fr);
+  }
+  .app .portfolio-preview {
+    grid-column: 1/-1;
+  }
+  .context-night {
+    display: none;
+  }
+  .app .work-context-bar {
+    padding: 8px 12px;
+  }
+  .context-site {
+    min-width: 150px;
+  }
+  .app .workbench-primary button {
+    font-size: 14px;
+  }
+}
+@media (max-width: 850px) {
+  .app .toolbar .layout-actions {
+    display: none;
+  }
+  .app {
+    --nav-width: 0px;
+    font-size: 15px;
+    padding-bottom: 64px;
+  }
+  .app .header {
+    height: 50px;
+    min-height: 50px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .app .brand strong {
+    font-size: 21px;
+  }
+  .app .personal-label,
+  .app .project-name {
+    display: none;
+  }
+  .app .file-actions {
+    gap: 2px;
+    margin-left: auto;
+  }
+  .app .file-actions button {
+    min-width: 34px;
+    padding: 7px;
+  }
+  .app .file-actions .engineering-file-action {
+    display: none;
+  }
+  .app .workbench-primary {
+    display: none;
+  }
+  .app .work-context-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px 10px;
+    padding: 8px 12px;
+    min-height: 92px;
+    margin: 0;
+  }
+  .context-site {
+    min-width: 0;
+    max-width: none;
+    grid-column: 1/-1;
+  }
+  .app .context-site select {
+    width: 100%;
+    max-width: none;
+    font-size: 16px;
+  }
+  .context-date input {
+    font-size: 13px;
+    min-height: 34px;
+  }
+  .context-date > svg,
+  .context-night {
+    display: none;
+  }
+  .app .context-shift button {
+    padding: 4px 8px;
+    min-height: 30px;
+    font-size: 12px;
+  }
+  .app .station-context {
+    padding: 4px 12px;
+    flex-direction: row;
+    align-items: center;
+  }
+  .app .station-context small {
+    font-size: 12px;
+  }
+  .app .station-workspaces {
+    display: flex;
+    gap: 3px;
+    width: 100%;
+  }
+  .app .station-workspaces button {
+    flex: 1;
+    padding: 4px;
+    min-height: 30px;
+    font-size: 12px;
+  }
+  .app .workspace-modes {
+    top: 60px;
+    bottom: 74px;
+    left: 10px;
+    right: 10px;
+    max-height: none;
+    grid-template-columns: 1fr 1fr;
+    padding: 14px;
+  }
+  .app .workspace-modes button {
+    font-size: 13px;
+    min-height: 46px;
+  }
+  .app .workspace-modes .navigation-heading {
+    font-size: 12px;
+  }
+  .app .operations-home,
+  .app .shift-control,
+  .app .construction-panel,
+  .app .field-operations,
+  .app .schedule {
+    padding: 16px 12px;
+  }
+  .app h1,
+  .app .operations-heading h1,
+  .app .daily-work-orders .daily-orders-heading h1 {
+    font-size: 23px;
+  }
+  .app .operations-heading {
+    margin-bottom: 14px;
+  }
+  .app .operations-heading > div > p {
+    display: none;
+  }
+  .app .operations-scope-note {
+    font-size: 12px;
+  }
+  .app .portfolio-cartography {
+    height: 30dvh;
+    min-height: 220px;
+  }
+  .app .portfolio-map {
+    min-height: 220px;
+  }
+  .app .portfolio-list {
+    padding: 10px;
+    max-height: none;
+  }
+  .app .portfolio-site {
+    min-height: 54px;
+  }
+  .app .portfolio-preview {
+    padding: 14px;
+  }
+  .app .operation-kpi strong {
+    font-size: 18px;
+  }
+  .app .operation-kpi .kpi-label {
+    font-size: 12px;
+  }
+  .app .field-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow: auto;
+    padding-bottom: 6px;
+    gap: 6px;
+  }
+  .app .field-tabs button {
+    flex: 0 0 auto;
+    min-height: 40px;
+    font-size: 13px;
+  }
+  .app .field-toolbar {
+    gap: 10px;
+  }
+  .app .field-card {
+    padding: 14px;
+  }
+  .app .field-card p {
+    font-size: 13px;
+  }
+  .app .field-card footer button {
+    min-height: 40px;
+    font-size: 13px;
+  }
+  .app .field-editor,
+  .app .cm-editor {
+    padding: 16px 12px;
+    bottom: 64px;
+    height: auto;
+  }
+  .app .field-editor > p {
+    font-size: 12px;
+  }
+  .app .daily-orders-heading {
+    margin-bottom: 12px;
+  }
+  .app .order-detail {
+    padding-bottom: 0;
+  }
+  .app .order-detail .order-workflow > p {
+    font-size: 12px;
+  }
+  .app .handoff-heading h2 {
+    font-size: 17px;
+  }
+  .app .handoff-heading p {
+    font-size: 13px;
+  }
+  .app .handoff-row {
+    padding: 14px;
+  }
+  .app .handoff-values {
+    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+  }
+  .app .handoff-values span {
+    font-size: 13px;
+  }
+  .app .handoff-values strong {
+    font-size: 18px;
+  }
+  .app .orders-register-filters {
+    padding: 12px;
+  }
+  .app .orders-register-filters label {
+    font-size: 12px;
+  }
+  .app .orders-register-filters :is(input, select) {
+    min-height: 40px;
+    font-size: 14px;
+  }
+  .app .order-detail-open .orders-work-area {
+    display: block;
+  }
+  .app .status {
+    display: none;
+  }
+  .app.mode-model {
+    padding-bottom: 108px;
+  }
+  .app .model-panel-tabs {
+    display: flex;
+    position: fixed;
+    bottom: 64px;
+    left: 0;
+    right: 0;
+    height: 44px;
+    z-index: 76;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    justify-content: space-around;
+  }
+  .app .model-panel-tabs button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    min-height: 40px;
+    padding: 4px 8px;
+  }
+  .app .mobile-dock {
+    height: 64px;
+    min-height: 64px;
+    bottom: 0;
+  }
+  .app .mobile-dock button {
+    font-size: 11px;
+    min-height: 56px;
+  }
+  .app .inspector,
+  .app .tree-panel,
+  .app .mobile-tree-backdrop {
+    bottom: 108px;
+  }
+  .app .panel-heading {
+    font-size: 15px;
+    padding: 12px;
+  }
+  .app .work-order-map {
+    height: 220px;
+    min-height: 180px;
+  }
+  .app .work-order-layout {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .app .work-order-title p {
+    font-size: 12px;
+  }
+  .app .signature-person {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .app .signature-albums {
+    grid-template-columns: 1fr;
+  }
+  .app .installation-player {
+    top: 8px;
+    bottom: 72px;
+  }
+  .app .schedule > table,
+  .app .progress-table {
+    font-size: 13px;
+  }
+  .app .schedule:has(.progress-table) {
+    overflow: auto;
+  }
+  .app .inspector .object-secondary {
+    padding: 12px;
+  }
+}

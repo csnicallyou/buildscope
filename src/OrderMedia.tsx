@@ -25,7 +25,7 @@ export default function OrderMedia({
     (r) => r.payload.orderId === order.id,
   );
   return (
-    <details className="order-media">
+    <details open className="order-media">
       <summary>Фото, видео и документы наряда ({docs.length})</summary>
       <p>
         Оригиналы связаны с этим нарядом. Факт получения файла не означает

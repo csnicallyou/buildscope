@@ -46,6 +46,8 @@ export function useWorkspace(
   const [error, setError] = useState("");
   const [draftStatus, setDraftStatus] = useState("");
   const [recovery, setRecovery] = useState<WorkDraft | null>(null);
+  const latestDraft = useRef(draft);
+  latestDraft.current = draft;
   const draftRevision = useRef(0),
     lastSavedDraft = useRef(""),
     draftLoaded = useRef(false),
@@ -189,7 +191,8 @@ export function useWorkspace(
           );
           draftRevision.current = result.revision;
           lastSavedDraft.current = JSON.stringify(draft);
-          setDraftStatus("Черновик сохранён на сервере");
+          if (JSON.stringify(latestDraft.current) === JSON.stringify(draft))
+            setDraftStatus("Черновик сохранён на сервере");
         } catch (e) {
           draftPaused.current = true;
           setDraftStatus(
