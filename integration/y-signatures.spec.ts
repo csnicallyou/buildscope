@@ -69,6 +69,17 @@ async function photo(page: Page, phase: "выход" | "окончание") {
   await expect(
     page.getByLabel("Просмотр фотографии", { exact: true }),
   ).toBeVisible();
+  const readerImage = page.locator(".evidence-reader-stage img");
+  await expect(readerImage).toHaveJSProperty("naturalWidth", 640);
+  await expect
+    .poll(async () => (await readerImage.boundingBox())!.height)
+    .toBeGreaterThan(200);
+  const readerStage = (await page
+    .locator(".evidence-reader-stage")
+    .boundingBox())!;
+  expect((await readerImage.boundingBox())!.height).toBeLessThanOrEqual(
+    readerStage.height,
+  );
   await page
     .getByRole("button", { name: "Увеличить фотографию", exact: true })
     .click();

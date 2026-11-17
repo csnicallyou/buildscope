@@ -1502,14 +1502,12 @@
   padding: 20px;
 }
 .evidence-reader-paper {
-  display: grid;
-  place-items: center;
-  min-width: 100%;
-  min-height: 100%;
+  position: relative;
 }
 .evidence-reader-stage .evidence-reader-paper img {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
   object-fit: contain;
   max-width: none;
   max-height: none;

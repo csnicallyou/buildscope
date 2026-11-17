@@ -65,6 +65,29 @@ export default function ObjectNotes({
   const [photoId, setPhotoId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const photoStage = useRef<HTMLDivElement>(null);
+  const [photoViewport, setPhotoViewport] = useState({ width: 1, height: 1 });
+  const [photoSize, setPhotoSize] = useState({ width: 1, height: 1 });
+  useEffect(() => {
+    const stage = photoStage.current;
+    if (!photoId || !stage) return;
+    const observer = new ResizeObserver(() =>
+      setPhotoViewport({
+        width: Math.max(1, stage.clientWidth - 40),
+        height: Math.max(1, stage.clientHeight - 40),
+      }),
+    );
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [photoId]);
+  const turned = rotation % 180 !== 0;
+  const paperWidth = turned ? photoSize.height : photoSize.width;
+  const paperHeight = turned ? photoSize.width : photoSize.height;
+  const photoScale =
+    Math.min(
+      photoViewport.width / paperWidth,
+      photoViewport.height / paperHeight,
+    ) * zoom;
   const dialog = useRef<HTMLElement>(null),
     fileInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -253,15 +276,31 @@ export default function ObjectNotes({
                 <X />
               </button>
             </header>
-            <div className="evidence-reader-stage">
+            <div className="evidence-reader-stage" ref={photoStage}>
               <div
                 className="evidence-reader-paper"
-                style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}
+                style={{
+                  width: Math.max(photoViewport.width, paperWidth * photoScale),
+                  height: Math.max(
+                    photoViewport.height,
+                    paperHeight * photoScale,
+                  ),
+                }}
               >
                 <img
                   src={`/api/images/${photoId}`}
                   alt={`Увеличенная фотография: ${context.label}`}
-                  style={{ transform: `rotate(${rotation}deg)` }}
+                  onLoad={(e) =>
+                    setPhotoSize({
+                      width: e.currentTarget.naturalWidth,
+                      height: e.currentTarget.naturalHeight,
+                    })
+                  }
+                  style={{
+                    width: photoSize.width * photoScale,
+                    height: photoSize.height * photoScale,
+                    transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+                  }}
                 />
               </div>
             </div>
