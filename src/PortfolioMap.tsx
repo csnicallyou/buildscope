@@ -43,9 +43,14 @@ export default function PortfolioMap({
       const p = site.payload.location;
       if (!p) continue;
       points.push([p.lat, p.lng]);
-      const label = document.createElement("span");
+      const label = document.createElement("button");
+      label.type = "button";
+      label.className = "map-site-link";
       label.textContent = site.payload.title;
-      L.circleMarker([p.lat, p.lng], {
+      label.setAttribute("aria-label", `Открыть объект: ${site.payload.title}`);
+      L.DomEvent.disableClickPropagation(label);
+      label.addEventListener("click", () => callback.current(site.id));
+      const marker = L.circleMarker([p.lat, p.lng], {
         radius: site.id === selected ? 12 : 8,
         color: "#fff",
         weight: 3,
@@ -53,8 +58,51 @@ export default function PortfolioMap({
         fillOpacity: 1,
       })
         .addTo(map)
-        .bindTooltip(label, { permanent: true, direction: "right" })
+        .bindTooltip(label, {
+          permanent: true,
+          direction: "right",
+          interactive: true,
+        })
         .on("click", () => callback.current(site.id));
+      const path = marker.getElement();
+      if (path) {
+        let touch: { x: number; y: number } | null = null;
+        path.addEventListener("pointerdown", (event) => {
+          if (event instanceof PointerEvent && event.pointerType === "touch")
+            touch = { x: event.clientX, y: event.clientY };
+        });
+        path.addEventListener("pointercancel", () => {
+          touch = null;
+        });
+        path.addEventListener("pointerup", (event) => {
+          const start = touch;
+          touch = null;
+          if (
+            event instanceof PointerEvent &&
+            event.pointerType === "touch" &&
+            start &&
+            Math.hypot(event.clientX - start.x, event.clientY - start.y) <= 6
+          ) {
+            event.preventDefault();
+            callback.current(site.id);
+          }
+        });
+        path.setAttribute("role", "button");
+        path.setAttribute(
+          "aria-label",
+          `Открыть объект: ${site.payload.title}`,
+        );
+        path.setAttribute("tabindex", "0");
+        path.addEventListener("keydown", (event) => {
+          if (
+            event instanceof KeyboardEvent &&
+            (event.key === "Enter" || event.key === " ")
+          ) {
+            event.preventDefault();
+            callback.current(site.id);
+          }
+        });
+      }
     }
     const fit = () => {
       map.invalidateSize({ pan: false });

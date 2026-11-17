@@ -565,6 +565,18 @@
   z-index: 0;
   background: #e6ecec;
 }
+.app .map-site-link {
+  min-height: 36px;
+  padding: 3px 5px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #20334f;
+  font-size: 12px;
+}
+.app .map-site-link:hover {
+  background: #e8efff;
+}
 .map-explanation {
   position: absolute;
   left: 16px;

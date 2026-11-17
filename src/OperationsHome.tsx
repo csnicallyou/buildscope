@@ -56,6 +56,20 @@ export default function OperationsHome({
   const [selected, setSelected] = useState("");
   const [search, setSearch] = useState("");
   const site = sites.find((s) => s.id === selected) ?? sites[0];
+  const openSite = (id: string) => {
+    const target = sites.find((s) => s.id === id);
+    if (!target) return;
+    setSelected(id);
+    onOpen({
+      id: target.id,
+      title: target.payload.title,
+      nodeIds: ofKind(records, "node")
+        .filter((r) => inNode(records, r.id, target.id))
+        .map((r) => r.id),
+      model: target.payload.model,
+      elementIds: target.payload.elementIds,
+    });
+  };
   const siteOrders = site
     ? orders.filter((o) => inNode(records, o.draft.nodeId ?? null, site.id))
     : [];
@@ -167,7 +181,8 @@ export default function OperationsHome({
               <button
                 key={s.id}
                 className={`portfolio-site ${site?.id === s.id ? "selected" : ""}`}
-                onClick={() => setSelected(s.id)}
+                title={`Открыть объект: ${s.payload.title}`}
+                onClick={() => openSite(s.id)}
               >
                 <span className="site-dot" />
                 <span>
@@ -205,7 +220,7 @@ export default function OperationsHome({
         <PortfolioMap
           sites={sites}
           selected={site?.id ?? ""}
-          onSelect={setSelected}
+          onSelect={openSite}
         />
         <aside className="portfolio-preview">
           <div className="site-preview-cover">
@@ -269,19 +284,7 @@ export default function OperationsHome({
             </small>
             <button
               className="primary"
-              onClick={() =>
-                site
-                  ? onOpen({
-                      id: site.id,
-                      title: site.payload.title,
-                      nodeIds: ofKind(records, "node")
-                        .filter((r) => inNode(records, r.id, site.id))
-                        .map((r) => r.id),
-                      model: site.payload.model,
-                      elementIds: site.payload.elementIds,
-                    })
-                  : onManage()
-              }
+              onClick={() => (site ? openSite(site.id) : onManage())}
             >
               {site ? "Открыть объект" : "Настроить объекты"}
               <ArrowUpRight size={17} />

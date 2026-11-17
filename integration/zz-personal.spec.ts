@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { openSection } from "../e2e/navigation-helpers";
+test.use({ hasTouch: true });
 
 test("Главная показывает сохранённые координаты, объект открывается со своим контекстом", async ({
   page,
@@ -50,18 +51,13 @@ test("Главная показывает сохранённые координ�
     expect(response.ok()).toBe(true);
   }
   await openSection(page, "Карта объектов");
-  await page
-    .locator(".portfolio-site")
-    .filter({ hasText: "Тестовая станция на карте" })
-    .click();
-  await expect(page.locator(".portfolio-preview h2")).toHaveText(
-    "Тестовая станция на карте",
+  const markers = page.locator(
+    ".leaflet-overlay-pane path.leaflet-interactive",
   );
-  await expect(page.locator(".preview-bottom")).toContainText("55.75, 37.62");
-  await expect(page.locator(".leaflet-interactive")).toHaveCount(5);
+  await expect(markers).toHaveCount(5);
   const allMarkersFit = async () => {
     const bounds = (await page.locator(".portfolio-map").boundingBox())!;
-    for (const marker of await page.locator(".leaflet-interactive").all()) {
+    for (const marker of await markers.all()) {
       const box = (await marker.boundingBox())!;
       if (
         box.width > 30 ||
@@ -81,9 +77,17 @@ test("Главная показывает сохранённые координ�
   await page.setViewportSize({ width: 1440, height: 1000 });
   await expect.poll(allMarkersFit).toBe(true);
   await page.screenshot({ path: ".deploy/screenshots/personal-site.png" });
+  // The already selected first station must open on the first click too.
+  const firstSite = page.locator(".portfolio-site").first();
+  const firstTitle = await firstSite.locator("strong").innerText();
+  await firstSite.click();
+  await expect(page.locator(".station-context")).toContainText(firstTitle);
+  await openSection(page, "Карта объектов");
+  await page.setViewportSize({ width: 390, height: 844 });
   await page
-    .getByRole("button", { name: "Открыть объект", exact: true })
-    .click();
+    .locator(".map-site-link")
+    .filter({ hasText: "Тестовая станция на карте" })
+    .tap();
   await expect(page.locator(".station-context")).toContainText(
     "Тестовая станция на карте",
   );
@@ -99,4 +103,43 @@ test("Главная показывает сохранённые координ�
     .getByRole("button", { name: "Наряды", exact: true })
     .click();
   await expect(page.locator(".daily-order-card")).toHaveCount(0);
+  await openSection(page, "Карта объектов");
+  await page
+    .locator(".portfolio-site")
+    .filter({ hasText: "Тестовая станция на карте" })
+    .tap();
+  await expect(page.locator(".station-context")).toContainText(
+    "Тестовая станция на карте",
+  );
+  await openSection(page, "Карта объектов");
+  const circle = (await markers.first().boundingBox())!;
+  const gesture = await page.context().newCDPSession(page);
+  const point = {
+    x: circle.x + circle.width / 2,
+    y: circle.y + circle.height / 2,
+  };
+  await gesture.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [point],
+  });
+  await gesture.send("Input.dispatchTouchEvent", {
+    type: "touchMove",
+    touchPoints: [{ x: point.x + 24, y: point.y + 12 }],
+  });
+  await gesture.send("Input.dispatchTouchEvent", {
+    type: "touchEnd",
+    touchPoints: [],
+  });
+  await gesture.detach();
+  await expect(page.locator(".portfolio-map")).toBeVisible();
+  await expect(page.locator(".station-context")).toHaveCount(0);
+  await markers.first().tap();
+  await expect(page.locator(".station-context")).toContainText(
+    "Тестовая станция на карте",
+  );
+  await openSection(page, "Карта объектов");
+  await markers.first().press("Enter");
+  await expect(page.locator(".station-context")).toContainText(
+    "Тестовая станция на карте",
+  );
 });
