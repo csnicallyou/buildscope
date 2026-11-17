@@ -6,7 +6,7 @@ async function login(page: Page) {
   await page.getByLabel("Пароль", { exact: true }).fill("Browser-admin-1234!");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Обзор стройки", exact: true }),
+    page.getByRole("heading", { name: "Объекты строительства", exact: true }),
   ).toBeVisible();
 }
 async function save(page: Page) {

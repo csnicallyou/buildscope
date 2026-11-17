@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
-import { X, Camera } from "lucide-react";
+import {
+  X,
+  Camera,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { api } from "./workspaceClient";
 import {
   noteSchema,
@@ -54,16 +62,25 @@ export default function ObjectNotes({
   readonly?: boolean;
 }) {
   const signature = context.model.startsWith("shift-signatures-");
+  const [photoId, setPhotoId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
   const dialog = useRef<HTMLElement>(null),
     fileInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    dialog.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    const focusRoot = photoId
+      ? dialog.current?.querySelector(".evidence-reader")
+      : dialog.current;
+    focusRoot?.querySelector<HTMLButtonElement>("button")?.focus();
     const keydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        if (photoId) setPhotoId(null);
+        else onClose();
+      }
       if (event.key !== "Tab") return;
       const items = Array.from(
-        dialog.current?.querySelectorAll<HTMLElement>(
+        focusRoot?.querySelectorAll<HTMLElement>(
           "button:not(:disabled), input, textarea, a[href]",
         ) ?? [],
       );
@@ -82,7 +99,7 @@ export default function ObjectNotes({
       document.removeEventListener("keydown", keydown);
       previous?.focus();
     };
-  }, [onClose]);
+  }, [onClose, photoId]);
   const [notes, setNotes] = useState<ObjectNote[]>([]),
     [text, setText] = useState(""),
     [file, setFile] = useState<File | null>(null),
@@ -201,16 +218,20 @@ export default function ObjectNotes({
           <article className="object-note" key={note.id}>
             <p>{note.text}</p>
             {note.imageId && (
-              <a
-                href={`/api/images/${note.imageId}`}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                className="evidence-thumbnail"
+                aria-label="Открыть фотографию крупно"
+                onClick={() => {
+                  setPhotoId(note.imageId);
+                  setZoom(1);
+                  setRotation(0);
+                }}
               >
                 <img
                   src={`/api/images/${note.imageId}`}
                   alt={`Фотография: ${context.label}`}
                 />
-              </a>
+              </button>
             )}
             <small>
               {note.author} · {new Date(note.createdAt).toLocaleString("ru-RU")}{" "}
@@ -218,6 +239,96 @@ export default function ObjectNotes({
             </small>
           </article>
         ))}
+        {photoId && (
+          <div className="evidence-reader" aria-label="Просмотр фотографии">
+            <header>
+              <div>
+                <strong>Бумажный документ / фотография</strong>
+                <small>{context.label}</small>
+              </div>
+              <button
+                aria-label="Закрыть крупную фотографию"
+                onClick={() => setPhotoId(null)}
+              >
+                <X />
+              </button>
+            </header>
+            <div className="evidence-reader-stage">
+              <div
+                className="evidence-reader-paper"
+                style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}
+              >
+                <img
+                  src={`/api/images/${photoId}`}
+                  alt={`Увеличенная фотография: ${context.label}`}
+                  style={{ transform: `rotate(${rotation}deg)` }}
+                />
+              </div>
+            </div>
+            <div className="evidence-reader-tools">
+              <button
+                aria-label="Предыдущая фотография"
+                disabled={
+                  notes
+                    .filter((n) => n.imageId)
+                    .findIndex((n) => n.imageId === photoId) <= 0
+                }
+                onClick={() => {
+                  const photos = notes.filter((n) => n.imageId);
+                  setPhotoId(
+                    photos[photos.findIndex((n) => n.imageId === photoId) - 1]
+                      ?.imageId ?? photoId,
+                  );
+                  setZoom(1);
+                  setRotation(0);
+                }}
+              >
+                <ChevronLeft />
+              </button>
+              <button
+                aria-label="Уменьшить фотографию"
+                disabled={zoom <= 1}
+                onClick={() => setZoom(Math.max(1, zoom - 0.5))}
+              >
+                <ZoomOut />
+              </button>
+              <span>{Math.round(zoom * 100)}%</span>
+              <button
+                aria-label="Увеличить фотографию"
+                disabled={zoom >= 4}
+                onClick={() => setZoom(Math.min(4, zoom + 0.5))}
+              >
+                <ZoomIn />
+              </button>
+              <button
+                aria-label="Повернуть фотографию"
+                onClick={() => setRotation((r) => (r + 90) % 360)}
+              >
+                <RotateCw />
+              </button>
+              <button
+                aria-label="Следующая фотография"
+                disabled={
+                  notes
+                    .filter((n) => n.imageId)
+                    .findIndex((n) => n.imageId === photoId) >=
+                  notes.filter((n) => n.imageId).length - 1
+                }
+                onClick={() => {
+                  const photos = notes.filter((n) => n.imageId);
+                  setPhotoId(
+                    photos[photos.findIndex((n) => n.imageId === photoId) + 1]
+                      ?.imageId ?? photoId,
+                  );
+                  setZoom(1);
+                  setRotation(0);
+                }}
+              >
+                <ChevronRight />
+              </button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

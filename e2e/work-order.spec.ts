@@ -163,10 +163,14 @@ for (const mobile of [false, true])
     await page
       .getByRole("button", { name: "Выдать наряд", exact: true })
       .click();
-    await expect(page.locator(".work-order-day")).toHaveCount(2);
+    await expect(page.locator(".orders-register tbody tr")).toHaveCount(2);
     await expect(page.locator(".daily-order-card")).toHaveCount(2);
-    await expect(page.locator(".work-order-day").first()).toContainText("День");
-    await expect(page.locator(".work-order-day").last()).toContainText("Ночь");
+    await expect(
+      page.locator(".orders-register tbody tr").first(),
+    ).toContainText("День");
+    await expect(
+      page.locator(".orders-register tbody tr").last(),
+    ).toContainText("Ночь");
     await page.screenshot({
       path: `docs/screenshots/work-orders-days${mobile ? "-mobile" : ""}.png`,
     });

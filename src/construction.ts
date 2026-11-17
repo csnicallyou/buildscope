@@ -24,6 +24,13 @@ export const payloadSchema = z.discriminatedUnion("kind", [
     model: z.string().max(180),
     elementIds: z.array(id).max(500),
     description: text,
+    location: z
+      .object({
+        lat: z.number().finite().min(-90).max(90),
+        lng: z.number().finite().min(-180).max(180),
+      })
+      .nullable()
+      .optional(),
   }),
   z.object({
     kind: z.literal("crew"),

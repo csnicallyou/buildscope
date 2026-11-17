@@ -93,7 +93,7 @@ test("Проекции, сечение, тема, изоляция и DXF", asyn
   await expect(page.getByLabel("Положение разреза")).toBeVisible();
   await page.getByLabel("Положение разреза").fill("5");
   await page.getByLabel("Сменить тему").click();
-  await expect(page.locator(".app")).toHaveClass(/\blight\b/);
+  await expect(page.locator(".app")).toHaveClass(/\bdark\b/);
   await page
     .getByRole("button", { name: "ОС-001 Щебёночное основание", exact: true })
     .click();

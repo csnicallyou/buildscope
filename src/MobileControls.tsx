@@ -57,6 +57,11 @@ export default function MobileControls({
   workOrderActive,
   managementActive = false,
   onManagement,
+  onHome,
+  onShifts,
+  onMore,
+  homeActive,
+  shiftsActive,
 }: {
   onModel: () => void;
   onWorkOrder: () => void;
@@ -64,8 +69,45 @@ export default function MobileControls({
   workOrderActive: boolean;
   managementActive?: boolean;
   onManagement?: (view: "overview" | "objects" | "planning") => void;
+  onHome?: () => void;
+  onShifts?: () => void;
+  onMore?: () => void;
+  homeActive?: boolean;
+  shiftsActive?: boolean;
 }) {
   const s = useStore();
+  if (!modelActive && onHome && onShifts && onMore)
+    return (
+      <nav
+        className="mobile-dock personal-dock"
+        aria-label="Управление стройкой"
+      >
+        <button aria-pressed={homeActive} onClick={onHome}>
+          <Building2 size={20} />
+          Объекты
+        </button>
+        <button
+          aria-label="Открыть наряды"
+          aria-pressed={workOrderActive}
+          onClick={onWorkOrder}
+        >
+          <ClipboardList size={20} />
+          Наряды
+        </button>
+        <button aria-pressed={shiftsActive} onClick={onShifts}>
+          <CalendarDays size={20} />
+          Смены
+        </button>
+        <button onClick={onModel}>
+          <Box size={20} />
+          Модель
+        </button>
+        <button onClick={onMore}>
+          <ListTree size={20} />
+          Ещё
+        </button>
+      </nav>
+    );
   if (managementActive && onManagement)
     return (
       <nav className="mobile-dock" aria-label="Управление стройкой">

@@ -33,6 +33,9 @@ import {
 import Viewer from "./Viewer";
 import WorkOrderPanel from "./WorkOrderPanel";
 import DailyWorkOrders from "./DailyWorkOrders";
+import OperationsHome, { type SiteContext } from "./OperationsHome";
+import ShiftControl from "./ShiftControl";
+import type { OrderSignal } from "./operations";
 import { useWorkspace } from "./useWorkspace";
 import ProgressPanel from "./ProgressPanel";
 import WorkspacePanel from "./WorkspacePanel";
@@ -169,6 +172,9 @@ export default function App() {
     null,
   );
   const [navigationOpen, setNavigationOpen] = useState(false);
+  const [orderToOpen, setOrderToOpen] = useState<string | null>(null);
+  const [shiftSignal, setShiftSignal] = useState<OrderSignal>("all");
+  const [siteContext, setSiteContext] = useState<SiteContext | null>(null);
   const workspace = useWorkspace(workDraft, setWorkDraft);
   const workArchive = { orders: workspace.orders, error: workspace.error };
   const persistWorkOrder = workspace.save;
@@ -191,15 +197,18 @@ export default function App() {
     | "progress"
     | "workspace"
     | "management"
-  >("model");
+    | "home"
+    | "shifts"
+  >(window.location.search ? "model" : "home");
   const homeInitialized = useRef(false);
   useEffect(() => {
     if (workspace.mode === "server" && !homeInitialized.current) {
       homeInitialized.current = true;
-      if (!window.location.search) setTab("management");
+      if (!window.location.search) setTab("home");
     }
   }, [workspace.mode]);
   const goManagement = (view: ManagementView) => {
+    setSiteContext(null);
     setManagementView(view);
     setTab("management");
     setNavigationOpen(false);
@@ -607,10 +616,11 @@ export default function App() {
         <div className="brand">
           <Box size={27} />
           <strong>BuildScope</strong>
-          <span>0.12.1</span>
+          <span className="personal-label">Personal</span>
         </div>
         <div className="project-name">
-          {tab === "management" ? "Управление строительством" : s.project.name}
+          {siteContext?.title ??
+            (tab === "model" ? s.project.name : "Строительство объектов МЦД")}
           <small>Инженерная модель</small>
         </div>
         <div className="file-actions">
@@ -737,6 +747,26 @@ export default function App() {
         }}
       >
         <div className="navigation-heading">Управление стройкой</div>
+        <button
+          className={tab === "home" ? "active" : ""}
+          onClick={() => {
+            setTab("home");
+            setSiteContext(null);
+          }}
+        >
+          <Building2 size={18} />
+          Карта объектов
+        </button>
+        <button
+          className={tab === "shifts" ? "active" : ""}
+          onClick={() => {
+            setShiftSignal("all");
+            setTab("shifts");
+          }}
+        >
+          <CalendarDays size={18} />
+          Контроль смены
+        </button>
         {(Object.keys(managementLabels) as ManagementView[]).map((view) => {
           const Icon = managementIcons[view];
           return (
@@ -755,7 +785,10 @@ export default function App() {
         <div className="navigation-heading">Работы и модель</div>
         <button
           className={tab === "model" ? "active" : ""}
-          onClick={() => setTab("model")}
+          onClick={() => {
+            setSiteContext(null);
+            setTab("model");
+          }}
         >
           <Box size={17} /> 3D-модель
         </button>
@@ -844,6 +877,53 @@ export default function App() {
         </div>
         <span className="demo-badge">{projectNotice}</span>
       </nav>
+      {siteContext && tab !== "home" && (
+        <div className="station-context">
+          <div>
+            <button
+              onClick={() => {
+                setSiteContext(null);
+                setTab("home");
+              }}
+            >
+              Объекты
+            </button>
+            <ChevronDown size={14} />
+            <strong>{siteContext.title}</strong>
+          </div>
+          <div className="station-workspaces">
+            <button
+              className={tab === "shifts" ? "active" : ""}
+              onClick={() => setTab("shifts")}
+            >
+              Контроль смены
+            </button>
+            <button
+              className={tab === "workdays" ? "active" : ""}
+              onClick={() => setTab("workdays")}
+            >
+              Наряды
+            </button>
+            <button
+              className={tab === "model" ? "active" : ""}
+              disabled={!siteContext.model}
+              title={
+                siteContext.model
+                  ? "Открыть привязанную модель"
+                  : "Для объекта ещё не задана 3D-привязка"
+              }
+              onClick={() =>
+                focusConstructionModel(
+                  siteContext.model,
+                  siteContext.elementIds,
+                )
+              }
+            >
+              Модель
+            </button>
+          </div>
+        </div>
+      )}
       {(workspace.mode === "error" ||
         (workspace.mode === "server" && workspace.error)) && (
         <div className="workspace-error" role="alert">
@@ -1462,6 +1542,39 @@ export default function App() {
                   />
                 )}
               </>
+            ) : tab === "home" ? (
+              <OperationsHome
+                enabled={workspace.mode === "server"}
+                orders={workspace.orders}
+                shared={workspace.shared}
+                modelName={s.project.name}
+                onManage={() => goManagement("objects")}
+                onModel={() => setTab("model")}
+                onIssue={() => goManagement("quality")}
+                onOrders={(signal) => {
+                  setShiftSignal(signal);
+                  setTab("shifts");
+                }}
+                onOpen={(site) => {
+                  setSiteContext(site);
+                  setShiftSignal("all");
+                  setTab("shifts");
+                }}
+              />
+            ) : tab === "shifts" ? (
+              <ShiftControl
+                key={`${shiftSignal}:${siteContext?.id ?? "all"}`}
+                orders={workspace.orders}
+                shared={workspace.shared}
+                initialSignal={shiftSignal}
+                siteIds={siteContext?.nodeIds}
+                siteTitle={siteContext?.title}
+                onNew={openWorkOrder}
+                onOpen={(id) => {
+                  setOrderToOpen(id);
+                  setTab("workdays");
+                }}
+              />
             ) : tab === "management" ? (
               <ConstructionPanel
                 view={managementView}
@@ -1600,6 +1713,8 @@ export default function App() {
               </div>
             ) : tab === "workdays" ? (
               <DailyWorkOrders
+                initialOrderId={orderToOpen}
+                onInitialOpened={() => setOrderToOpen(null)}
                 user={workspace.user}
                 shared={
                   workspace.mode === "server" ? workspace.shared : undefined
@@ -1618,7 +1733,13 @@ export default function App() {
                     brigade: order.draft.brigade,
                   })
                 }
-                orders={workArchive.orders}
+                orders={
+                  siteContext
+                    ? workArchive.orders.filter((o) =>
+                        siteContext.nodeIds.includes(o.draft.nodeId ?? ""),
+                      )
+                    : workArchive.orders
+                }
                 error={workArchive.error}
                 onSave={persistWorkOrder}
                 onSaveSignatures={workspace.saveSignatures}
@@ -2214,9 +2335,23 @@ export default function App() {
         />
       )}
       <MobileControls
+        onHome={() => {
+          setSiteContext(null);
+          setTab("home");
+        }}
+        onShifts={() => {
+          setShiftSignal("all");
+          setTab("shifts");
+        }}
+        onMore={() => setNavigationOpen(true)}
+        homeActive={tab === "home"}
+        shiftsActive={tab === "shifts"}
         managementActive={tab === "management"}
         onManagement={goManagement}
-        onModel={() => setTab("model")}
+        onModel={() => {
+          setSiteContext(null);
+          setTab("model");
+        }}
         onWorkOrder={() => setTab("workdays")}
         modelActive={tab === "model"}
         workOrderActive={tab === "workorder" || tab === "workdays"}
@@ -2225,9 +2360,13 @@ export default function App() {
         className={`status ${message.startsWith("Ошибка") ? "error" : ""}`}
         role="status"
       >
-        <span>{message}</span>
+        <span>{tab === "home" ? "Объекты и работа по сменам" : message}</span>
         <span>
-          Y — высота · единицы: м · формат проекта v{s.project.version}
+          {tab === "model"
+            ? `Y — высота · единицы: м · формат проекта v${s.project.version}`
+            : workspace.mode === "server"
+              ? "Общая база"
+              : "Локальный режим"}
         </span>
       </footer>
     </div>

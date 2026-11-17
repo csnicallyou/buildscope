@@ -119,7 +119,6 @@ test("Невысокий экран и светлая тема оставляю�
 }) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/?assembly=canopy");
-  await page.getByLabel("Сменить тему").click();
   await expect(page.locator(".app")).toHaveClass(/light/);
   expect(
     (await page.locator(".model-stage canvas").boundingBox())!.height,

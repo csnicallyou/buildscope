@@ -378,6 +378,41 @@ function Editor({
                       ))}
                   </select>
                 </Field>
+                <Field label="Координаты на карте (широта, долгота)">
+                  <input
+                    aria-label="Координаты на карте"
+                    placeholder="Например: 55.75, 37.62"
+                    defaultValue={
+                      value.location
+                        ? `${value.location.lat}, ${value.location.lng}`
+                        : ""
+                    }
+                    onChange={(e) => {
+                      const parts = e.target.value
+                        .split(",")
+                        .map((v) => Number(v.trim()));
+                      const valid =
+                        parts.length === 2 &&
+                        e.target.value.trim() !== "" &&
+                        parts.every(Number.isFinite) &&
+                        Math.abs(parts[0]) <= 90 &&
+                        Math.abs(parts[1]) <= 180;
+                      e.target.setCustomValidity(
+                        !e.target.value.trim() || valid
+                          ? ""
+                          : "Укажите широту от −90 до 90 и долготу от −180 до 180 через запятую",
+                      );
+                      if (valid)
+                        patch({ location: { lat: parts[0], lng: parts[1] } });
+                      else if (!e.target.value.trim())
+                        patch({ location: null });
+                    }}
+                  />
+                  <small>
+                    Необязательно. Указывайте только известное положение
+                    объекта.
+                  </small>
+                </Field>
               </>
             ) : (
               "nodeId" in value && (

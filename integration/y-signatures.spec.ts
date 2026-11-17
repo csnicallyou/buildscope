@@ -30,8 +30,23 @@ async function photo(page: Page, phase: "выход" | "окончание") {
     buffer: Buffer.from(
       await page.evaluate(() => {
         const canvas = document.createElement("canvas");
-        canvas.width = canvas.height = 64;
-        canvas.getContext("2d")!.fillRect(0, 0, 64, 64);
+        canvas.width = 640;
+        canvas.height = 900;
+        const ctx = canvas.getContext("2d")!;
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, 640, 900);
+        ctx.fillStyle = "#22344a";
+        ctx.font = "24px Arial";
+        ctx.fillText("SYNTHETIC SHIFT SHEET", 40, 70);
+        ctx.font = "18px Arial";
+        for (let i = 0; i < 12; i++) {
+          ctx.fillText(
+            `Test row ${i + 1} - sample data only`,
+            40,
+            130 + i * 48,
+          );
+          ctx.fillRect(40, 145 + i * 48, 560, 1);
+        }
         return canvas.toDataURL("image/png").split(",")[1];
       }),
       "base64",
@@ -47,6 +62,27 @@ async function photo(page: Page, phase: "выход" | "окончание") {
   expect((await uploaded).status()).toBe(201);
   await expect(page.locator(".object-note img")).toHaveCount(count + 1);
   await expect(page.locator(".object-note img").first()).toBeVisible();
+  await page
+    .getByRole("button", { name: "Открыть фотографию крупно", exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByLabel("Просмотр фотографии", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Увеличить фотографию", exact: true })
+    .click();
+  await expect(page.locator(".evidence-reader-tools")).toContainText("150%");
+  await page
+    .getByRole("button", { name: "Повернуть фотографию", exact: true })
+    .click();
+  await page.screenshot({
+    path: ".deploy/screenshots/personal-photo-reader.png",
+  });
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByLabel("Просмотр фотографии", { exact: true }),
+  ).toHaveCount(0);
   await page.keyboard.press("Escape");
 }
 test("Подписи смены: фото, утренний выход без окончания, ночной табель, сохранение и Excel", async ({

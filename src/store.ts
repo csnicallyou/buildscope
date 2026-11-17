@@ -41,7 +41,7 @@ type State = {
   points: Vec3[];
   theme: "dark" | "light";
   workStatusColors: boolean;
-  workStatuses: Record<string,WorkStatus>;
+  workStatuses: Record<string, WorkStatus>;
   view: "iso" | "top" | "front" | "side";
   ortho: boolean;
   cameraRevision: number;
@@ -79,7 +79,7 @@ export const useStore = create<State>((set, get) => ({
   rebarKinds: allBarKinds,
   measure: false,
   points: [],
-  theme: "dark",
+  theme: "light",
   workStatusColors: false,
   workStatuses: {},
   view: "iso",

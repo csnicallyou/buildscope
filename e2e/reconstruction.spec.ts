@@ -41,7 +41,7 @@ test("Павильон: исходная сборка, свойства, арм�
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto("/?assembly=pavilion");
   await page.waitForLoadState("networkidle");
   await expect(page.locator(".project-name")).toContainText(
     "Кассовый павильон",
@@ -108,7 +108,7 @@ test("Навес: Фм2 с вырезом, лестница, источники 
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto("/?assembly=pavilion");
   await page
     .getByRole("button", { name: "Навес «сухие ноги»", exact: true })
     .click();
@@ -142,7 +142,7 @@ test("Навес: Фм2 с вырезом, лестница, источники 
 test("Навес: экспорт GLB, обратная загрузка v2 и ведомость источника", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?assembly=pavilion");
   await page
     .getByRole("button", { name: "Навес «сухие ноги»", exact: true })
     .click();
