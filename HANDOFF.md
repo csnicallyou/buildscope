@@ -2,6 +2,8 @@
 
 ## Сначала: 0.12.1 — бумажные подписи и фото
 
+Проверенный код ab08f5c в PRIVATE origin/codex/shift-signature-photos опубликован как release20261117T074020. Main остаётся отдельным прежним checkpoint. Рабочие изменения .gitignore/.local-share, tracked screenshots и старые untracked share-скрипты сохранены вне коммита.
+
 Внешняя проверка release20261117T074020 прошла для всех ролей, backup schema2/integrity=ok открыт на ПК (.deploy/backups/cloud-0.12.1-20261117.sqlite). Сервисы/таймер active/enabled, рестартов0. Серверный bundle SHA256 совпал с локальным. Финально 106 unit+35 E2E+5 серверных сценариев успешны; изображения/данные тестов синтетические и на production не добавлялись.
 
 Production release20261117T074020, прежний адрес и учётные записи. Существующая БД schema2 сохранена, backup/preflight и сверка числа пользователей/нарядов прошли. Не делать bootstrap. Для старых клиентов inheritSignatureChecks сохраняет отсутствующие optional поля, explicit null означает снятие отметки. Сравнение неизменяемой части наряда структурное isDeepStrictEqual: сравнение JSON-строк ломалось при разном порядке унаследованных полей.
