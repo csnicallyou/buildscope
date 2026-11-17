@@ -1,3 +1,4 @@
+import { signatureStatus, signatureStatusLabels } from "./signatures";
 import templateUrl from "./assets/work-order-template.xlsx?url";
 import { unzipSync, zipSync, strFromU8, strToU8 } from "fflate";
 import { crewHours, reportErrors, type WorkDraft } from "./workOrders";
@@ -136,7 +137,17 @@ export async function createWorkOrder(draft: WorkDraft) {
     r.equipment,
     r.brand,
     r.plate,
-    r.note,
+    [
+      r.note,
+      r.verifiedActual !== undefined
+        ? `Проверенный объём: ${r.verifiedActual ?? "не проверено"} ${r.unit}. Основание: ${r.verificationBasis || "не указано"}. ${r.verifiedBy || ""} ${r.verifiedAt || ""}`
+        : "",
+      r.additional
+        ? `Дополнительная работа. Основание: ${r.additional.basis}. Внёс: ${r.additional.addedBy}, ${r.additional.addedAt}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
     r.target,
     r.elementIds.join("; "),
     r.plan === r.modelPlan
@@ -163,10 +174,13 @@ export async function createWorkOrder(draft: WorkDraft) {
     },
     [
       r.note,
+      i === 0
+        ? `Трудовые единицы: план — ${draft.plannedPeople ?? "не указано"}; заявлено — ${draft.reportedPeople ?? "не указано"}; поимённо — ${draft.crew.length}.`
+        : "",
       ...(r.startSignatureNoteId !== undefined ||
       r.endSignatureNoteId !== undefined
         ? [
-            `Проверка подписей по фото: выход — ${r.startSignatureNoteId ? "подтверждена" : "не отмечена"}; окончание — ${r.endSignatureNoteId ? "подтверждена" : "не отмечена"}. Фото хранятся в карточке наряда.`,
+            `Проверка подписей по фото: выход — ${signatureStatusLabels[signatureStatus(r, "start")]}; окончание — ${signatureStatusLabels[signatureStatus(r, "end")]}. Фото хранятся в карточке наряда.`,
           ]
         : []),
     ]

@@ -94,7 +94,7 @@ export default function OrdersRegister({
             <tr>
               <th>Объект / подрядчик</th>
               <th>Работа</th>
-              <th>План / факт</th>
+              <th>План / заявлено / проверено</th>
               <th>Смена</th>
               <th>Состояние</th>
             </tr>
@@ -141,7 +141,8 @@ export default function OrdersRegister({
                   <td>
                     {order.draft.rows.slice(0, 2).map((r) => (
                       <p key={r.id}>
-                        {r.plan ?? "—"} / {r.actual ?? "—"} {r.unit}
+                        {r.plan ?? "—"} / {r.actual ?? "—"} /{" "}
+                        {r.verifiedActual ?? "—"} {r.unit}
                       </p>
                     ))}
                   </td>

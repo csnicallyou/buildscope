@@ -211,13 +211,13 @@ test("Подписи смены: фото, утренний выход без о
   const path = await download.path();
   const files = unzipSync(new Uint8Array(await readFile(path!)));
   expect(strFromU8(files["xl/worksheets/sheet2.xml"])).toContain(
-    "Проверка подписей по фото: выход — подтверждена; окончание — подтверждена",
+    "Проверка подписей по фото: выход — Есть; окончание — Есть",
   );
   await page
     .getByRole("button", { name: "История изменений", exact: true })
     .click();
   await expect(page.locator(".order-history")).toContainText(
-    "проверка подписи на фото: выход подтверждена",
+    "проверка подписи на фото: выход Есть",
   );
   await workerContext.close();
 });

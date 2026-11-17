@@ -23,6 +23,7 @@ import {
 import { download } from "./export";
 import { useConstruction } from "./useConstruction";
 import { ofKind, nodePath } from "./construction";
+import ManualWorkComposer from "./ManualWorkComposer";
 const f = (v: number | null) =>
   v === null
     ? "Не определён"
@@ -275,6 +276,22 @@ export default function WorkOrderPanel({
         <fieldset className="work-order-metadata">
           <legend>Параметры наряда</legend>
           <label>
+            Трудовые единицы по плану
+            <input
+              aria-label="План людей на смену"
+              type="number"
+              min="0"
+              step="1"
+              value={draft.plannedPeople ?? ""}
+              onChange={(e) =>
+                onDraft((d) => ({
+                  ...d,
+                  plannedPeople: e.target.value === "" ? null : +e.target.value,
+                }))
+              }
+            />
+          </label>
+          <label>
             Бригада
             <input
               aria-label="Бригада наряда"
@@ -310,7 +327,15 @@ export default function WorkOrderPanel({
             <input
               aria-label="Объект наряда"
               value={draft.site}
-              onChange={(e) => onDraft((d) => ({ ...d, site: e.target.value }))}
+              onChange={(e) => {
+                const site = e.target.value;
+                onDraft((d) => ({
+                  ...d,
+                  site,
+                  rows: d.rows.map((r) => ({ ...r, site })),
+                  crew: d.crew.map((r) => ({ ...r, site })),
+                }));
+              }}
             />
           </label>
           <label>
@@ -354,6 +379,7 @@ export default function WorkOrderPanel({
           </label>
         </fieldset>
       </details>
+      <ManualWorkComposer draft={draft} onDraft={onDraft} />
       <div className="work-order-add">
         <label>
           Объект или часть
@@ -636,7 +662,9 @@ export default function WorkOrderPanel({
       <p className="work-order-footnote">
         Excel: «ОБЪЕМ», «ТАБЕЛЬ», «ИТОГИ». В итогах работы разделены по
         наименованию и единице. Неизвестное количество не заменяется нулём.
-        Данные не отправляются на сервер.
+        {shared
+          ? "Данные сохраняются в общей базе."
+          : "Данные хранятся в этом браузере."}
       </p>
     </section>
   );

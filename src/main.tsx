@@ -5,6 +5,7 @@ import "./style.css";
 import "./workbench.css";
 import "./construction.css";
 import "./personal.css";
+import "./field-operations.css";
 import { createKzh } from "./kzh";
 import { useStore } from "./store";
 import { createKzhDetails } from "./details";

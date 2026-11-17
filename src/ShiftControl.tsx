@@ -12,6 +12,7 @@ import {
 import type { SavedWorkOrder } from "./workOrderArchive";
 import type { SharedOrder } from "./workspaceTypes";
 import { today } from "./workOrders";
+import { signatureSummary } from "./signatures";
 import {
   matchesSignal,
   orderSignals,
@@ -133,12 +134,14 @@ export default function ShiftControl({
         {metrics.map(({ key, title, icon: Icon }) => (
           <button
             key={key}
+            title={title}
+            aria-label={title}
             className={`operation-kpi ${signal === key ? "selected" : ""}`}
             onClick={() => setSignal(signal === key ? "all" : key)}
           >
             <Icon size={22} />
             <span>
-              {title}
+              <span className="kpi-label">{title}</span>
               <strong>
                 {current.filter((o) => matchesSignal(o, shared, key)).length}
               </strong>
@@ -172,6 +175,7 @@ export default function ShiftControl({
                   <th>Подрядчик / бригада</th>
                   <th>Выход по табелю</th>
                   <th>Работы</th>
+                  <th>Объёмы</th>
                   <th>Отчёт</th>
                   <th>Подписи</th>
                   <th>Приёмка</th>
@@ -196,6 +200,10 @@ export default function ShiftControl({
                         </small>
                       </td>
                       <td>
+                        <small>
+                          План / заявлено: {o.draft.plannedPeople ?? "—"} /{" "}
+                          {o.draft.reportedPeople ?? "—"}
+                        </small>
                         <strong>
                           {present} / {o.draft.crew.length || "—"}
                         </strong>
@@ -213,6 +221,18 @@ export default function ShiftControl({
                         </small>
                       </td>
                       <td>
+                        <span className="operation-status neutral">
+                          {
+                            o.draft.rows.filter(
+                              (r) =>
+                                r.verifiedActual !== undefined &&
+                                r.verifiedActual !== null,
+                            ).length
+                          }{" "}
+                          / {o.draft.rows.length} проверено
+                        </span>
+                      </td>
+                      <td>
                         <span
                           className={`operation-status ${state.received ? "good" : "pending"}`}
                         >
@@ -223,9 +243,7 @@ export default function ShiftControl({
                         <span
                           className={`operation-status ${state.signatures ? "pending" : "good"}`}
                         >
-                          {state.signatures
-                            ? "Проверены не все"
-                            : "Отметки есть"}
+                          {signatureSummary(o.draft.crew)}
                         </span>
                       </td>
                       <td>

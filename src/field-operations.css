@@ -1,0 +1,432 @@
+.field-operations {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: auto;
+  background: var(--bg);
+  color: var(--fg);
+}
+.field-operations.field-editing {
+  grid-template-columns: minmax(0, 1fr) 410px;
+}
+.field-main {
+  padding: 26px;
+  min-width: 0;
+  overflow: auto;
+}
+.field-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+.field-tabs button {
+  min-height: 39px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.field-tabs button.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+.field-filters {
+  display: flex;
+  align-items: end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.field-filters label {
+  min-width: 180px;
+  flex: 1;
+}
+.field-operations :is(input:not([type="checkbox"]), select, textarea),
+.order-review :is(input, textarea),
+.manual-work-composer input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 38px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 12px;
+}
+.field-operations textarea {
+  min-height: 80px;
+}
+.field-records {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+.field-card {
+  min-width: 0;
+  background: var(--panel);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+.field-card header {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+}
+.field-card h2 {
+  font-size: 16px;
+  margin: 0 0 10px;
+}
+.field-card p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 9px 0;
+}
+.field-card small,
+.field-editor small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.field-card footer {
+  border-top: 1px solid var(--border);
+  margin-top: 15px;
+  padding-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.field-card a,
+.field-editor a {
+  display: block;
+  color: var(--accent);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.field-editor {
+  border-left: 1px solid var(--border);
+  padding: 22px;
+  min-width: 0;
+  overflow: auto;
+  background: var(--panel);
+}
+.field-editor header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.field-editor h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.field-editor fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+.field-editor label:has([type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.field-editor h3 {
+  font-size: 14px;
+}
+.allocation-row {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.order-review {
+  margin: 20px 0;
+}
+.order-review details,
+.manual-work-composer {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--panel);
+  margin: 12px 0;
+}
+.order-review summary,
+.manual-work-composer summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.order-review table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 15px 0;
+  font-size: 12px;
+}
+.order-review :is(th, td) {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.order-review th {
+  background: var(--bg);
+  font-size: 10px;
+}
+.order-review :is(p, small),
+.manual-work-composer p {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.order-review small {
+  display: block;
+}
+.order-review td input {
+  min-width: 100px;
+}
+.order-review label,
+.manual-work-composer label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  margin: 12px 0;
+}
+.additional-badge {
+  padding: 10px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 6px;
+}
+.manual-work-composer {
+  margin: 20px 0;
+}
+.app .field-operations button,
+.app .order-review button {
+  min-height: 36px;
+}
+.field-operations video {
+  width: 100%;
+  max-height: 300px;
+}
+@media (max-width: 1100px) {
+  .field-operations.field-editing {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .field-editing .field-main {
+    display: none;
+  }
+}
+@media (max-width: 850px) {
+  .field-main {
+    padding: 22px 14px 90px;
+  }
+  .field-editor {
+    padding: 22px 16px 90px;
+    border: 0;
+  }
+  .field-records {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .field-filters label {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .field-tabs {
+    gap: 6px;
+  }
+  .field-tabs button {
+    font-size: 11px;
+    padding: 8px;
+  }
+  .order-review details {
+    padding: 12px;
+  }
+  .order-review table {
+    font-size: 11px;
+  }
+  .order-review td input {
+    min-width: 90px;
+  }
+  .field-card {
+    padding: 17px;
+  }
+}
+
+.order-media {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 18px 0;
+  background: var(--panel);
+}
+.order-media summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+}
+.order-media p,
+.order-media small {
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.order-media article {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.order-media small {
+  display: block;
+}
+.order-media video {
+  width: 100%;
+  max-height: 400px;
+}
+.order-media a {
+  display: block;
+  color: var(--accent);
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+}
+.order-media label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 15px 0;
+  font-size: 12px;
+}
+.order-media input {
+  min-height: 38px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px;
+}
+.signature-bulk {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.signature-bulk label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11px;
+}
+.signature-bulk select {
+  width: 100%;
+  min-height: 36px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px;
+}
+@media (max-width: 850px) {
+  .shift-table td:nth-child(4)::before {
+    content: "Объёмы";
+  }
+  .shift-table td:nth-child(5)::before {
+    content: "Отчёт";
+  }
+  .shift-table td:nth-child(6)::before {
+    content: "Подписи";
+  }
+  .shift-table td:nth-child(7)::before {
+    content: "Приёмка";
+  }
+}
+
+.reported-people {
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 12px;
+}
+.reported-people label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.reported-people input {
+  width: 160px;
+  min-height: 38px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 8px;
+}
+
+.field-editor fieldset {
+  min-width: 0;
+}
+@media (max-width: 850px) {
+  .order-review table,
+  .order-review tbody {
+    display: block;
+  }
+  .order-review thead {
+    display: none;
+  }
+  .order-review tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    padding: 15px 0;
+  }
+  .order-review td {
+    display: block;
+    border: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .order-review td:first-child,
+  .order-review td:last-child {
+    grid-column: 1/-1;
+  }
+  .order-review td:nth-child(2)::before {
+    content: "Единица";
+  }
+  .order-review td:nth-child(3)::before {
+    content: "План";
+  }
+  .order-review td:nth-child(4)::before {
+    content: "Заявлено";
+  }
+  .order-review td:nth-child(5)::before {
+    content: "Проверено";
+  }
+  .order-review td:nth-child(6)::before {
+    content: "Основание проверки";
+  }
+  .order-review td::before {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .order-review td input {
+    min-width: 0;
+    font-size: 14px;
+  }
+}

@@ -10,6 +10,7 @@ import {
 } from "../src/construction";
 import type { WorkspaceUser } from "../src/workspaceTypes";
 import { WorkspaceDatabase, WorkspaceError } from "./database";
+import { validateField } from "./field-validation";
 const scope = (p: Payload) =>
   "brigade" in p ? p.brigade || null : p.kind === "crew" ? p.title : null;
 const allowed = (u: WorkspaceUser, p: Payload) =>
@@ -209,6 +210,12 @@ export class ConstructionStore {
         previous = recordId ? this.get(user, id) : null;
       if (previous && previous.payload.kind !== p.kind)
         throw new WorkspaceError(400, "Тип записи нельзя менять");
+      if (
+        p.kind === "document" &&
+        previous?.payload.kind === "document" &&
+        p.orderId === undefined
+      )
+        p.orderId = previous.payload.orderId;
       if (previous ? previous.revision !== revision : revision !== null)
         throw new WorkspaceError(
           409,
@@ -216,6 +223,7 @@ export class ConstructionStore {
         );
       if (!allowed(user, p))
         throw new WorkspaceError(403, "Недоступная бригада");
+      validateField(this.store, user, p, id, existing);
       if (user.role !== "admin") {
         if (
           previous?.payload.kind === "issue" &&
@@ -328,11 +336,19 @@ export class ConstructionStore {
               ? data[0] === 255 && data[1] === 216
               : extension === "dxf"
                 ? data.subarray(0, 200).toString().includes("SECTION")
-                : false;
+                : extension === "mp4"
+                  ? data.subarray(4, 8).toString() === "ftyp"
+                  : extension === "mov"
+                    ? ["ftyp", "moov", "wide", "mdat"].includes(
+                        data.subarray(4, 8).toString(),
+                      )
+                    : extension === "webm"
+                      ? data.subarray(0, 4).toString("hex") === "1a45dfa3"
+                      : false;
     if (!valid || !data.length || data.length > 25 * 1024 * 1024)
       throw new WorkspaceError(
         400,
-        "Поддерживаются PDF, XLSX, DOCX, DXF и изображения JPEG/PNG до 25 МБ",
+        "Поддерживаются PDF, XLSX, DOCX, DXF, JPEG/PNG и видео MP4/WebM/MOV до 25 МБ",
       );
     return this.store.transaction(() => {
       const record = this.get(user, id);
@@ -341,7 +357,12 @@ export class ConstructionStore {
           409,
           "Документ изменён. Обновите запись перед загрузкой",
         );
-      if (record.payload.kind !== "document" || record.file)
+      if (
+        !["document", "waybill", "request", "proposal"].includes(
+          record.payload.kind,
+        ) ||
+        record.file
+      )
         throw new WorkspaceError(
           409,
           "Для другого файла создайте новую редакцию документа",
@@ -375,15 +396,35 @@ export class ConstructionStore {
     user: WorkspaceUser,
     draft: {
       taskId?: string | null;
+      proposalId?: string | null;
       nodeId?: string | null;
       brigade: string;
       date: string;
       shift: string;
-      rows?: { elementIds: string[]; project: string }[];
+      rows?: {
+        elementIds: string[];
+        project: string;
+        additional?: { basis: string };
+      }[];
     },
   ) {
     if (draft.nodeId && this.get(user, draft.nodeId).payload.kind !== "node")
       throw new WorkspaceError(400, "Выберите участок стройки");
+    if (draft.proposalId) {
+      const source = this.get(user, draft.proposalId);
+      if (
+        source.payload.kind !== "proposal" ||
+        source.payload.status !== "approved" ||
+        source.payload.brigade !== draft.brigade ||
+        source.payload.date !== draft.date ||
+        source.payload.shift !== draft.shift ||
+        source.payload.nodeId !== (draft.nodeId ?? null)
+      )
+        throw new WorkspaceError(
+          409,
+          "Предложение должно быть согласовано для того же участка, бригады, даты и смены.",
+        );
+    }
     if (!draft.taskId) return;
     const task = this.get(user, draft.taskId);
     if (task.payload.kind !== "task")
@@ -392,12 +433,13 @@ export class ConstructionStore {
     if (
       draft.rows?.some(
         (r) =>
-          (p.elementIds.length > 0 &&
+          !r.additional &&
+          ((p.elementIds.length > 0 &&
             !r.elementIds.some((id) => p.elementIds.includes(id))) ||
-          (p.model === "kzh-canopy" &&
-            r.elementIds.some((id) => !id.startsWith("canopy-"))) ||
-          (p.model === "kzh-pavilion" &&
-            r.elementIds.some((id) => !id.startsWith("pavilion-"))),
+            (p.model === "kzh-canopy" &&
+              r.elementIds.some((id) => !id.startsWith("canopy-"))) ||
+            (p.model === "kzh-pavilion" &&
+              r.elementIds.some((id) => !id.startsWith("pavilion-")))),
       )
     )
       throw new WorkspaceError(

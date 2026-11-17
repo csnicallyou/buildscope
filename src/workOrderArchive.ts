@@ -10,6 +10,13 @@ export const workOrdersStorageKey = "buildscope.work-orders.v1";
 const quantity = z.number().finite().nonnegative().nullable();
 const text = z.string().max(20000);
 const workRow = z.object({
+  verifiedActual: quantity.optional(),
+  verificationBasis: text.optional(),
+  verifiedAt: text.optional(),
+  verifiedBy: text.optional(),
+  additional: z
+    .object({ basis: text.min(1), addedAt: text, addedBy: text })
+    .optional(),
   id: text,
   date: text,
   site: text,
@@ -42,6 +49,9 @@ const workRow = z.object({
   quantityElementIds: z.array(text).optional(),
 });
 const draftSchema = z.object({
+  plannedPeople: z.number().int().nonnegative().nullable().optional(),
+  reportedPeople: z.number().int().nonnegative().nullable().optional(),
+  proposalId: text.nullable().optional(),
   nodeId: text.nullable().optional(),
   taskId: text.nullable().optional(),
   brigade: text,
@@ -60,6 +70,12 @@ const draftSchema = z.object({
         contractor: text,
         shift: text,
         name: text,
+        startSignatureStatus: z
+          .enum(["unchecked", "present", "missing", "illegible"])
+          .optional(),
+        endSignatureStatus: z
+          .enum(["unchecked", "present", "missing", "illegible"])
+          .optional(),
         startSignatureNoteId: z.string().min(1).max(200).nullable().optional(),
         endSignatureNoteId: z.string().min(1).max(200).nullable().optional(),
         start: text,
@@ -103,6 +119,7 @@ export function issueWorkOrder(draft: WorkDraft): SavedWorkOrder {
     submittedAt: null,
     draft: {
       ...structuredClone(draft),
+      reportedPeople: null,
       crew: draft.crew.map((r) => ({
         ...structuredClone(r),
         start: "",
@@ -110,10 +127,16 @@ export function issueWorkOrder(draft: WorkDraft): SavedWorkOrder {
         breakMinutes: 0,
         startSignatureNoteId: null,
         endSignatureNoteId: null,
+        startSignatureStatus: "unchecked",
+        endSignatureStatus: "unchecked",
       })),
       rows: draft.rows.map((r) => ({
         ...structuredClone(r),
         actual: null,
+        verifiedActual: null,
+        verificationBasis: "",
+        verifiedAt: "",
+        verifiedBy: "",
         completed: false,
       })),
     },

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { fieldPayloads, blankField } from "./fieldOperations";
 import type { SharedOrder } from "./workspaceTypes";
 const text = z.string().trim().max(4000);
 const title = text.min(1).max(180);
@@ -16,6 +17,7 @@ const ref = {
   elementIds: z.array(id).max(500),
 };
 export const payloadSchema = z.discriminatedUnion("kind", [
+  ...fieldPayloads,
   z.object({
     kind: z.literal("node"),
     title,
@@ -80,12 +82,20 @@ export const payloadSchema = z.discriminatedUnion("kind", [
   }),
   z.object({
     kind: z.literal("document"),
+    orderId: id.nullable().optional(),
     title,
     ...ref,
     brigade: text,
     number: title,
     edition: title,
-    category: z.enum(["drawing", "executive", "certificate", "photo", "other"]),
+    category: z.enum([
+      "drawing",
+      "executive",
+      "certificate",
+      "photo",
+      "video",
+      "other",
+    ]),
     date,
     supersedes: id.nullable(),
     description: text,
@@ -244,6 +254,12 @@ export function blankPayload(
 ): Payload {
   const common = { title: "", nodeId, model, elementIds };
   switch (kind) {
+    case "contractor":
+    case "machine":
+    case "waybill":
+    case "request":
+    case "proposal":
+      return blankField(kind, today, brigade, nodeId);
     case "node":
       return {
         kind,

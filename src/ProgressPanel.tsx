@@ -24,8 +24,10 @@ export default function ProgressPanel({ orders }: { orders: SharedOrder[] }) {
                 <th>Работа</th>
                 <th>Единица</th>
                 <th>Нужно по модели</th>
-                <th>Факт сдано</th>
-                <th>Осталось</th>
+                <th>Заявлено в сданных нарядах</th>
+                <th>Проверено</th>
+                <th>Проверенный остаток</th>
+                <th>Остаток по заявленному</th>
                 <th>План в работе</th>
               </tr>
             </thead>
@@ -45,6 +47,14 @@ export default function ProgressPanel({ orders }: { orders: SharedOrder[] }) {
                           ? "Не заполнен"
                           : "Нет сданного факта"}
                   </td>
+                  <td>
+                    {g.conflict
+                      ? "Разные основания"
+                      : g.hasVerified
+                        ? `${f(g.verified)}${g.verifiedIncomplete ? " + не проверено" : ""}`
+                        : "Не проверено"}
+                  </td>
+                  <td>{f(g.verifiedRemaining)}</td>
                   <td>{f(g.remaining)}</td>
                   <td>{f(g.reserved)}</td>
                 </tr>

@@ -108,20 +108,27 @@ export default function OperationsHome({
           <button
             className={`operation-kpi ${tone}`}
             key={signal}
+            title={`${title}: ${value}`}
+            aria-label={`${title}: ${value}`}
             onClick={() => onOrders(signal)}
           >
             <Icon size={21} />
             <span>
-              {title}
+              <span className="kpi-label">{title}</span>
               <strong>{value}</strong>
             </span>
             <ChevronRight size={15} />
           </button>
         ))}
-        <button className="operation-kpi red" onClick={onIssue}>
+        <button
+          className="operation-kpi red"
+          title="Критические проблемы"
+          aria-label="Критические проблемы"
+          onClick={onIssue}
+        >
           <ShieldAlert size={21} />
           <span>
-            Критические проблемы
+            <span className="kpi-label">Критические проблемы</span>
             <strong>
               {issues.filter((r) => r.payload.severity === "critical").length}
             </strong>

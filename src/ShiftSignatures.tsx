@@ -13,6 +13,9 @@ import {
   signatureModels,
   signatureFields,
   signatureLabels,
+  signatureStatus,
+  signatureStatusLabels,
+  type SignatureStatus,
   type SignaturePhase,
 } from "./signatures";
 export default function ShiftSignatures({
@@ -30,6 +33,7 @@ export default function ShiftSignatures({
     personId: string,
     phase: SignaturePhase,
     noteId: string | null,
+    status?: SignatureStatus,
   ) => void;
 }) {
   const [photos, setPhotos] = useState<Record<SignaturePhase, ObjectNote[]>>({
@@ -43,6 +47,12 @@ export default function ShiftSignatures({
     user.role === "viewer" ||
     accepted ||
     (!!order.submittedAt && user.role !== "admin");
+  const [bulk, setBulk] = useState<
+    Record<SignaturePhase, { photo: string; status: SignatureStatus }>
+  >({
+    start: { photo: "", status: "present" },
+    end: { photo: "", status: "present" },
+  });
   const refresh = useCallback(async () => {
     try {
       const values = await Promise.all(
@@ -76,15 +86,24 @@ export default function ShiftSignatures({
     <details className="shift-signatures">
       <summary>
         Подписи сотрудников · выход{" "}
-        {order.draft.crew.filter((p) => !!p.startSignatureNoteId).length}/
-        {order.draft.crew.length} · окончание{" "}
-        {order.draft.crew.filter((p) => !!p.endSignatureNoteId).length}/
-        {order.draft.crew.length}
+        {
+          order.draft.crew.filter(
+            (p) => signatureStatus(p, "start") === "present",
+          ).length
+        }
+        /{order.draft.crew.length} · окончание{" "}
+        {
+          order.draft.crew.filter(
+            (p) => signatureStatus(p, "end") === "present",
+          ).length
+        }
+        /{order.draft.crew.length}
       </summary>
       <p>
         Прикрепите фотографии подписанных листов и отметьте подписи, которые вы
         проверили. Для каждого сотрудника сохраните время выхода и окончания
         смены. Отсутствие галочки означает, что проверка не подтверждена.
+        Проверка подписи не подтверждает автоматически отработанные часы.
       </p>
       {error && <p role="alert">{error}</p>}
       <div className="signature-albums">
@@ -102,6 +121,78 @@ export default function ShiftSignatures({
                 ? `Фотографий: ${photos[p].length}`
                 : "Фото ещё не приложено"}
             </small>
+            {!!photos[p].length && !readonly && (
+              <div className="signature-bulk">
+                <label>
+                  Лист для проверки списка
+                  <select
+                    aria-label={`Лист для списка ${p}`}
+                    value={bulk[p].photo || photos[p][0].id}
+                    onChange={(e) =>
+                      setBulk((b) => ({
+                        ...b,
+                        [p]: { ...b[p], photo: e.target.value },
+                      }))
+                    }
+                  >
+                    {photos[p].map((n, i) => (
+                      <option key={n.id} value={n.id}>
+                        Лист {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Результат для списка
+                  <select
+                    aria-label={`Проверка списка ${p}`}
+                    value={bulk[p].status}
+                    onChange={(e) =>
+                      setBulk((b) => ({
+                        ...b,
+                        [p]: {
+                          ...b[p],
+                          status: e.target.value as SignatureStatus,
+                        },
+                      }))
+                    }
+                  >
+                    {Object.entries(signatureStatusLabels).map(
+                      ([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+                <button
+                  onClick={() =>
+                    order.draft.crew
+                      .filter(
+                        (person) => bulk[p].status !== "present" || person[p],
+                      )
+                      .forEach((person) =>
+                        onChange(
+                          person.id,
+                          p,
+                          bulk[p].status === "unchecked"
+                            ? null
+                            : bulk[p].photo || photos[p][0].id,
+                          bulk[p].status,
+                        ),
+                      )
+                  }
+                >
+                  Применить к списку сотрудников
+                </button>
+                <small>
+                  Выберите лист, на котором указан этот список. Для отметки
+                  «Есть» время должно быть заполнено; остальные строки останутся
+                  без подтверждения.
+                </small>
+              </div>
+            )}
             {photos[p].map((n, i) => (
               <a
                 key={n.id}
@@ -134,7 +225,7 @@ export default function ShiftSignatures({
                   <input
                     aria-label={`Подпись ${p === "start" ? "при выходе" : "при окончании"} ${i + 1}`}
                     type="checkbox"
-                    checked={!!noteId}
+                    checked={signatureStatus(person, p) === "present"}
                     disabled={
                       readonly || (!noteId && (!photos[p].length || !person[p]))
                     }
@@ -143,18 +234,57 @@ export default function ShiftSignatures({
                         person.id,
                         p,
                         e.target.checked ? photos[p][0].id : null,
+                        e.target.checked ? "present" : "unchecked",
                       )
                     }
                   />
                   {p === "start" ? "Выход" : "Окончание"}: подпись на фото
                   проверена
                 </label>
+                <label>
+                  Состояние подписи
+                  <select
+                    aria-label={`Состояние подписи ${p === "start" ? "при выходе" : "при окончании"} ${i + 1}`}
+                    value={signatureStatus(person, p)}
+                    disabled={readonly || !photos[p].length}
+                    onChange={(e) => {
+                      const status = e.target.value as SignatureStatus;
+                      onChange(
+                        person.id,
+                        p,
+                        status === "unchecked"
+                          ? null
+                          : (noteId ?? photos[p][0].id),
+                        status,
+                      );
+                    }}
+                  >
+                    {Object.entries(signatureStatusLabels).map(
+                      ([key, label]) => (
+                        <option
+                          key={key}
+                          value={key}
+                          disabled={key === "present" && !person[p]}
+                        >
+                          {label}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
                 {noteId && (
                   <select
                     aria-label={`Фото подписи ${p === "start" ? "при выходе" : "при окончании"} ${i + 1}`}
                     disabled={readonly}
                     value={noteId}
-                    onChange={(e) => onChange(person.id, p, e.target.value)}
+                    onChange={(e) =>
+                      onChange(
+                        person.id,
+                        p,
+                        e.target.value,
+                        signatureStatus(person, p),
+                      )
+                    }
                   >
                     {!matched && (
                       <option value={noteId}>Выбранное фото недоступно</option>

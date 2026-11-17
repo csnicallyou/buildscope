@@ -1,3 +1,7 @@
+import OrderReview from "./OrderReviewPanel";
+import OrderMedia from "./OrderMedia";
+import type { additionalSchema, reviewSchema } from "./orderReview";
+import type { z } from "zod";
 import { useEffect, useState } from "react";
 import { Download, Plus, Check, ArrowLeft } from "lucide-react";
 import {
@@ -16,7 +20,11 @@ import type { SharedOrder, WorkspaceUser } from "./workspaceTypes";
 import OrderWorkflow from "./OrderWorkflow";
 import OrdersRegister from "./OrdersRegister";
 import ShiftSignatures from "./ShiftSignatures";
-import { signatureFields } from "./signatures";
+import {
+  signatureFields,
+  signatureStatusFields,
+  type SignatureStatus,
+} from "./signatures";
 const f = (n: number | null) =>
   n === null
     ? "Не определён"
@@ -33,6 +41,8 @@ export default function DailyWorkOrders({
   onAction,
   onCarry,
   onEvidence,
+  onReview,
+  onAdditional,
   initialOrderId,
   onInitialOpened,
 }: {
@@ -51,12 +61,21 @@ export default function DailyWorkOrders({
   ) => Promise<SavedWorkOrder | null>;
   onCarry: (draft: WorkDraft) => void;
   onEvidence: (order: SavedWorkOrder, row: WorkRow) => void;
+  onReview: (
+    order: SavedWorkOrder,
+    rows: z.infer<typeof reviewSchema>["rows"],
+  ) => Promise<SavedWorkOrder | null>;
+  onAdditional: (
+    order: SavedWorkOrder,
+    fields: Omit<z.infer<typeof additionalSchema>, "revision">,
+  ) => Promise<SavedWorkOrder | null>;
   initialOrderId?: string | null;
   onInitialOpened?: () => void;
 }) {
   const [editing, setEditing] = useState<SavedWorkOrder | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [reviewDirty, setReviewDirty] = useState(false);
   useEffect(() => {
     if (!initialOrderId) return;
     const order = orders.find((o) => o.id === initialOrderId);
@@ -74,6 +93,8 @@ export default function DailyWorkOrders({
       id: p.id,
       start: p.startSignatureNoteId ?? null,
       end: p.endSignatureNoteId ?? null,
+      startStatus: p.startSignatureStatus,
+      endStatus: p.endSignatureStatus,
     }));
   const signatureChanges =
     !!editing &&
@@ -94,6 +115,10 @@ export default function DailyWorkOrders({
     }
   };
   const persistCurrent = async () => {
+    if (reviewDirty) {
+      setMessage("Сначала сохраните или отмените правки проверки объёмов");
+      return false;
+    }
     if (!editing || !canEdit) return true;
     if (editing.submittedAt)
       return !signatureChanges || !!(await saveSignatureChecks());
@@ -202,7 +227,8 @@ export default function DailyWorkOrders({
               user &&
               shared.find((e) => e.order.id === editing.id) && (
                 <OrderWorkflow
-                  key={`${editing.id}:${shared.find((e) => e.order.id === editing.id)!.revision}`}
+                  acceptDisabled={reviewDirty}
+                  key={editing.id}
                   entry={shared.find((e) => e.order.id === editing.id)!}
                   user={user}
                   onAction={async (...args) => {
@@ -253,6 +279,52 @@ export default function DailyWorkOrders({
                 {editing.draft.zone}
               </p>
             </div>
+            {user && <OrderMedia order={editing} user={user} />}
+            <OrderReview
+              onDirty={setReviewDirty}
+              key={`${editing.id}:${editing.serverRevision ?? editing.createdAt}`}
+              order={editing}
+              admin={canIssue}
+              canEdit={canEdit}
+              accepted={
+                shared?.find((e) => e.order.id === editing.id)?.stage ===
+                "accepted"
+              }
+              onReview={async (rows) => {
+                const current = editing.submittedAt
+                  ? signatureChanges
+                    ? await saveSignatureChecks()
+                    : editing
+                  : await onSave(editing);
+                if (!current) return false;
+                const saved = await onReview(current, rows);
+                if (saved) {
+                  setEditing(saved);
+                  setMessage(
+                    "Проверенные объёмы сохранены отдельно от заявленных",
+                  );
+                }
+                return !!saved;
+              }}
+              onAdditional={async (fields) => {
+                if (reviewDirty) {
+                  setMessage(
+                    "Сначала сохраните или отмените правки проверки объёмов",
+                  );
+                  return false;
+                }
+                const current = await onSave(editing);
+                if (!current) return false;
+                const saved = await onAdditional(current, fields);
+                if (saved) {
+                  setEditing(saved);
+                  setMessage(
+                    "Дополнительная работа добавлена. Исходный план сохранён.",
+                  );
+                }
+                return !!saved;
+              }}
+            />
             {editing.draft.rows.map((row, index) => (
               <article
                 className="handoff-row"
@@ -263,6 +335,11 @@ export default function DailyWorkOrders({
                   {index + 1}. {row.work}
                 </h3>
                 <p>{row.target}</p>
+                {row.additional && (
+                  <p className="additional-badge">
+                    Дополнительная работа · {row.additional.basis}
+                  </p>
+                )}
                 {user && (
                   <button onClick={() => onEvidence(editing, row)}>
                     Фото и замечания
@@ -284,7 +361,7 @@ export default function DailyWorkOrders({
                     </strong>
                   </span>
                   <label>
-                    Факт, {row.unit}
+                    Заявленный факт, {row.unit}
                     <input
                       type="number"
                       min={0}
@@ -339,6 +416,45 @@ export default function DailyWorkOrders({
                 <small>{row.modelNeed?.basis ?? row.basis}</small>
               </article>
             ))}
+            <div className="reported-people">
+              <label>
+                Заявлено трудовых единиц
+                <input
+                  aria-label="Заявлено людей на смену"
+                  type="number"
+                  min="0"
+                  step="1"
+                  disabled={!!editing.submittedAt || !canEdit || busy}
+                  value={editing.draft.reportedPeople ?? ""}
+                  onChange={(e) =>
+                    setEditing((o) =>
+                      o
+                        ? {
+                            ...o,
+                            draft: {
+                              ...o.draft,
+                              reportedPeople:
+                                e.target.value === "" ? null : +e.target.value,
+                            },
+                          }
+                        : o,
+                    )
+                  }
+                />
+              </label>
+              <p>
+                По плану: {editing.draft.plannedPeople ?? "не указано"}.
+                Поимённых строк: {editing.draft.crew.length}.
+              </p>
+              {editing.draft.reportedPeople !== undefined &&
+                editing.draft.reportedPeople !== null &&
+                editing.draft.reportedPeople !== editing.draft.crew.length && (
+                  <p className="cm-warning">
+                    Заявленное количество отличается от поимённого состава.
+                    Уточните табель; значения не заменяются автоматически.
+                  </p>
+                )}
+            </div>
             {editing.draft.crew.length > 0 && (
               <details className="work-crew handoff-crew">
                 <summary>Табель ({editing.draft.crew.length})</summary>
@@ -402,7 +518,7 @@ export default function DailyWorkOrders({
                   shared?.find((e) => e.order.id === editing.id)?.stage ===
                   "accepted"
                 }
-                onChange={(personId, phase, noteId) =>
+                onChange={(personId, phase, noteId, status) =>
                   setEditing(
                     (o) =>
                       o && {
@@ -411,7 +527,15 @@ export default function DailyWorkOrders({
                           ...o.draft,
                           crew: o.draft.crew.map((p) =>
                             p.id === personId
-                              ? { ...p, [signatureFields[phase]]: noteId }
+                              ? {
+                                  ...p,
+                                  [signatureFields[phase]]: noteId,
+                                  [signatureStatusFields[phase]]:
+                                    status ??
+                                    ((noteId
+                                      ? "present"
+                                      : "unchecked") as SignatureStatus),
+                                }
                               : p,
                           ),
                         },

@@ -20,6 +20,29 @@ function entry(): SharedOrder {
   };
 }
 describe("Остатки и назначения", () => {
+  it("проверенный ноль сохраняет заявленное значение и даёт независимый остаток", () => {
+    const e = entry();
+    e.order.draft.rows[0].actual = 1;
+    e.order.draft.rows[0].verifiedActual = 0;
+    const g = progressGroups([e])[0];
+    expect(g.actual).toBe(1);
+    expect(g.verified).toBe(0);
+    expect(g.verifiedRemaining).toBeCloseTo(2.592);
+    const next = entry().order;
+    next.draft.rows[0].plan = 2.592;
+    expect(allocationErrors(next, [e])).toEqual([]);
+  });
+  it("не смешивает проверенные количества разных единиц и не придумывает проверенный остаток", () => {
+    const a = entry(),
+      b = entry();
+    a.order.draft.rows[0].actual = 1;
+    a.order.draft.rows[0].verifiedActual = 1;
+    b.order.draft.rows[0].unit = "т";
+    b.order.draft.rows[0].verifiedActual = 0.5;
+    const g = progressGroups([a, b])[0];
+    expect(g.verified).toBeNull();
+    expect(g.verifiedRemaining).toBeNull();
+  });
   it("неизвестный сданный факт не превращается в ноль или известный остаток", () => {
     const e = entry(),
       g = progressGroups([e])[0];

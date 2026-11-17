@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { signatureStatus, signatureStatusLabels } from "./signatures";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { api } from "./workspaceClient";
 import {
@@ -14,6 +15,7 @@ export default function OrderWorkflow({
   user,
   onAction,
   onCarry,
+  acceptDisabled = false,
 }: {
   entry: SharedOrder;
   user: WorkspaceUser;
@@ -24,6 +26,7 @@ export default function OrderWorkflow({
     order?: SavedWorkOrder,
   ) => Promise<SavedWorkOrder | null>;
   onCarry: (draft: WorkDraft) => void;
+  acceptDisabled?: boolean;
 }) {
   const [reason, setReason] = useState(""),
     [events, setEvents] = useState<WorkEvent[] | null>(null),
@@ -35,6 +38,10 @@ export default function OrderWorkflow({
   const [plans, setPlans] = useState(() =>
     entry.order.draft.rows.map((r) => r.plan),
   );
+  useEffect(() => {
+    setPlans(entry.order.draft.rows.map((r) => r.plan));
+    setEvents(null);
+  }, [entry.revision]);
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
     setError("");
@@ -64,7 +71,12 @@ export default function OrderWorkflow({
         <>
           {entry.stage === "submitted" && (
             <button
-              disabled={busy}
+              disabled={busy || acceptDisabled}
+              title={
+                acceptDisabled
+                  ? "Сначала сохраните или отмените правки проверки объёмов"
+                  : "Принять наряд"
+              }
               onClick={() =>
                 void run(async () => {
                   await onAction(entry.order.id, "accept");
@@ -230,7 +242,9 @@ export default function OrderWorkflow({
                     accepted: "Приёмка",
                     reopen: "Возврат на исправление",
                     replan: "Изменение плана",
-                    "progress-saved": "Изменение факта",
+                    "progress-saved": "Изменение заявленного факта",
+                    "volumes-verified": "Проверка объёмов",
+                    "additional-work": "Дополнительная работа",
                     "imported-local": "Перенос из браузера",
                     "object-note": "Фото / замечание",
                     "signatures-verified": "Проверка подписей по фото",
@@ -242,16 +256,20 @@ export default function OrderWorkflow({
                 <p key={r.id}>
                   {r.work} · план {r.plan ?? "не указан"} {r.unit} · факт{" "}
                   {r.actual ?? "не указан"} {r.unit} ·{" "}
-                  {r.completed ? "выполнено" : "не завершено"}
+                  {r.completed ? "выполнено" : "не завершено"} · проверено{" "}
+                  {r.verifiedActual ?? "не проверено"} {r.unit} ·{" "}
+                  {r.verificationBasis || "без основания проверки"}
+                  {r.additional
+                    ? ` · дополнительная работа: ${r.additional.basis}`
+                    : ""}
                 </p>
               ))}
               {e.snapshot?.draft.crew.map((p) => (
                 <p key={p.id}>
                   {p.name} · выход {p.start || "не указан"} · окончание{" "}
                   {p.end || "не указано"} · проверка подписи на фото: выход{" "}
-                  {p.startSignatureNoteId ? "подтверждена" : "не отмечена"},
-                  окончание{" "}
-                  {p.endSignatureNoteId ? "подтверждена" : "не отмечена"}
+                  {signatureStatusLabels[signatureStatus(p, "start")]},
+                  окончание {signatureStatusLabels[signatureStatus(p, "end")]}
                 </p>
               ))}
             </details>

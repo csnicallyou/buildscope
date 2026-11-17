@@ -1,3 +1,5 @@
+import FieldOperationsPanel from "./FieldOperationsPanel";
+import { fieldLabels, type FieldKind } from "./fieldOperations";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
@@ -53,6 +55,8 @@ import {
   Package,
   ShieldCheck,
   Files,
+  Truck,
+  Send,
 } from "lucide-react";
 import ObjectNotes, { type EvidenceContext } from "./ObjectNotes";
 import {
@@ -171,6 +175,7 @@ export default function App() {
   const [managementRecordId, setManagementRecordId] = useState<string | null>(
     null,
   );
+  const [fieldView, setFieldView] = useState<FieldKind>("machine");
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [orderToOpen, setOrderToOpen] = useState<string | null>(null);
   const [shiftSignal, setShiftSignal] = useState<OrderSignal>("all");
@@ -199,6 +204,7 @@ export default function App() {
     | "management"
     | "home"
     | "shifts"
+    | "field"
   >(window.location.search ? "model" : "home");
   const homeInitialized = useRef(false);
   useEffect(() => {
@@ -789,6 +795,30 @@ export default function App() {
             >
               <Icon size={18} />
               {managementLabels[view]}
+            </button>
+          );
+        })}
+        {(Object.keys(fieldLabels) as FieldKind[]).map((view) => {
+          const Icon =
+            view === "machine"
+              ? Truck
+              : view === "contractor"
+                ? UsersRound
+                : view === "request"
+                  ? Send
+                  : ClipboardList;
+          return (
+            <button
+              key={view}
+              className={tab === "field" && fieldView === view ? "active" : ""}
+              onClick={() => {
+                setSiteContext(null);
+                setFieldView(view);
+                setTab("field");
+              }}
+            >
+              <Icon size={18} />
+              {fieldLabels[view]}
             </button>
           );
         })}
@@ -1585,6 +1615,18 @@ export default function App() {
                   setTab("workdays");
                 }}
               />
+            ) : tab === "field" ? (
+              <FieldOperationsPanel
+                view={fieldView}
+                onView={setFieldView}
+                user={workspace.user}
+                enabled={workspace.mode === "server"}
+                orders={workspace.shared}
+                onCompose={(draft) => {
+                  setWorkDraft(draft);
+                  openWorkOrder();
+                }}
+              />
             ) : tab === "management" ? (
               <ConstructionPanel
                 view={managementView}
@@ -1753,6 +1795,8 @@ export default function App() {
                 error={workArchive.error}
                 onSave={persistWorkOrder}
                 onSaveSignatures={workspace.saveSignatures}
+                onReview={workspace.review}
+                onAdditional={workspace.additional}
                 onNew={openWorkOrder}
               />
             ) : tab === "progress" ? (
@@ -2035,7 +2079,19 @@ export default function App() {
                   issue: "quality",
                   document: "documents",
                 } as const;
-                goManagement(views[record.payload.kind]);
+                const kind = record.payload.kind;
+                if (
+                  kind === "contractor" ||
+                  kind === "machine" ||
+                  kind === "waybill" ||
+                  kind === "request" ||
+                  kind === "proposal"
+                ) {
+                  setFieldView(kind);
+                  setTab("field");
+                  return;
+                }
+                goManagement(views[kind]);
                 setManagementRecordId(record.id);
               }}
             />

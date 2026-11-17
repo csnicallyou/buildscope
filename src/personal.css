@@ -1,4 +1,7 @@
 /* BuildScope Personal: work records around a spacious geographic / engineering view. */
+.app .operation-kpi .kpi-label {
+  font-size: inherit;
+}
 .app.light {
   color-scheme: light;
 }
@@ -1519,4 +1522,44 @@
 }
 .app .workspace-modal .evidence-reader button:hover {
   background: #405574;
+}
+
+@media (max-width: 850px) {
+  .operations-kpis {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overflow: visible;
+    gap: 7px;
+  }
+  .operations-kpis.shift-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .app .operation-kpi {
+    min-width: 0;
+    min-height: 53px;
+    padding: 9px 5px;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+  }
+  .app .operation-kpi > svg {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+  }
+  .app .operation-kpi > svg:last-child:not(:first-child) {
+    display: none;
+  }
+  .app .operation-kpi .kpi-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .app .operation-kpi strong {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1;
+  }
 }

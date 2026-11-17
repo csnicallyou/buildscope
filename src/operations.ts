@@ -1,3 +1,4 @@
+import { signatureStatus, signatureSummary } from "./signatures";
 import type { SavedWorkOrder } from "./workOrderArchive";
 import type { SharedOrder } from "./workspaceTypes";
 
@@ -12,7 +13,11 @@ export function orderSignals(order: SavedWorkOrder, shared: SharedOrder[]) {
     attendance: !people.length || people.some((p) => !p.start),
     signatures:
       !people.length ||
-      people.some((p) => !p.startSignatureNoteId || !p.endSignatureNoteId),
+      people.some(
+        (p) =>
+          signatureStatus(p, "start") !== "present" ||
+          signatureStatus(p, "end") !== "present",
+      ),
     review: !!order.submittedAt && entry?.stage !== "accepted",
   };
 }
@@ -42,7 +47,7 @@ export function shiftSummary(orders: SavedWorkOrder[], shared: SharedOrder[]) {
     .map((o) => {
       const s = orderSignals(o, shared);
       const started = o.draft.crew.filter((p) => p.start).length;
-      return `${o.draft.contractor || o.draft.brigade}: ${o.draft.site}; ${shiftCaption(o.draft.date, o.draft.shift)}. Выход в табеле: ${started} из ${o.draft.crew.length || "нет списка"}. ${s.received ? "Отчёт сдан" : "Отчёт ещё не сдан"}; ${s.accepted ? "наряд принят" : "наряд не принят"}; ${s.signatures ? "подписи проверены не полностью" : "отметки проверки подписей есть"}.`;
+      return `${o.draft.contractor || o.draft.brigade}: ${o.draft.site}; ${shiftCaption(o.draft.date, o.draft.shift)}. Выход в табеле: ${started} из ${o.draft.crew.length || "нет списка"}. Трудовые единицы: план ${o.draft.plannedPeople ?? "нет данных"}, заявлено ${o.draft.reportedPeople ?? "нет данных"}. ${s.received ? "Отчёт сдан" : "Отчёт ещё не сдан"}; ${s.accepted ? "наряд принят" : "наряд не принят"}. Объёмы: проверено ${o.draft.rows.filter((r) => r.verifiedActual !== undefined && r.verifiedActual !== null).length} из ${o.draft.rows.length}. Подписи: ${signatureSummary(o.draft.crew)}.`;
     })
     .join("\n\n");
 }

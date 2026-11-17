@@ -42,6 +42,11 @@ export type ProgressGroup = {
   unit: string;
   need: number | null;
   actual: number;
+  verified: number | null;
+  verifiedIncomplete: boolean;
+  hasVerified: boolean;
+  verifiedRemaining: number | null;
+  allocationActual: number;
   actualIncomplete: boolean;
   hasActuals: boolean;
   remaining: number | null;
@@ -85,15 +90,42 @@ export function progressGroups(orders: SharedOrder[]): ProgressGroup[] {
     const hasActuals = entries.some(
       (e) => e.shared.stage !== "issued" && e.row.actual !== null,
     );
+    const submitted = entries.filter((e) => e.shared.stage !== "issued");
+    const checked = submitted.filter(
+      (e) =>
+        e.row.verifiedActual !== undefined && e.row.verifiedActual !== null,
+    );
+    const verified = conflict
+      ? null
+      : checked.reduce((n, e) => n + e.row.verifiedActual!, 0);
+    const verifiedIncomplete = submitted.some(
+      (e) =>
+        e.row.verifiedActual === undefined || e.row.verifiedActual === null,
+    );
+    const allocationActual = submitted.reduce(
+      (n, e) => n + (e.row.verifiedActual ?? e.row.actual ?? 0),
+      0,
+    );
     const active = entries.filter((e) => e.shared.stage === "issued");
     return {
-      key: `${modelKeyForRow(first)}:${rowOperation(first)}:${[...rowIds(first)].sort().join("|")}`,
+      key: `${rowIds(first).length ? "" : first.id}${modelKeyForRow(first)}:${rowOperation(first)}:${[...rowIds(first)].sort().join("|")}`,
       rows: entries,
       work: first.work,
       target: first.target,
       unit: first.unit,
       need,
       actual,
+      verified,
+      verifiedIncomplete,
+      hasVerified: checked.length > 0,
+      verifiedRemaining:
+        need === null ||
+        verified === null ||
+        verifiedIncomplete ||
+        !submitted.length
+          ? null
+          : Math.max(0, need - verified),
+      allocationActual,
       actualIncomplete,
       hasActuals,
       remaining:
@@ -125,7 +157,14 @@ export function allocationErrors(
     const newRows = group.rows.filter((e) => e.shared === entry);
     if (!newRows.length) continue;
     const old = group.rows.filter((e) => e.shared !== entry);
-    if (old.some((e) => e.shared.stage !== "issued" && e.row.actual === null)) {
+    if (
+      old.some(
+        (e) =>
+          e.shared.stage !== "issued" &&
+          e.row.actual === null &&
+          e.row.verifiedActual == null,
+      )
+    ) {
       errors.push(
         `${group.target}: в предыдущем сданном наряде не заполнен факт; уточните его перед назначением остатка.`,
       );
@@ -151,11 +190,13 @@ export function allocationErrors(
       const reservations = group.rows
         .filter((e) => e.shared.stage === "issued")
         .reduce(
-          (n, e) => n + (e.row.plan ?? Math.max(0, group.need! - group.actual)),
+          (n, e) =>
+            n +
+            (e.row.plan ?? Math.max(0, group.need! - group.allocationActual)),
           0,
         );
       if (
-        group.actual + reservations >
+        group.allocationActual + reservations >
         group.need + 1e-6 * Math.max(1, group.need)
       )
         errors.push(

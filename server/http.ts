@@ -1,3 +1,4 @@
+import { reviewSchema, additionalSchema } from "../src/orderReview";
 import {
   createServer,
   type IncomingMessage,
@@ -144,7 +145,7 @@ export async function createWorkspaceServer(options: Options) {
         json(res, {
           service: "buildscope-workspace",
           version: 2,
-          appVersion: "0.13.0",
+          appVersion: "0.14.0",
         });
         return;
       }
@@ -272,6 +273,39 @@ export async function createWorkspaceServer(options: Options) {
       const documentFile = path.match(/^\/api\/construction-files\/([^/]+)$/);
       if (documentFile && req.method === "GET") {
         const file = construction.file(user, documentFile[1]);
+        if (/\.(mp4|webm|mov)$/i.test(String(file.name))) {
+          const data = Buffer.from(file.data as Uint8Array);
+          res.setHeader(
+            "Content-Type",
+            String(file.name).toLowerCase().endsWith(".mp4")
+              ? "video/mp4"
+              : String(file.name).toLowerCase().endsWith(".mov")
+                ? "video/quicktime"
+                : "video/webm",
+          );
+          res.setHeader("Accept-Ranges", "bytes");
+          if (req.headers.range) {
+            const range = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range);
+            const start = range ? Number(range[1]) : -1;
+            const end = range?.[2]
+              ? Math.min(Number(range[2]), data.length - 1)
+              : data.length - 1;
+            if (start < 0 || start >= data.length || end < start) {
+              res.writeHead(416, { "Content-Range": `bytes */${data.length}` });
+              res.end();
+              return;
+            }
+            res.writeHead(206, {
+              "Content-Range": `bytes ${start}-${end}/${data.length}`,
+              "Content-Length": end - start + 1,
+            });
+            res.end(data.subarray(start, end + 1));
+            return;
+          }
+          res.setHeader("Content-Length", data.length);
+          res.end(data);
+          return;
+        }
         res.setHeader("Content-Type", "application/octet-stream");
         res.setHeader(
           "Content-Disposition",
@@ -335,10 +369,31 @@ export async function createWorkspaceServer(options: Options) {
         return;
       }
       const orderRoute = path.match(
-        /^\/api\/orders\/([^/]+)\/(history|action|carryover|signatures)$/,
+        /^\/api\/orders\/([^/]+)\/(history|action|carryover|signatures|review|additional)$/,
       );
       if (orderRoute) {
         const [, id, action] = orderRoute;
+        if (action === "review" && req.method === "PUT") {
+          json(res, {
+            saved: store.saveReview(
+              user,
+              id,
+              reviewSchema.parse(await body(req)),
+            ),
+          });
+          return;
+        }
+        if (action === "additional" && req.method === "POST") {
+          json(res, {
+            saved: store.addAdditional(
+              user,
+              id,
+              additionalSchema.parse(await body(req)),
+            ),
+          });
+          return;
+        }
+
         if (action === "signatures" && req.method === "PUT") {
           const input = z
             .object({
@@ -349,6 +404,12 @@ export async function createWorkspaceServer(options: Options) {
                     id: z.string().min(1),
                     startSignatureNoteId: z.string().min(1).max(200).nullable(),
                     endSignatureNoteId: z.string().min(1).max(200).nullable(),
+                    startSignatureStatus: z
+                      .enum(["unchecked", "present", "missing", "illegible"])
+                      .optional(),
+                    endSignatureStatus: z
+                      .enum(["unchecked", "present", "missing", "illegible"])
+                      .optional(),
                   }),
                 )
                 .max(200),
@@ -419,6 +480,10 @@ export async function createWorkspaceServer(options: Options) {
                     ? null
                     : Number(Math.max(0, planned - r.actual).toPrecision(12)),
                 actual: null,
+                verifiedActual: null,
+                verificationBasis: "",
+                verifiedAt: "",
+                verifiedBy: "",
                 completed: false,
                 note: `${r.note}\nПеренос из наряда ${source.order.draft.date} · ${source.order.draft.shift} (${id})`.trim(),
               };
@@ -430,6 +495,8 @@ export async function createWorkspaceServer(options: Options) {
               ...source.order.draft,
               ...input,
               taskId: null,
+              proposalId: null,
+              reportedPeople: null,
               rows,
               crew: source.order.draft.crew.map((r) => ({
                 ...r,
@@ -441,6 +508,8 @@ export async function createWorkspaceServer(options: Options) {
                 breakMinutes: 0,
                 startSignatureNoteId: null,
                 endSignatureNoteId: null,
+                startSignatureStatus: "unchecked",
+                endSignatureStatus: "unchecked",
               })),
             },
           });

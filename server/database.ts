@@ -26,8 +26,17 @@ import { allocationErrors } from "../src/workProgress";
 import {
   signatureModels,
   signatureFields,
+  signatureStatus,
+  type SignatureStatus,
   type SignaturePhase,
 } from "../src/signatures";
+
+import {
+  manualWorkRow,
+  reviewSchema,
+  additionalSchema,
+} from "../src/orderReview";
+import type { z } from "zod";
 
 const scrypt = promisify(derive);
 const now = () => new Date().toISOString();
@@ -362,9 +371,14 @@ export class WorkspaceDatabase {
           submittedAt: null,
           draft: {
             ...incoming.draft,
+            reportedPeople: null,
             rows: incoming.draft.rows.map((r) => ({
               ...r,
               actual: null,
+              verifiedActual: null,
+              verificationBasis: "",
+              verifiedAt: "",
+              verifiedBy: "",
               completed: false,
             })),
             crew: incoming.draft.crew.map((r) => ({
@@ -374,6 +388,8 @@ export class WorkspaceDatabase {
               breakMinutes: 0,
               startSignatureNoteId: null,
               endSignatureNoteId: null,
+              startSignatureStatus: "unchecked" as const,
+              endSignatureStatus: "unchecked" as const,
             })),
           },
         });
@@ -396,9 +412,14 @@ export class WorkspaceDatabase {
         submittedAt: null,
         draft: {
           ...o.draft,
+          reportedPeople: null,
           rows: o.draft.rows.map((r) => ({
             ...r,
             actual: null,
+            verifiedActual: r.verifiedActual ?? null,
+            verificationBasis: r.verificationBasis ?? "",
+            verifiedAt: r.verifiedAt ?? "",
+            verifiedBy: r.verifiedBy ?? "",
             completed: false,
           })),
           crew: o.draft.crew.map((r) => ({
@@ -408,6 +429,8 @@ export class WorkspaceDatabase {
             breakMinutes: 0,
             startSignatureNoteId: null,
             endSignatureNoteId: null,
+            startSignatureStatus: "unchecked" as const,
+            endSignatureStatus: "unchecked" as const,
           })),
         },
       });
@@ -419,6 +442,15 @@ export class WorkspaceDatabase {
       if (incoming.submittedAt) {
         const errors = handoffErrors(incoming);
         if (errors.length) throw new WorkspaceError(400, errors.join("; "));
+      }
+      for (const row of incoming.draft.rows) {
+        const previous = current.order.draft.rows.find((r) => r.id === row.id);
+        if (previous && previous.actual !== row.actual) {
+          row.verifiedActual = null;
+          row.verificationBasis = "";
+          row.verifiedAt = "";
+          row.verifiedBy = "";
+        }
       }
       this.validateSignatures(incoming);
       const order = {
@@ -438,9 +470,39 @@ export class WorkspaceDatabase {
     order: SavedWorkOrder,
     previous: SavedWorkOrder,
   ) {
+    if (order.draft.reportedPeople === undefined)
+      order.draft.reportedPeople = previous.draft.reportedPeople;
+    for (const row of order.draft.rows) {
+      const old = previous.draft.rows.find((r) => r.id === row.id);
+      if (!old) continue;
+      for (const key of [
+        "verifiedActual",
+        "verificationBasis",
+        "verifiedAt",
+        "verifiedBy",
+      ] as const) {
+        if (row[key] === undefined) Object.assign(row, { [key]: old[key] });
+      }
+    }
     for (const person of order.draft.crew) {
       const old = previous.draft.crew.find((p) => p.id === person.id);
       if (!old) continue;
+      if (person.startSignatureStatus === undefined)
+        person.startSignatureStatus =
+          person.startSignatureNoteId !== undefined &&
+          person.startSignatureNoteId !== old.startSignatureNoteId
+            ? person.startSignatureNoteId
+              ? "present"
+              : "unchecked"
+            : old.startSignatureStatus;
+      if (person.endSignatureStatus === undefined)
+        person.endSignatureStatus =
+          person.endSignatureNoteId !== undefined &&
+          person.endSignatureNoteId !== old.endSignatureNoteId
+            ? person.endSignatureNoteId
+              ? "present"
+              : "unchecked"
+            : old.endSignatureStatus;
       if (person.startSignatureNoteId === undefined)
         person.startSignatureNoteId = old.startSignatureNoteId;
       if (person.endSignatureNoteId === undefined)
@@ -455,6 +517,8 @@ export class WorkspaceDatabase {
       id: string;
       startSignatureNoteId: string | null;
       endSignatureNoteId: string | null;
+      startSignatureStatus?: SignatureStatus;
+      endSignatureStatus?: SignatureStatus;
     }[],
   ) {
     if (user.role === "viewer")
@@ -497,6 +561,16 @@ export class WorkspaceDatabase {
               ...person,
               startSignatureNoteId: check.startSignatureNoteId,
               endSignatureNoteId: check.endSignatureNoteId,
+              startSignatureStatus:
+                check.startSignatureStatus ??
+                (check.startSignatureNoteId
+                  ? ("present" as const)
+                  : ("unchecked" as const)),
+              endSignatureStatus:
+                check.endSignatureStatus ??
+                (check.endSignatureNoteId
+                  ? ("present" as const)
+                  : ("unchecked" as const)),
             };
           }),
         },
@@ -511,12 +585,126 @@ export class WorkspaceDatabase {
       );
     });
   }
+  saveReview(
+    user: WorkspaceUser,
+    id: string,
+    input: z.infer<typeof reviewSchema>,
+  ) {
+    admin(user);
+    input = reviewSchema.parse(input);
+    return this.transaction(() => {
+      const current = this.get(user, id);
+      if (current.revision !== input.revision)
+        throw new WorkspaceError(
+          409,
+          "Наряд изменён. Загрузите актуальную версию.",
+        );
+      if (current.stage === "accepted")
+        throw new WorkspaceError(
+          409,
+          "Сначала верните принятый наряд в работу.",
+        );
+      if (
+        input.rows.length !== current.order.draft.rows.length ||
+        new Set(input.rows.map((r) => r.id)).size !== input.rows.length ||
+        input.rows.some(
+          (r) => !current.order.draft.rows.some((old) => old.id === r.id),
+        )
+      )
+        throw new WorkspaceError(
+          400,
+          "Проверка должна относиться к строкам этого наряда.",
+        );
+      if (input.rows.some((r) => r.value !== null && r.basis.trim().length < 3))
+        throw new WorkspaceError(
+          400,
+          "Укажите основание каждого проверенного объёма.",
+        );
+      const order = {
+        ...current.order,
+        draft: {
+          ...current.order.draft,
+          rows: current.order.draft.rows.map((row) => {
+            const check = input.rows.find((r) => r.id === row.id)!;
+            return {
+              ...row,
+              verifiedActual: check.value,
+              verificationBasis: check.basis,
+              verifiedAt: now(),
+              verifiedBy: `${user.name} (${user.username})`,
+            };
+          }),
+        },
+      };
+      return this.write(
+        user,
+        order,
+        current.revision + 1,
+        current.stage,
+        "volumes-verified",
+      );
+    });
+  }
+  addAdditional(
+    user: WorkspaceUser,
+    id: string,
+    input: z.infer<typeof additionalSchema>,
+  ) {
+    if (user.role === "viewer")
+      throw new WorkspaceError(403, "Доступен только просмотр");
+    input = additionalSchema.parse(input);
+    return this.transaction(() => {
+      const current = this.get(user, id);
+      if (current.revision !== input.revision)
+        throw new WorkspaceError(
+          409,
+          "Наряд изменён. Загрузите актуальную версию.",
+        );
+      if (current.stage !== "issued")
+        throw new WorkspaceError(
+          409,
+          "Сначала верните сданный наряд в работу для добавления работ.",
+        );
+      const row = manualWorkRow(
+        current.order.draft,
+        input.work,
+        input.unit,
+        input.target,
+      );
+      row.additional = {
+        basis: input.basis,
+        addedAt: now(),
+        addedBy: `${user.name} (${user.username})`,
+      };
+      const order = savedSchema.parse({
+        ...current.order,
+        draft: {
+          ...current.order.draft,
+          rows: [...current.order.draft.rows, row],
+        },
+      });
+      return this.write(
+        user,
+        order,
+        current.revision + 1,
+        current.stage,
+        "additional-work",
+        input.basis,
+      );
+    });
+  }
   validateSignatures(order: SavedWorkOrder) {
     for (const person of order.draft.crew)
       for (const phase of ["start", "end"] as SignaturePhase[]) {
         const noteId = person[signatureFields[phase]];
+        const status = signatureStatus(person, phase);
+        if (status !== "unchecked" && !noteId)
+          throw new WorkspaceError(
+            400,
+            `${person.name}: для проверки подписи выберите фото листа`,
+          );
         if (!noteId) continue;
-        if (!person[phase])
+        if (!person[phase] && status === "present")
           throw new WorkspaceError(
             400,
             `${person.name}: укажите время ${phase === "start" ? "выхода" : "окончания"} перед подтверждением подписи`,

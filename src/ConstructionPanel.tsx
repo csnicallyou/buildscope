@@ -55,6 +55,11 @@ const viewKind: Partial<Record<ManagementView, Kind>> = {
   documents: "document",
 };
 const kindLabels: Record<Kind, string> = {
+  contractor: "подрядчика",
+  machine: "технику",
+  waybill: "путевой лист",
+  request: "заявку",
+  proposal: "предложение",
   node: "объект",
   task: "задачу",
   crew: "бригаду",
@@ -809,6 +814,7 @@ function Editor({
                   <option value="executive">Исполнительный документ</option>
                   <option value="certificate">Паспорт / сертификат</option>
                   <option value="photo">Фотофиксация</option>
+                  <option value="video">Видео с объекта</option>
                   <option value="other">Прочее</option>
                 </select>
               </Field>
@@ -858,7 +864,7 @@ function Editor({
                   <input
                     aria-label="Файл документа"
                     type="file"
-                    accept=".pdf,.xlsx,.docx,.dxf,.jpg,.jpeg,.png"
+                    accept=".pdf,.xlsx,.docx,.dxf,.jpg,.jpeg,.png,.mp4,.webm,.mov"
                     onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                   />
                   <small>
@@ -1570,6 +1576,15 @@ export default function ConstructionPanel(props: Props) {
                     {r.payload.date}
                   </p>
                   <small>{nodePath(records, r.payload.nodeId)}</small>
+                  {r.file && r.payload.category === "video" && (
+                    <video
+                      controls
+                      playsInline
+                      preload="metadata"
+                      style={{ width: "100%", maxWidth: 600 }}
+                      src={`/api/construction-files/${r.file.id}`}
+                    />
+                  )}
                   {r.file ? (
                     <p>
                       <a href={`/api/construction-files/${r.file.id}`}>

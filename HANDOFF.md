@@ -1,3 +1,11 @@
+## Передача 0.14: рабочие процессы и компактные показатели
+
+Сначала верх PROJECT_STATE.md и docs/SHIFT_OPERATIONS.md. Ветка codex/complete-shift-operations, начальный checkpoint 62381b7. Новые модули: fieldOperations/FieldOperationsPanel/field-operations.css, server/field-validation, orderReview/OrderReviewPanel, ManualWorkComposer, OrderMedia/constructionFiles. Серверные сценарии server/shift-operations.test.ts и integration/zz-operations.spec.ts; синтетический WebM integration/fixtures разрешён, рабочие документы не коммитить.
+
+Новые виды construction записей используют schema2; 0.13 не является совместимым откатом после их сохранения. Обновление только через прежний deploy/upgrade.sh, переиспользовать БД/реквизиты, не менять Caddy/VPN. Проверенные объёмы меняет отдельный admin endpoint, изменение claimed сбрасывает проверку, дополнительная работа не заменяет план. Заявленные/проверенные/табельные сведения независимы. Общее видео до25МБ защищено сеансом, проигрывание зависит от кодека браузера. Путевой лист — универсальные поля, точный формат ещё не согласован. Platform/доставка/юридическое подписание не реализованы.
+
+Проверки typecheck/lint/116 unit/7 workspace/обе сборки успешны; полный37 E2E также прошёл. Перед завершением записать итог и выкладку в PROJECT_STATE. .deploy/cloud-operations-check.mjs — приватный smoke с чтением credentials, не печатать их. Новая локальная копия production должна называться cloud-0.14.0-20261117.sqlite, не перезаписывать старую.
+
 # Передача BuildScope 0.13.0
 
 ## Сначала: 0.13 — новая оболочка координатора

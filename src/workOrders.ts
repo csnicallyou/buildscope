@@ -205,6 +205,11 @@ export function workReference(
   return { elements: es, value, basis, unit };
 }
 export type WorkRow = {
+  verifiedActual?: number | null;
+  verificationBasis?: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  additional?: { basis: string; addedAt: string; addedBy: string };
   id: string;
   date: string;
   site: string;
@@ -277,6 +282,8 @@ export function workQuantityElementIds(target: WorkTarget, id: WorkId) {
     : target.elements.map((e) => e.id);
 }
 export type CrewRow = {
+  startSignatureStatus?: import("./signatures").SignatureStatus;
+  endSignatureStatus?: import("./signatures").SignatureStatus;
   startSignatureNoteId?: string | null;
   endSignatureNoteId?: string | null;
   id: string;
@@ -291,6 +298,9 @@ export type CrewRow = {
   note: string;
 };
 export type WorkDraft = {
+  plannedPeople?: number | null;
+  reportedPeople?: number | null;
+  proposalId?: string | null;
   nodeId?: string | null;
   taskId?: string | null;
   brigade: string;
@@ -385,6 +395,14 @@ export function crewHours(r: CrewRow): number | null {
 }
 export function reportErrors(d: WorkDraft) {
   const errors: string[] = [];
+  if (
+    [d.plannedPeople, d.reportedPeople].some(
+      (v) => v != null && (!Number.isInteger(v) || v < 0),
+    )
+  )
+    errors.push(
+      "Количество трудовых единиц должно быть целым неотрицательным числом.",
+    );
   if (!d.rows.length) errors.push("Добавьте хотя бы одну работу");
   d.rows.forEach((r, i) => {
     if (!r.date || !r.work.trim() || !r.site.trim() || !r.unit.trim())

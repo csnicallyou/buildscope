@@ -1,4 +1,10 @@
 import {
+  manualWorkRow,
+  type additionalSchema,
+  type reviewSchema,
+} from "./orderReview";
+import type { z } from "zod";
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -243,6 +249,25 @@ export function useWorkspace(
         throw Error(
           "Наряд уже сдан в другом окне. Откройте актуальную запись.",
         );
+      const previous = current.find((o) => o.id === order.id);
+      order = {
+        ...order,
+        draft: {
+          ...order.draft,
+          rows: order.draft.rows.map((row) => {
+            const old = previous?.draft.rows.find((r) => r.id === row.id);
+            return old && old.actual !== row.actual
+              ? {
+                  ...row,
+                  verifiedActual: null,
+                  verificationBasis: "",
+                  verifiedAt: "",
+                  verifiedBy: "",
+                }
+              : row;
+          }),
+        },
+      };
       const next = [order, ...current.filter((o) => o.id !== order.id)];
       localStorage.setItem(workOrdersStorageKey, serializeWorkOrders(next));
       setOrders(next);
@@ -306,6 +331,8 @@ export function useWorkspace(
             id: p.id,
             startSignatureNoteId: p.startSignatureNoteId ?? null,
             endSignatureNoteId: p.endSignatureNoteId ?? null,
+            startSignatureStatus: p.startSignatureStatus,
+            endSignatureStatus: p.endSignatureStatus,
           })),
         },
       );
@@ -317,6 +344,78 @@ export function useWorkspace(
         e instanceof Error
           ? e.message
           : "Не удалось сохранить проверку подписей",
+      );
+      return null;
+    }
+  };
+  const review = async (
+    order: SavedWorkOrder,
+    rows: z.infer<typeof reviewSchema>["rows"],
+  ) => {
+    try {
+      if (mode === "local")
+        return await save({
+          ...order,
+          draft: {
+            ...order.draft,
+            rows: order.draft.rows.map((r) => {
+              const c = rows.find((x) => x.id === r.id)!;
+              return {
+                ...r,
+                verifiedActual: c.value,
+                verificationBasis: c.basis,
+                verifiedAt: new Date().toISOString(),
+                verifiedBy: "Координатор (локально)",
+              };
+            }),
+          },
+        });
+      const result = await api<{ saved: unknown }>(
+        `/api/orders/${encodeURIComponent(order.id)}/review`,
+        "PUT",
+        { revision: order.serverRevision, rows },
+      );
+      const saved = sharedOrderSchema.parse(result.saved);
+      await refresh();
+      return clientOrder(saved);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Проверка не сохранена");
+      return null;
+    }
+  };
+  const additional = async (
+    order: SavedWorkOrder,
+    fields: Omit<z.infer<typeof additionalSchema>, "revision">,
+  ) => {
+    try {
+      if (mode === "local") {
+        const row = manualWorkRow(
+          order.draft,
+          fields.work,
+          fields.unit,
+          fields.target,
+        );
+        row.additional = {
+          basis: fields.basis,
+          addedAt: new Date().toISOString(),
+          addedBy: "Координатор (локально)",
+        };
+        return await save({
+          ...order,
+          draft: { ...order.draft, rows: [...order.draft.rows, row] },
+        });
+      }
+      const result = await api<{ saved: unknown }>(
+        `/api/orders/${encodeURIComponent(order.id)}/additional`,
+        "POST",
+        { revision: order.serverRevision, ...fields },
+      );
+      const saved = sharedOrderSchema.parse(result.saved);
+      await refresh();
+      return clientOrder(saved);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Дополнительная работа не сохранена",
       );
       return null;
     }
@@ -359,6 +458,8 @@ export function useWorkspace(
     shared: allShared,
     save,
     saveSignatures,
+    review,
+    additional,
     action,
     refresh,
     importLocal,
