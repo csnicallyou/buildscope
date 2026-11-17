@@ -608,6 +608,16 @@ export default function App() {
     download(JSON.stringify(s.project, null, 2), "buildscope.json");
     setMessage("Проект сохранён в JSON");
   }
+  if (workspace.mode === "loading")
+    return (
+      <div className={`app ${s.theme}`}>
+        <div className="operations-empty workspace-loading" role="status">
+          <Box size={35} />
+          <h1>BuildScope</h1>
+          <p>Загрузка рабочего пространства…</p>
+        </div>
+      </div>
+    );
   return (
     <div
       className={`app mode-${tab} ${treeCollapsed ? "tree-collapsed" : ""} ${inspectorCollapsed ? "inspector-collapsed" : ""} ${displayOpen || s.section ? "display-options-open" : ""} ${tab === "workorder" ? "work-order-active" : ""} ${workActive ? "installation-active" : ""} ${s.theme} mobile-${s.mobilePanel} ${s.mobileExpanded ? "mobile-expanded" : ""} ${mobileTools ? "mobile-tools-open" : ""}`}
