@@ -962,6 +962,12 @@ export default function App() {
               Модель
             </button>
           </div>
+          {!siteContext.model && (
+            <small role="status">
+              Для этого объекта 3D-модель ещё не добавлена. Можно вести наряды и
+              смены.
+            </small>
+          )}
         </div>
       )}
       {(workspace.mode === "error" ||
@@ -1599,6 +1605,8 @@ export default function App() {
                   setSiteContext(site);
                   setShiftSignal("all");
                   setTab("shifts");
+                  if (site.model)
+                    focusConstructionModel(site.model, site.elementIds);
                 }}
               />
             ) : tab === "shifts" ? (

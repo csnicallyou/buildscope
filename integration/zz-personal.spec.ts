@@ -41,7 +41,7 @@ test("Главная показывает сохранённые координ�
           title: `Картографический тест ${i + 1}`,
           level: "site",
           parentId: null,
-          model: "",
+          model: i === 0 ? "kzh-canopy" : "",
           elementIds: [],
           description: "Синтетический источник. ".repeat(30),
           location: { lat: 55.77 + i * 0.03, lng: 37.64 + i * 0.02 },
@@ -83,7 +83,37 @@ test("Главная показывает сохранённые координ�
   await firstSite.click();
   await expect(page.locator(".station-context")).toContainText(firstTitle);
   await openSection(page, "Карта объектов");
+  await page
+    .locator(".portfolio-site")
+    .filter({ hasText: "Картографический тест 1" })
+    .click();
+  await expect(page.locator(".station-context")).toContainText(
+    "Картографический тест 1",
+  );
+  await expect(
+    page
+      .locator(".station-workspaces")
+      .getByRole("button", { name: "Модель", exact: true }),
+  ).toHaveClass(/active/);
+  await expect(page.locator(".viewport-heading")).toContainText(
+    "Навес «сухие ноги»",
+  );
+  await expect(page.locator("canvas").first()).toBeVisible();
+  await openSection(page, "Карта объектов");
   await page.setViewportSize({ width: 390, height: 844 });
+  await page
+    .locator(".map-site-link")
+    .filter({ hasText: "Картографический тест 1" })
+    .tap();
+  await expect(
+    page
+      .locator(".station-workspaces")
+      .getByRole("button", { name: "Модель", exact: true }),
+  ).toHaveClass(/active/);
+  await expect(page.locator(".viewport-heading")).toContainText(
+    "Навес «сухие ноги»",
+  );
+  await openSection(page, "Карта объектов");
   await page
     .locator(".map-site-link")
     .filter({ hasText: "Тестовая станция на карте" })
@@ -96,6 +126,12 @@ test("Главная показывает сохранённые координ�
       .locator(".station-workspaces")
       .getByRole("button", { name: "Модель", exact: true }),
   ).toBeDisabled();
+  await expect(
+    page.getByText("Для этого объекта 3D-модель ещё не добавлена.", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await expect(page.locator("canvas")).toHaveCount(0);
   await page.getByLabel("Все даты и смены").check();
   await expect(page.locator(".shift-table tbody tr")).toHaveCount(0);
   await page
