@@ -213,10 +213,17 @@ export default function OperationsHome({
             <span>{site ? "Строительный объект" : "Начало работы"}</span>
           </div>
           <h2>{site?.payload.title ?? "Вся стройка — в одном месте"}</h2>
-          <p>
-            {site?.payload.description ||
-              "Соберите объекты, наряды и документы. Выбирайте станцию слева или на карте, чтобы открыть её рабочее пространство."}
-          </p>
+          {site?.payload.description ? (
+            <details className="site-source-details">
+              <summary>Сведения об объекте и источники</summary>
+              <p>{site.payload.description}</p>
+            </details>
+          ) : (
+            <p>
+              Соберите объекты, наряды и документы. Выбирайте станцию слева или
+              на карте, чтобы открыть её рабочее пространство.
+            </p>
+          )}
           <div className="preview-counts">
             <div>
               <strong>{siteOrders.length}</strong>

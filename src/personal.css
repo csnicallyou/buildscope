@@ -621,6 +621,19 @@
   letter-spacing: -0.4px;
   margin: 20px 0 9px;
 }
+.site-source-details {
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.site-source-details summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.site-source-details p {
+  overflow-wrap: anywhere;
+}
 .portfolio-preview > p {
   font-size: 12px;
   color: var(--muted);

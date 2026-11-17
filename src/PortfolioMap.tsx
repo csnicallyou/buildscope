@@ -56,9 +56,17 @@ export default function PortfolioMap({
         .bindTooltip(label, { permanent: true, direction: "right" })
         .on("click", () => callback.current(site.id));
     }
-    if (points.length)
-      map.fitBounds(L.latLngBounds(points), { padding: [60, 60], maxZoom: 14 });
-    const observer = new ResizeObserver(() => map.invalidateSize());
+    const fit = () => {
+      map.invalidateSize({ pan: false });
+      if (points.length)
+        map.fitBounds(L.latLngBounds(points), {
+          padding: [45, 45],
+          maxZoom: 14,
+          animate: false,
+        });
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
     observer.observe(container.current);
     return () => {
       observer.disconnect();

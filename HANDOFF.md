@@ -1,3 +1,9 @@
+## Передача 0.14.1: заполненная база
+
+Сначала PROJECT_STATE.md сверху и docs/WORKSPACE_DATA.md. Ветка codex/populate-yaroslavl-workspace от 6afdf8e. На production уже 44 construction-записи, включая 5 станций/27 дочерних объектов/9 подрядчиков/бригаду/два оригинальных документа. Не bootstrap, не очищать базу, не загружать тестовые fixtures на production. Маленковская — текущий объект с существующими двумя КЖ-моделями; остальные без вымышленной геометрии. Исторические наряды ещё не переносились, вопрос пользователю задан отдельно. Сырые Excel/PDF, manifest и одноразовые импортёры только в .deploy.
+
+Код 0.14.1 меняет только карту/раскрытие источников, схема2 прежняя. Обязательные проверки typecheck/lint/116 unit/7 workspace/обе сборки прошли; полный37 E2E также прошёл. Последняя опубликованная версия кода до выкладки — fb5bded/release20261117T122658, но её БД уже заполнена. После выкладки проверить .deploy/workspace-data-check.mjs и новый независимый backup; предыдущую копию cloud-project-filled-20261117.sqlite (до добавления PDF) не выдавать за финальную.
+
 ## Передача 0.14: рабочие процессы и компактные показатели
 
 Сначала верх PROJECT_STATE.md и docs/SHIFT_OPERATIONS.md. Ветка codex/complete-shift-operations, начальный checkpoint 62381b7. Новые модули: fieldOperations/FieldOperationsPanel/field-operations.css, server/field-validation, orderReview/OrderReviewPanel, ManualWorkComposer, OrderMedia/constructionFiles. Серверные сценарии server/shift-operations.test.ts и integration/zz-operations.spec.ts; синтетический WebM integration/fixtures разрешён, рабочие документы не коммитить.
