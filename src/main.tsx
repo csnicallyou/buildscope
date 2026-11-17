@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./style.css";
 import "./workbench.css";
+import "./construction.css";
 import { createKzh } from "./kzh";
 import { useStore } from "./store";
 import { createKzhDetails } from "./details";

@@ -7,7 +7,15 @@ async function login(page: Page, role: string) {
     .fill(`Browser-${role}-1234!`);
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Команда и доступ", exact: true }),
+    page.getByRole("button", {
+      name:
+        role === "admin"
+          ? "Тестовый руководитель"
+          : role === "foreman"
+            ? "Тестовый бригадир"
+            : "Тестовый наблюдатель",
+      exact: true,
+    }),
   ).toBeVisible();
 }
 test("Общая база: черновик, выдача, сдача другим пользователем, приёмка, фото и остаток", async ({

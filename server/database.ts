@@ -78,9 +78,10 @@ export class WorkspaceDatabase {
       "PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON;",
     );
     const version = this.db.prepare("PRAGMA user_version").get()!;
-    if (Number(version.user_version) > 1)
+    if (Number(version.user_version) > 2)
       throw Error("Database version is newer than this application");
-    this.db.exec(`BEGIN IMMEDIATE;
+    if (Number(version.user_version) < 1)
+      this.db.exec(`BEGIN IMMEDIATE;
       CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL, name TEXT NOT NULL, role TEXT NOT NULL, brigade TEXT, active INTEGER NOT NULL DEFAULT 1, password_hash TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id), expires INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS orders(id TEXT PRIMARY KEY, brigade TEXT NOT NULL, payload TEXT NOT NULL, revision INTEGER NOT NULL, stage TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT NOT NULL);
@@ -91,6 +92,13 @@ export class WorkspaceDatabase {
       CREATE INDEX IF NOT EXISTS notes_object ON notes(model,element_id);
       CREATE TABLE IF NOT EXISTS images(id TEXT PRIMARY KEY, mime TEXT NOT NULL, data BLOB NOT NULL, note_id TEXT NOT NULL REFERENCES notes(id));
       PRAGMA user_version=1; COMMIT;`);
+    if (Number(version.user_version) < 2)
+      this.db.exec(`BEGIN IMMEDIATE;
+      CREATE TABLE construction_records(id TEXT PRIMARY KEY,kind TEXT NOT NULL,payload TEXT NOT NULL,revision INTEGER NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,author TEXT NOT NULL);
+      CREATE TABLE construction_events(id INTEGER PRIMARY KEY AUTOINCREMENT,record_id TEXT NOT NULL REFERENCES construction_records(id),actor TEXT NOT NULL,created_at TEXT NOT NULL,before_payload TEXT,after_payload TEXT NOT NULL);
+      CREATE INDEX construction_events_record ON construction_events(record_id,id);
+      CREATE TABLE construction_files(id TEXT PRIMARY KEY,record_id TEXT NOT NULL REFERENCES construction_records(id),name TEXT NOT NULL,data BLOB NOT NULL,hash TEXT NOT NULL,created_at TEXT NOT NULL);
+      PRAGMA user_version=2; COMMIT;`);
   }
   static async open(path: string, backups = join(dirname(path), "backups")) {
     await mkdir(dirname(path), { recursive: true, mode: 0o700 });

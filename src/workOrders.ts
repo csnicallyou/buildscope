@@ -289,6 +289,8 @@ export type CrewRow = {
   note: string;
 };
 export type WorkDraft = {
+  nodeId?: string | null;
+  taskId?: string | null;
   brigade: string;
   date: string;
   site: string;

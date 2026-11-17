@@ -1,3 +1,4 @@
+import { openSection } from "./navigation-helpers";
 import {
   openTree,
   openProperties,
@@ -50,6 +51,6 @@ test("Фм4 8/А: расчётный щебень с откосами, свой�
   await page
     .getByRole("button", { name: "← Ко всем объектам", exact: true })
     .click();
-  await page.getByRole("button", { name: "Источник", exact: true }).click();
+  await openSection(page, "Источник");
   await expect(page.locator(".source-review")).toContainText("44,80485");
 });

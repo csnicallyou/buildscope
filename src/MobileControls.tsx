@@ -7,6 +7,9 @@ import {
   ChevronDown,
   GripHorizontal,
   ClipboardList,
+  LayoutDashboard,
+  Building2,
+  CalendarDays,
 } from "lucide-react";
 import { useRef } from "react";
 import { useStore } from "./store";
@@ -52,13 +55,42 @@ export default function MobileControls({
   onWorkOrder,
   modelActive,
   workOrderActive,
+  managementActive = false,
+  onManagement,
 }: {
   onModel: () => void;
   onWorkOrder: () => void;
   modelActive: boolean;
   workOrderActive: boolean;
+  managementActive?: boolean;
+  onManagement?: (view: "overview" | "objects" | "planning") => void;
 }) {
   const s = useStore();
+  if (managementActive && onManagement)
+    return (
+      <nav className="mobile-dock" aria-label="Управление стройкой">
+        <button onClick={() => onManagement("overview")}>
+          <LayoutDashboard size={19} />
+          Обзор
+        </button>
+        <button onClick={() => onManagement("objects")}>
+          <Building2 size={19} />
+          Объекты
+        </button>
+        <button onClick={() => onManagement("planning")}>
+          <CalendarDays size={19} />
+          План
+        </button>
+        <button onClick={onWorkOrder}>
+          <ClipboardList size={19} />
+          Наряды
+        </button>
+        <button onClick={onModel}>
+          <Box size={19} />
+          Модель
+        </button>
+      </nav>
+    );
   return (
     <nav className="mobile-dock" aria-label="Панели просмотра">
       <button

@@ -1,3 +1,4 @@
+import { openSection } from "./navigation-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 test("Демо, выбор, скрытие, разборка, смещение, сброс и ведомость", async ({
@@ -28,9 +29,7 @@ test("Демо, выбор, скрытие, разборка, смещение, 
   await expect(
     page.getByRole("button", { name: "Разобрать", exact: true }),
   ).toHaveAttribute("aria-pressed", "false");
-  await page
-    .getByRole("button", { name: "Ведомость материалов", exact: true })
-    .click();
+  await openSection(page, "Ведомость материалов");
   await expect(page.getByTestId("total-volume")).toBeVisible();
   await expect(page.getByTestId("total-volume")).toHaveText("327,258");
   expect(errors).toEqual([]);

@@ -42,6 +42,8 @@ const workRow = z.object({
   quantityElementIds: z.array(text).optional(),
 });
 const draftSchema = z.object({
+  nodeId: text.nullable().optional(),
+  taskId: text.nullable().optional(),
   brigade: text,
   date: text,
   site: text,

@@ -21,6 +21,17 @@ if (command === "bootstrap") {
     JSON.stringify({ id: added.id, username: added.username }),
   );
   store.close();
+} else if (command === "check") {
+  process.stdout.write(
+    JSON.stringify({
+      schema: store.db.prepare("PRAGMA user_version").get()?.user_version,
+      integrity: store.db.prepare("PRAGMA integrity_check").get()
+        ?.integrity_check,
+      users: store.db.prepare("SELECT count(*) n FROM users").get()?.n,
+      orders: store.db.prepare("SELECT count(*) n FROM orders").get()?.n,
+    }),
+  );
+  store.close();
 } else if (command === "backup") {
   process.stdout.write(await store.snapshot());
   store.close();

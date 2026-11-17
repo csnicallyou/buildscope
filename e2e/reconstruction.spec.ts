@@ -1,3 +1,4 @@
+import { openSection } from "./navigation-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 test("Каталог деталей: выбор, крупный вид, длина заготовки и узкий экран", async ({
@@ -18,7 +19,7 @@ test("Каталог деталей: выбор, крупный вид, длин
     path: "test-results/kzh-detail.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Армирование", exact: true }).click();
+  await openSection(page, "Армирование");
   await expect(page.locator(".schedule")).toContainText("0,9");
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
@@ -87,7 +88,7 @@ test("Павильон: исходная сборка, свойства, арм�
     path: "test-results/kzh-pavilion-rebar.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Армирование", exact: true }).click();
+  await openSection(page, "Армирование");
   await expect(page.locator(".schedule")).toContainText("324,5");
   await expect(page.locator(".schedule")).toContainText("Ск1");
   const pending = page.waitForEvent("download");
@@ -145,9 +146,7 @@ test("Навес: экспорт GLB, обратная загрузка v2 и в
   await page
     .getByRole("button", { name: "Навес «сухие ноги»", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Ведомость материалов", exact: true })
-    .click();
+  await openSection(page, "Ведомость материалов");
   await expect(page.locator(".schedule")).toContainText("54,2");
   await expect(page.locator(".schedule")).toContainText("7 183,8");
   const pending = page.waitForEvent("download");

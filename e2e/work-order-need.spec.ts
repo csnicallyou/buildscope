@@ -1,3 +1,4 @@
+import { openSection } from "./navigation-helpers";
 import { test, expect } from "@playwright/test";
 test("Потребность бетона для ФП отделена от ручного плана и факта", async ({
   page,
@@ -7,7 +8,7 @@ test("Потребность бетона для ФП отделена от ру
   await page
     .getByRole("button", { name: "Фм4 Фм4 · оси 8/А", exact: true })
     .click();
-  await page.getByRole("button", { name: "Наряд", exact: true }).click();
+  await openSection(page, "Наряд");
   await page.getByLabel("Тип работы наряда").selectOption("excel:9");
   await expect(page.locator(".model-need-preview")).toContainText("3,655 м³");
   await page

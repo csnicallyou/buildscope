@@ -1,3 +1,4 @@
+import { openSection } from "./navigation-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile, mkdir } from "node:fs/promises";
 import { unzipSync, strFromU8 } from "fflate";
@@ -26,7 +27,7 @@ for (const mobile of [false, true])
       .getByRole("button", { name: "Фм1 Фм1 · оси 1/А", exact: true })
       .click();
     await modelView(page);
-    await page.getByRole("button", { name: "Наряд", exact: true }).click();
+    await openSection(page, "Наряд");
     await expect(page.locator(".work-order-map canvas")).toBeVisible();
     const target = await page.getByLabel("Конструкция для наряда").inputValue();
     await expect(page.locator(".work-origin")).toContainText("ваш наряд");
@@ -81,8 +82,8 @@ for (const mobile of [false, true])
       .getByRole("button", { name: "Выдать наряд", exact: true })
       .click();
     await expect(
-      page.getByRole("button", { name: "Наряды по дням", exact: true }),
-    ).toHaveClass(/active/);
+      page.getByRole("heading", { name: "Наряды по дням", exact: true }),
+    ).toBeVisible();
     await expect(page.locator(".daily-order-card")).toContainText("Ночь");
     await expect(page.locator(".daily-order-card")).toContainText(
       "Тестовая бригада",

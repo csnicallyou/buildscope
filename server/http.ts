@@ -16,6 +16,7 @@ import {
 } from "../src/workspaceTypes";
 import { savedSchema } from "../src/workOrderArchive";
 import { initialWorkDraft } from "../src/workOrders";
+import { ConstructionStore } from "./construction-store";
 import { unitKey } from "../src/workProgress";
 
 type Options = {
@@ -29,14 +30,17 @@ const json = (res: ServerResponse, value: unknown, status = 200) => {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(value));
 };
-async function body(req: IncomingMessage) {
+async function body(req: IncomingMessage, limit = 8 * 1024 * 1024) {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of req) {
     const b = Buffer.from(chunk);
     size += b.length;
-    if (size > 8 * 1024 * 1024)
-      throw new WorkspaceError(413, "Файл слишком большой, допустимо до 5 МБ");
+    if (size > limit)
+      throw new WorkspaceError(
+        413,
+        "Размер запроса превышает допустимый предел",
+      );
     chunks.push(b);
   }
   const text = Buffer.concat(chunks).toString("utf8");
@@ -94,6 +98,7 @@ const requireAdmin = (u: WorkspaceUser) => {
 export async function createWorkspaceServer(options: Options) {
   const { store } = options,
     root = await realpath(options.webRoot);
+  const construction = new ConstructionStore(store);
   const secure = options.publicOrigin?.startsWith("https:") ?? false;
   const cookieName = secure
     ? "__Host-buildscope_session"
@@ -135,7 +140,11 @@ export async function createWorkspaceServer(options: Options) {
     try {
       if (req.method !== "GET" && req.method !== "HEAD") csrf();
       if (req.method === "GET" && path === "/api/health") {
-        json(res, { service: "buildscope-workspace", version: 1 });
+        json(res, {
+          service: "buildscope-workspace",
+          version: 2,
+          appVersion: "0.12.0",
+        });
         return;
       }
       if (req.method === "GET" && path === "/api/session") {
@@ -207,6 +216,69 @@ export async function createWorkspaceServer(options: Options) {
         json(res, { ok: true });
         return;
       }
+      if (path === "/api/construction" && req.method === "GET") {
+        json(res, { records: construction.list(user) });
+        return;
+      }
+      if (path === "/api/construction" && req.method === "POST") {
+        const input = z
+          .object({
+            payload: z.unknown(),
+            id: z.string().nullable(),
+            revision: z.number().int().positive().nullable(),
+          })
+          .parse(await body(req));
+        json(res, {
+          record: construction.save(
+            user,
+            input.payload,
+            input.id,
+            input.revision,
+          ),
+        });
+        return;
+      }
+      const constructionHistory = path.match(
+        /^\/api\/construction\/([^/]+)\/history$/,
+      );
+      if (constructionHistory && req.method === "GET") {
+        json(res, {
+          events: construction.history(user, constructionHistory[1]),
+        });
+        return;
+      }
+      const attachment = path.match(/^\/api\/construction\/([^/]+)\/file$/);
+      if (attachment && req.method === "POST") {
+        requireAdmin(user);
+        const input = z
+          .object({
+            revision: z.number().int().positive(),
+            name: z.string().min(1).max(240),
+            base64: z.string().max(35 * 1024 * 1024),
+          })
+          .parse(await body(req, 36 * 1024 * 1024));
+        json(res, {
+          record: construction.attach(
+            user,
+            attachment[1],
+            input.revision,
+            input.name,
+            Buffer.from(input.base64, "base64"),
+          ),
+        });
+        return;
+      }
+      const documentFile = path.match(/^\/api\/construction-files\/([^/]+)$/);
+      if (documentFile && req.method === "GET") {
+        const file = construction.file(user, documentFile[1]);
+        res.setHeader("Content-Type", "application/octet-stream");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename*=UTF-8''${encodeURIComponent(String(file.name))}`,
+        );
+        res.end(file.data);
+        return;
+      }
       if (req.method === "POST" && path === "/api/password") {
         const input = z
           .object({ current: z.string().max(256), next: z.string().max(256) })
@@ -246,6 +318,8 @@ export async function createWorkspaceServer(options: Options) {
             revision: z.number().int().positive().nullable(),
           })
           .parse(await body(req));
+        if (input.revision === null)
+          construction.validateOrder(user, input.order.draft);
         json(res, { saved: store.save(user, input.order, input.revision) });
         return;
       }
@@ -329,6 +403,7 @@ export async function createWorkspaceServer(options: Options) {
               ...initialWorkDraft(),
               ...source.order.draft,
               ...input,
+              taskId: null,
               rows,
               crew: source.order.draft.crew.map((r) => ({
                 ...r,

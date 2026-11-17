@@ -21,6 +21,8 @@ import {
   type CrewRow,
 } from "./workOrders";
 import { download } from "./export";
+import { useConstruction } from "./useConstruction";
+import { ofKind, nodePath } from "./construction";
 const f = (v: number | null) =>
   v === null
     ? "Не определён"
@@ -48,6 +50,7 @@ export default function WorkOrderPanel({
   archiveError: string;
   shared?: boolean;
 }) {
+  const management = useConstruction(shared);
   const targets = useMemo(
     () => workTargets(project, opened),
     [project, opened],
@@ -179,6 +182,75 @@ export default function WorkOrderPanel({
         </button>
       </div>
       {archiveError && <p role="alert">{archiveError}</p>}
+      {shared && (
+        <details className="work-order-shift">
+          <summary>Связь с объектом и планом работ</summary>
+          <label>
+            Участок наряда
+            <select
+              aria-label="Участок наряда"
+              value={draft.nodeId ?? ""}
+              onChange={(e) =>
+                onDraft((d) => ({
+                  ...d,
+                  nodeId: e.target.value || null,
+                  taskId: null,
+                }))
+              }
+            >
+              <option value="">Без привязки к структуре</option>
+              {ofKind(management.records, "node").map((n) => (
+                <option key={n.id} value={n.id}>
+                  {nodePath(management.records, n.id)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Задача плана
+            <select
+              aria-label="Задача плана"
+              value={draft.taskId ?? ""}
+              onChange={(e) => {
+                const task = ofKind(management.records, "task").find(
+                  (t) => t.id === e.target.value,
+                );
+                onDraft((d) =>
+                  task
+                    ? {
+                        ...d,
+                        taskId: task.id,
+                        nodeId: task.payload.nodeId,
+                        date: task.payload.start,
+                        shift: task.payload.shift,
+                        brigade: task.payload.brigade,
+                        rows: d.rows.map((r) => ({
+                          ...r,
+                          date: task.payload.start,
+                          shift: task.payload.shift,
+                        })),
+                      }
+                    : { ...d, taskId: null },
+                );
+              }}
+            >
+              <option value="">Самостоятельный наряд</option>
+              {ofKind(management.records, "task")
+                .filter(
+                  (t) =>
+                    (!draft.nodeId || t.payload.nodeId === draft.nodeId) &&
+                    t.payload.status !== "done",
+                )
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.payload.title} · {t.payload.shift} · {t.payload.brigade}
+                  </option>
+                ))}
+            </select>
+          </label>
+          {management.error && <p role="alert">{management.error}</p>}
+        </details>
+      )}
       <button
         className="issue-work-order primary"
         disabled={busy || !draft.rows.length || errors.length > 0}

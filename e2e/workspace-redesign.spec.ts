@@ -1,3 +1,4 @@
+import { openSection } from "./navigation-helpers";
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { elementBounds, type Project } from "../src/model";
@@ -12,7 +13,12 @@ for (const mobile of [false, true]) {
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto("/?assembly=canopy");
     await expect(
-      page.getByRole("navigation", { name: "Режимы работы" }),
+      mobile
+        ? page.getByRole("button", {
+            name: "Разделы управления стройкой",
+            exact: true,
+          })
+        : page.getByRole("navigation", { name: "Режимы работы" }),
     ).toBeVisible();
     const scene = page.locator(".model-stage canvas");
     await expect(scene).toBeVisible();
@@ -34,7 +40,7 @@ for (const mobile of [false, true]) {
     await page.screenshot({
       path: `docs/screenshots/workspace-09${mobile ? "-mobile" : ""}.png`,
     });
-    await page.getByRole("button", { name: "Наряд", exact: true }).click();
+    await openSection(page, "Наряд");
     await expect(page.getByLabel("Конструкция для наряда")).toHaveValue("");
     await page
       .getByRole("button", { name: "План сверху", exact: true })
@@ -96,8 +102,8 @@ for (const mobile of [false, true]) {
       /^part:/,
     );
     await expect(
-      page.getByRole("button", { name: "Наряд", exact: true }),
-    ).toHaveClass(/active/);
+      page.getByRole("heading", { name: "Наряд", exact: true }),
+    ).toBeVisible();
     await page.screenshot({
       path: `docs/screenshots/work-order-map${mobile ? "-mobile" : ""}.png`,
     });
@@ -120,7 +126,7 @@ test("Невысокий экран и светлая тема оставляю�
   ).toBeGreaterThanOrEqual(350);
   await page.screenshot({ path: "docs/screenshots/workspace-09-light.png" });
   await page.setViewportSize({ width: 844, height: 390 });
-  await page.getByRole("button", { name: "Наряд", exact: true }).click();
+  await openSection(page, "Наряд");
   await expect(page.locator(".work-order-map canvas")).toBeVisible();
   expect(
     (await page.locator(".work-order-map canvas").boundingBox())!.height,

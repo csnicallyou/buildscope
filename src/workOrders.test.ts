@@ -79,7 +79,7 @@ describe("Наряд из модели", () => {
         name: project.name + " другой вариант",
       }),
     ).toBeNull();
-    d.date = "2026-11-17";
+    d.date = d.date === "2026-11-17" ? "2026-11-18" : "2026-11-17";
     expect(addWork(d, target, "concrete", project)).not.toBeNull();
   });
   it("реальный факт 0 сохраняется, отсутствие факта остаётся неизвестным", () => {

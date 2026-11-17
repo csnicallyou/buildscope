@@ -1,3 +1,4 @@
+import { openSection } from "./navigation-helpers";
 import { test, expect } from "@playwright/test";
 import { jsPDF } from "jspdf";
 import { openTree, modelView } from "./mobile-helpers";
@@ -47,9 +48,7 @@ for (const mobile of [false, true])
       path: `docs/screenshots/inspection-pdf${mobile ? "-mobile" : ""}.png`,
     });
     await page.getByRole("button", { name: "Закрыть чертёж" }).click();
-    await page
-      .getByRole("button", { name: "Проверка модели", exact: true })
-      .click();
+    await openSection(page, "Проверка модели");
     await page
       .getByRole("button", { name: "Запустить проверку", exact: true })
       .click();
