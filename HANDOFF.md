@@ -2,6 +2,8 @@
 
 ## Сначала: 0.12 — панель управления стройкой
 
+Проверенный код 8852e60 в PRIVATE origin/codex/construction-management-panel соответствует действующему release 20261117T055527. Main ещё не интегрирован. Последующие записи этого файла описывают исторические версии; ориентироваться на верхний раздел и docs/CONSTRUCTION_PANEL.md.
+
 Внешний smoke новой публикации прошёл для admin/foreman/viewer, включая мобильный overview, construction API, вход/выход и download/открытие schema2 backup. Копия на ПК .deploy/backups/cloud-0.12-20261117.sqlite; новые реквизиты не создавались и старые не менялись. Сервис/Caddy/VPN active, backup timer enabled, новый путь backup unit подтверждён. Никаких фиктивных стройзаписей на production нет.
 
 Читать верх PROJECT_STATE 0.12, docs/CONSTRUCTION_PANEL.md и SHARED_WORKSPACE. Новая глобальная оболочка и главная серверного приложения; инженерные модули сохранены внутри. ConstructionPanel/ConstructionObjectContext/useConstruction/construction.css и чистый construction.ts. server/construction-store.ts — права, версии, иерархия, зависимости, склад, замечания, редакции и защищённые файлы.
