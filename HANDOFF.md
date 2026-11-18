@@ -1,3 +1,9 @@
+## 0.15.0 — интерфейс проверен, требуется выкладка
+
+Прочитать верх PROJECT_STATE и docs/WORKSPACE_UX.md. Ветка codex/unified-construction-workspace, checkpoint ae1241e. Все9 workspace/37 E2E/116 unit/typecheck/lint/обе сборки прошли,23 раздела/редакторы осмотрены. Новые модули WorkbenchNavigation/WorkContextBar/ConstructionTree/OrderEvidencePane и experience/order-experience. В useWorkspace mode=server устанавливать только после загрузки серверного черновика; regression integration/workspace.spec.ts управляет задержкой GET. На коротком canvas виджет осей сверху, строка статусов не меняет высоту при выборе. Геометрия/Project/schema2 не менялись.
+
+Production пока0.14.3/620dc6b. Выкладка только deploy/upgrade.sh с прежней БД; не bootstrap/restore. Затем .deploy/cloud-workbench-check.mjs и .deploy/model-first-check.mjs, защищённый PDF, hash обоих оригиналов, backup integrity/schema2/сохранность пользователей. Приватные ключи/credentials/данные/снимки не печатать и не коммитить; старые backups не перезаписывать. .gitignore/share-скрипты/tracked PNG сохранить вне коммита. Записать фактический release/SHA/code checkpoint после проверки.
+
 ## Единое рабочее пространство — реализация продолжается
 
 Прочитать верх PROJECT_STATE и docs/WORKSPACE_UX.md. Ветка codex/unified-construction-workspace от1724be3; production ещё620dc6b/0.14.3. Новые WorkbenchNavigation/WorkContextBar/ConstructionTree/OrderEvidencePane, стили experience/order-experience. Карточка наряда с разделами, оригинал/данные рядом, станция сохраняется при переходах. Геометрия/общая schema2 не меняются. Typecheck/lint/116 unit прошли; браузерные тесты ещё доводятся, не считать первый полный прогон успешным. Остались финальные проверки/визуальный просмотр/выкладка через прежний upgrade с сохранением БД. Не включать .gitignore, share-скрипты и tracked screenshots. Приватные скрипты/снимки только .deploy. Не перезаписывать прежние backups.

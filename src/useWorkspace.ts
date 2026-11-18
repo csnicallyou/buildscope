@@ -108,7 +108,6 @@ export function useWorkspace(
         }
         if (disposed) return;
         setUser(signed);
-        setMode("server");
         await refresh();
         if (signed.role === "admin") {
           const remote = parseDraft(await api("/api/draft"));
@@ -134,6 +133,7 @@ export function useWorkspace(
           if (remote.draft) setDraft(remote.draft);
           setDraftStatus("Черновик на сервере");
         }
+        if (!disposed) setMode("server");
       } catch (e) {
         if (!disposed) {
           setMode("error");

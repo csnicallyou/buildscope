@@ -100,7 +100,11 @@ export default function OrderEvidencePane({ orderId }: { orderId: string }) {
               <img
                 src={file.url}
                 alt={file.title}
-                onError={() => setError("Не удалось открыть изображение. Попробуйте открыть оригинал отдельно.")}
+                onError={() =>
+                  setError(
+                    "Не удалось открыть изображение. Попробуйте открыть оригинал отдельно.",
+                  )
+                }
                 style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
               />
             ) : file.type === "pdf" ? (

@@ -40,9 +40,27 @@ test("Общая база: черновик, выдача, сдача други
   await expect(page.locator(".workspace-sync")).toContainText(
     "Черновик сохранён",
   );
+  let allowDraft!: () => void;
+  const draftGate = new Promise<void>((resolve) => {
+    allowDraft = resolve;
+  });
+  await page.route("**/api/draft", async (route) => {
+    if (route.request().method() === "GET") await draftGate;
+    await route.continue();
+  });
+  const draftRequested = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/api/draft") && request.method() === "GET",
+  );
   await page.reload();
+  await draftRequested;
+  await expect(
+    page.getByText("Загрузка рабочего пространства…", { exact: true }),
+  ).toBeVisible();
+  allowDraft();
   await openSection(page, "Наряд");
   await expect(page.getByLabel("План работы 1")).toHaveValue("2.592");
+  await page.unroute("**/api/draft");
   await page.getByRole("button", { name: "Выдать наряд", exact: true }).click();
   await expect(page.locator(".daily-order-card")).toHaveCount(1);
   const foreman = await browser.newContext({

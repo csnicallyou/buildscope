@@ -120,16 +120,23 @@ test("Невысокий экран и светлая тема оставляю�
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto("/?assembly=canopy");
   await expect(page.locator(".app")).toHaveClass(/light/);
-  expect(
-    (await page.locator(".model-stage canvas").boundingBox())!.height,
-  ).toBeGreaterThanOrEqual(350);
+  await expect
+    .poll(
+      async () =>
+        (await page.locator(".model-stage canvas").boundingBox())?.height ?? 0,
+    )
+    .toBeGreaterThanOrEqual(350);
   await page.screenshot({ path: "docs/screenshots/workspace-09-light.png" });
   await page.setViewportSize({ width: 844, height: 390 });
   await openSection(page, "Наряд");
   await expect(page.locator(".work-order-map canvas")).toBeVisible();
-  expect(
-    (await page.locator(".work-order-map canvas").boundingBox())!.height,
-  ).toBeGreaterThan(140);
+  await expect
+    .poll(
+      async () =>
+        (await page.locator(".work-order-map canvas").boundingBox())?.height ??
+        0,
+    )
+    .toBeGreaterThan(140);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(844);

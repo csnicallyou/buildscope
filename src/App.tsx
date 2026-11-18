@@ -395,6 +395,7 @@ export default function App() {
         4,
     );
     setCompareOpen(true);
+    setMobileTools(false);
     setTab("model");
     s.set({ mobilePanel: "none" });
   };
@@ -1493,9 +1494,7 @@ export default function App() {
                 >
                   <Calculator size={16} />
                   Калькулятор
-                  {s.calculatedObjects.length > 0 && (
-                    <span>{s.calculatedObjects.length}</span>
-                  )}
+                  <span>{s.calculatedObjects.length}</span>
                 </button>
               )}
               {s.calculatorOpen && (

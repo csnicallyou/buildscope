@@ -317,7 +317,9 @@ function Part({ item, index }: { item: SceneItem; index: number }) {
                       ? "#5ccbb7"
                       : highlighted
                         ? "#f4b85d"
-                        : s.workStatusColors && s.workStatuses[objectId] ? statusColors[s.workStatuses[objectId]] : e.color
+                        : s.workStatusColors && s.workStatuses[objectId]
+                          ? statusColors[s.workStatuses[objectId]]
+                          : e.color
                 }
                 roughness={0.82}
                 metalness={e.material === "Сталь" ? 0.35 : 0}
@@ -371,6 +373,7 @@ function Part({ item, index }: { item: SceneItem; index: number }) {
 }
 function Scene({ paused }: { paused: boolean }) {
   const s = useStore();
+  const { size } = useThree();
   const items = useMemo(
     () =>
       visibleItems(
@@ -463,7 +466,10 @@ function Scene({ paused }: { paused: boolean }) {
           <Line points={s.points} color="#ffbe59" lineWidth={2} />
         </>
       )}
-      <GizmoHelper alignment="bottom-right" margin={[65, 65]}>
+      <GizmoHelper
+        alignment={size.height < 350 ? "top-right" : "bottom-right"}
+        margin={size.height < 350 ? [48, 48] : [65, 65]}
+      >
         <GizmoViewport
           axisColors={["#c97b72", "#88b491", "#77a6d1"]}
           labelColor="white"
