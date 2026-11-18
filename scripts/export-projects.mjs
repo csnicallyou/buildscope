@@ -20,6 +20,7 @@ const { createKzh, createKzhDetails, parseProject, toCSV, toSourceCSV } =
       Buffer.from(bundled.outputFiles[0].text).toString("base64")
   );
 await mkdir("output/projects", { recursive: true });
+const reinforcementReviews = [];
 for (const [name, projectInput] of [
   ["pavilion", createKzh("pavilion")],
   ["canopy-plan", createKzh("canopy")],
@@ -27,6 +28,25 @@ for (const [name, projectInput] of [
   ["bent-details", createKzhDetails()],
 ]) {
   const project = parseProject(JSON.stringify(projectInput));
+  const marks = new Set();
+  for (const e of project.elements) {
+    const review = e.evidence?.reinforcementReview;
+    if (!review || marks.has(e.mark)) continue;
+    marks.add(e.mark);
+    reinforcementReviews.push({
+      project: name,
+      mark: e.mark,
+      ...review,
+      positions: e.evidence.reinforcement.map((r) => ({
+        position: r.position,
+        specificationPage: r.page,
+        specificationCount: r.count,
+        shownCount: (e.evidence.bars ?? []).filter(
+          (b) => b.drawing?.position === r.position,
+        ).length,
+      })),
+    });
+  }
   await writeFile(
     `output/projects/${name}.buildscope.json`,
     JSON.stringify(project, null, 2) + "\n",
@@ -43,3 +63,8 @@ for (const [name, projectInput] of [
     "utf8",
   );
 }
+await writeFile(
+  "output/projects/reinforcement-review.json",
+  JSON.stringify(reinforcementReviews, null, 2) + "\n",
+  "utf8",
+);

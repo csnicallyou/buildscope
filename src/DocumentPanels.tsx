@@ -38,8 +38,8 @@ export function ReinforcementPanel({
       <QuantityBadges statuses={["source"]} />
       <p>
         Позиции переписаны из спецификаций. Количества, длины и массы сохранены
-        в исходных единицах. Сетка в 3D — схема размещения; гнутые детали,
-        сварку и нахлёсты проверяйте по PDF.
+        в исходных единицах. Ниже отдельно показаны результаты сверки 3D с
+        чертежом. Видимые стержни не означают, что весь каркас восстановлен.
       </p>
       {types.length === 0 ? (
         <p>Для выбранного проекта спецификация армирования отсутствует.</p>
@@ -56,12 +56,14 @@ export function ReinforcementPanel({
                   {e.mark}{" "}
                   <small>× {count} · значения ниже на один элемент</small>
                 </h2>
+                <ReinforcementReview element={e} />
                 <table>
                   <thead>
                     <tr>
                       <th>Поз.</th>
                       <th>Сталь / Ø мм</th>
                       <th>Кол., шт.</th>
+                      <th>В 3D, шт.</th>
                       <th>L, м</th>
                       <th>ΣL, м</th>
                       <th>Масса, кг</th>
@@ -76,6 +78,13 @@ export function ReinforcementPanel({
                           {r.grade} / {r.diameter}
                         </td>
                         <td>{f(r.count)}</td>
+                        <td>
+                          {e.evidence!.reinforcementReview
+                            ? (e.evidence!.bars ?? []).filter(
+                                (b) => b.drawing?.position === r.position,
+                              ).length
+                            : "Не сверено"}
+                        </td>
                         <td>{f(r.length)}</td>
                         <td>{f(r.totalLength)}</td>
                         <td>{f(r.totalMass)}</td>
@@ -117,6 +126,77 @@ export function ReinforcementPanel({
           </table>
         </>
       )}
+    </section>
+  );
+}
+
+export function ReinforcementReview({ element }: { element: Element }) {
+  const review = element.evidence?.reinforcementReview;
+  if (!review)
+    return (
+      <p>
+        Размещение арматуры этой модели не проходило новую сверку с чертежом.
+      </p>
+    );
+  return (
+    <section
+      className="reinforcement-review"
+      aria-label={`Сверка армирования ${element.mark}`}
+    >
+      <strong>
+        {review.status === "partial"
+          ? "Каркас восстановлен частично"
+          : "Каркас в 3D не восстановлен"}
+      </strong>
+      <p>Проверены страницы PDF: {review.pages.join(", ")}.</p>
+      {review.placed.length > 0 && (
+        <>
+          <h3>Построено</h3>
+          <ul>
+            {review.placed.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {review.pending.length > 0 && (
+        <>
+          <h3>Не восстановлено в 3D</h3>
+          <ul>
+            {review.pending.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {review.conflicts.map((t) => (
+        <p className="reinforcement-conflict" key={t}>
+          <strong>Расхождение чертежа: </strong>
+          {t}
+        </p>
+      ))}
+      <details>
+        <summary>Основания и ограничения сверки</summary>
+        {review.notes.map((t) => (
+          <p key={t}>{t}</p>
+        ))}
+        {review.distributions?.map((d) => (
+          <details key={d.position}>
+            <summary>
+              {d.position}: {d.distances.length} сечений × {d.perStation} · PDF{" "}
+              {d.page}
+            </summary>
+            <p>
+              {d.from}. Расстояния до осей в метрах:{" "}
+              {d.distances.map((v) => f(v)).join("; ")}.
+            </p>
+            <p>
+              Это размерная цепь размещения; форма и размещение самих гнутых
+              деталей в 3D пока не восстановлены.
+            </p>
+          </details>
+        ))}
+      </details>
     </section>
   );
 }

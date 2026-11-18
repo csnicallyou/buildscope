@@ -101,7 +101,11 @@ import {
 import { download, exportGLB } from "./export";
 import { dxfImporter, type Drawing } from "./importers";
 import { createKzh, type Assembly } from "./kzh";
-import { ReinforcementPanel, SourcePanel } from "./DocumentPanels";
+import {
+  ReinforcementPanel,
+  ReinforcementReview,
+  SourcePanel,
+} from "./DocumentPanels";
 import { createKzhDetails } from "./details";
 import {
   hasObjects,
@@ -2407,6 +2411,9 @@ export default function App() {
                     >
                       PDF: страницы {selected.evidence.pages.join(", ")}
                     </button>
+                    {selected.evidence.reinforcement && (
+                      <ReinforcementReview element={selected} />
+                    )}
                     {selected.evidence.reinforcement && (
                       <button onClick={() => setTab("reinforcement")}>
                         Спецификация армирования

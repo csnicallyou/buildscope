@@ -35,6 +35,33 @@ export const barSchema = z.object({
   label: z.string(),
   diameter: z.number().positive().max(0.1),
   points: z.array(v3).min(2).max(100),
+  drawing: z
+    .object({
+      page: z.number().int().min(1).max(30),
+      position: z.string(),
+    })
+    .optional(),
+});
+export const reinforcementReviewSchema = z.object({
+  revision: z.literal(1),
+  sourceHash: z.string(),
+  pages: z.array(z.number().int().min(1).max(30)),
+  status: z.enum(["partial", "schedule-only"]),
+  placed: z.array(z.string()),
+  pending: z.array(z.string()),
+  notes: z.array(z.string()),
+  conflicts: z.array(z.string()),
+  distributions: z
+    .array(
+      z.object({
+        position: z.string(),
+        page: z.number().int().min(1).max(30),
+        from: z.string(),
+        distances: z.array(z.number().nonnegative()),
+        perStation: z.number().int().positive(),
+      }),
+    )
+    .optional(),
 });
 export const rebarSpecSchema = z.object({
   position: z.string(),
@@ -60,6 +87,7 @@ export const evidenceSchema = z.object({
   reportedVolume: z.number().nonnegative().optional(),
   reinforcement: z.array(rebarSpecSchema).optional(),
   bars: z.array(barSchema).max(4000).optional(),
+  reinforcementReview: reinforcementReviewSchema.optional(),
 });
 export const documentSchema = z.object({
   code: z.string(),

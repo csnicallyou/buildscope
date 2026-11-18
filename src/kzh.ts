@@ -1,3 +1,4 @@
+import { applyDrawingReinforcement } from "./reinforcement";
 import { drawingPlanToWorld } from "./drawingCoordinates";
 import layout from "./data/kzh-layout.json";
 import {
@@ -5,9 +6,8 @@ import {
   type Project,
   type Vec3,
   type Box,
-  elementBounds,
 } from "./model";
-import type { ShapeData, EngineeringDocument, Bar } from "./engineering";
+import type { ShapeData, EngineeringDocument } from "./engineering";
 import {
   pavilionRebar,
   canopyRebar,
@@ -174,7 +174,7 @@ export function documentInfo(assembly: Assembly): EngineeringDocument {
         title: "Армирование: схема и спецификация",
         pages: [9, 10, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
         detail:
-          "В 3D показаны основные сетки, продольные стержни и хомуты балок/Пм6. Все позиции спецификаций сохранены отдельно, включая скобы, фиксаторы, петли и выпуски. Гибка, сварка, нахлёсты и полная пространственная расстановка каждой гнутой детали не утверждены этой моделью.",
+          "Армирование повторно сверено по PDF. В 3D оставлены восстановленные прямые участки и анкеры; универсальные сетки у сложных узлов и условные хомуты удалены. Для каждой марки в разделе «Армирование» указан состав построенного, непостроенные позиции и расхождения источника. Полный изготовительный каркас не заявляется.",
       },
       {
         id: "stair",
@@ -317,129 +317,6 @@ function gravelShape(width: number, depth: number): ShapeData {
     ]) as [number, number, number][],
   };
 }
-function segmentsInPolygon(
-  outline: [number, number][],
-  axis: 0 | 1,
-  value: number,
-) {
-  const cut: number[] = [];
-  for (let i = 0; i < outline.length; i++) {
-    const a = outline[i],
-      b = outline[(i + 1) % outline.length];
-    if (
-      (a[axis] <= value && b[axis] > value) ||
-      (b[axis] <= value && a[axis] > value)
-    ) {
-      const t = (value - a[axis]) / (b[axis] - a[axis]);
-      cut.push(a[1 - axis] + t * (b[1 - axis] - a[1 - axis]));
-    }
-  }
-  cut.sort((a, b) => a - b);
-  const pairs: [number, number][] = [];
-  for (let i = 0; i + 1 < cut.length; i += 2)
-    if (cut[i + 1] - cut[i] > 0.06)
-      pairs.push([cut[i] + 0.025, cut[i + 1] - 0.025]);
-  return pairs;
-}
-function cage(e: Element, spacing = 0.2, diameter = 0.012) {
-  const bounds = elementBounds(e);
-  const [lx, , lz] = bounds.min,
-    [rx, , rz] = bounds.max;
-  const t = bounds.max[1] - bounds.min[1];
-  const outline =
-    e.shape?.kind === "extrusion" && e.shape.axis === "y"
-      ? e.shape.outline
-      : ([
-          [lx, lz],
-          [rx, lz],
-          [rx, rz],
-          [lx, rz],
-        ] as [number, number][]);
-  const bars: Bar[] = [];
-  for (const y of [
-    bounds.min[1] + 0.025 + diameter / 2,
-    bounds.max[1] - 0.025 - diameter / 2,
-  ])
-    for (const axis of [0, 1] as const) {
-      const lo = axis === 0 ? lx : lz,
-        hi = axis === 0 ? rx : rz;
-      const count = Math.floor((hi - lo - 0.06) / spacing) + 1;
-      for (let i = 0; i < count; i++) {
-        const v = (lo + hi) / 2 + (i - (count - 1) / 2) * spacing;
-        for (const [a, b] of segmentsInPolygon(outline, axis, v)) {
-          const pts: Vec3[] =
-            axis === 0
-              ? [
-                  [v, y, a],
-                  [v, y, b],
-                ]
-              : [
-                  [a, y + diameter, v],
-                  [b, y + diameter, v],
-                ];
-          bars.push({
-            id: `${e.id}:grid:${bars.length + 1}`,
-            label: "Основная сетка · схема",
-            diameter,
-            points: pts,
-          });
-        }
-      }
-    }
-  if (t > 0.1) e.evidence!.bars = bars;
-}
-function beamCage(
-  e: Element,
-  length: number,
-  count: number,
-  stirrupCount: number,
-) {
-  const bars: Bar[] = [];
-  const half = length / 2 - 0.025;
-  const zValues =
-    count === 10 ? [-0.152, -0.05, 0.05, 0.152] : [-0.152, -0.05, 0.05, 0.152];
-  for (const y of [-0.242, 0.242])
-    for (const z of zValues)
-      bars.push({
-        id: `${e.id}:long:${bars.length}`,
-        label: "1 · продольная арматура",
-        diameter: 0.016,
-        points: [
-          [-half, y, z],
-          [half, y, z],
-        ],
-      });
-  const middle = count === 10 ? [0] : [-0.107, 0, 0.107];
-  for (const y of middle)
-    for (const z of [-0.152, 0.152])
-      bars.push({
-        id: `${e.id}:long:${bars.length}`,
-        label: "1 · боковые стержни",
-        diameter: 0.016,
-        points: [
-          [-half, y, z],
-          [half, y, z],
-        ],
-      });
-  for (let i = 0; i < stirrupCount / 2; i++) {
-    const x = -half + 0.05 + ((length - 0.15) * i) / (stirrupCount / 2 - 1);
-    for (const center of [-0.076, 0.076])
-      bars.push({
-        id: `${e.id}:stirrup:${bars.length}`,
-        label: "Х2 · схема хомутов",
-        diameter: 0.008,
-        points: [
-          [x, -0.246, center - 0.08],
-          [x, 0.246, center - 0.08],
-          [x, 0.246, center + 0.08],
-          [x, -0.246, center + 0.08],
-          [x, -0.246, center - 0.08],
-        ],
-      });
-  }
-  e.evidence!.bars = bars;
-}
-
 export function createKzh(
   assembly: Assembly,
   variant: "plan" | "sections" = "plan",
@@ -588,7 +465,6 @@ export function createKzh(
           type === "Пм1" ? 2.93 : type === "Пм2" ? 2.05 : 2.26,
         );
         e.evidence!.reinforcement = pavilionRebar[type];
-        cage(e);
       }
       x += width + 0.02;
     }
@@ -627,7 +503,7 @@ export function createKzh(
               : 3.66,
       );
       e.evidence!.reinforcement = foundationRebar[type];
-      cage(e, 0.2, 0.016);
+      e.evidence!.bars = [];
       const outline: [number, number][] | undefined =
         type === "Фм2"
           ? [
@@ -861,37 +737,6 @@ export function createKzh(
         };
         e.parts = [];
       }
-      if (mark === "Пм6") {
-        const bars: Bar[] = [];
-        for (const y of [-0.065, 0.065])
-          for (const z of [-0.182, -0.09, 0, 0.092, 0.182])
-            bars.push({
-              id: `${e.id}:main:${bars.length}`,
-              label: "1 · 16 A500C",
-              diameter: 0.016,
-              points: [
-                [-4.47, y, z],
-                [4.47, y, z],
-              ],
-            });
-        for (let i = 0; i < 75; i++)
-          for (const center of [-0.091, 0.091]) {
-            const x = -4.44 + i * 0.12;
-            bars.push({
-              id: `${e.id}:X1:${bars.length}`,
-              label: "Х1 · 8 A240",
-              diameter: 0.008,
-              points: [
-                [x, -0.0655, center - 0.0995],
-                [x, 0.0655, center - 0.0995],
-                [x, 0.0655, center + 0.0995],
-                [x, -0.0655, center + 0.0995],
-                [x, -0.0655, center - 0.0995],
-              ],
-            });
-          }
-        e.evidence!.bars = bars;
-      } else cage(e, mark === "Пм4" ? 0.1 : 0.2);
       return e;
     };
     const stripX = 6.925;
@@ -931,7 +776,6 @@ export function createKzh(
         1.66,
       );
       e.evidence!.reinforcement = canopyRebar.Бм1;
-      beamCage(e, 7.15, 10, 90);
     }
     const beam = add(
       "Бм2",
@@ -947,7 +791,6 @@ export function createKzh(
       2.57,
     );
     beam.evidence!.reinforcement = canopyRebar.Бм2;
-    beamCage(beam, 11.09, 14, 168);
     // Stated tread geometry; ambiguous lower profile is explicitly a diagram, excluded from takeoff.
     const outline: [number, number][] = [
       [0, -1.48],
@@ -988,6 +831,7 @@ export function createKzh(
     );
     stair.evidence!.reinforcement = canopyRebar.Лм1;
   }
+  for (const e of elements) applyDrawingReinforcement(e, assembly);
   return drawingPlanToWorld({
     version: 2,
     name: `Маленковская · ${document.assembly}${assembly === "canopy" ? " · " + (variant === "plan" ? "по плану" : "по разрезам") : ""}`,

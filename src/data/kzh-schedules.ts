@@ -131,7 +131,8 @@ export const foundationRebar: Record<string, RebarSpec[]> = {
     ]),
   ],
   Фм3: footing(58, 16, 181.3, 286),
-  Фм4: footing(60, 22, 179, 284.4),
+  // PDF27, sheet22: printed total is 282,4 kg (previous transcription:284,4).
+  Фм4: footing(60, 22, 179, 282.4),
 };
 // Literal totals as printed in the steel schedules, kept separately from rounded row products.
 export const steelSchedule = {

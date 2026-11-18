@@ -60,7 +60,7 @@ for (const mobile of [false, true])
     await expect(amounts).toContainText("7,31 м³");
     await expect(amounts).toContainText("1,861 м³");
     await expect(amounts).toContainText("6,752 м³");
-    await expect(amounts).toContainText("938,4 кг");
+    await expect(amounts).toContainText("934,4 кг");
     await expect(amounts).toContainText("16 шт.");
     await expect(amounts).toContainText("одинаковые откосы");
     await openCalculator(page);
@@ -79,7 +79,7 @@ for (const mobile of [false, true])
       .first()
       .click();
     await expect(calculator).toContainText("Скрыто выбранных объектов: 1");
-    await expect(amounts).toContainText("938,4 кг");
+    await expect(amounts).toContainText("934,4 кг");
     await openCalculator(page);
     await calculator
       .getByRole("button", {

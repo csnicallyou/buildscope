@@ -50,7 +50,10 @@ describe("Объект и его части", () => {
     const o = modelObjects(p).find((o) => o.root.mark === "Фм2")!;
     const item = objectItems(o).find((i) => i.kind === "steel")!;
     const q = steelSchemeAmount(item.bars!);
-    expect(q.count).toBeGreaterThan(20);
+    // Фм2: после сверки оставлены 16 анкеров; неподтверждённая сетка
+    // больше не выдаётся за размещённую арматуру.
+    expect(q.count).toBe(16);
+    expect(o.root.evidence!.reinforcementReview?.status).toBe("schedule-only");
     expect(q.volume).toBeGreaterThan(0);
     expect(q.length).toBeGreaterThan(0);
     const copy = structuredClone(o.root);

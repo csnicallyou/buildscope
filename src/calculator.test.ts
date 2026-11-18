@@ -46,7 +46,7 @@ describe("Калькулятор выбранных объектов", () => {
     expect(value("Бетон B25 W8 F150")).toBeCloseTo(7.31025, 8);
     expect(value("Бетон B7.5")).toBeCloseTo(1.8605, 8);
     expect(value("Щебень")).toBeCloseTo(6.7515, 8);
-    expect(value("Сталь A500C")).toBeCloseTo(938.4);
+    expect(value("Сталь A500C")).toBeCloseTo(934.4);
     expect(value("Сталь A240")).toBeCloseTo(45.8);
     expect(value("Анкеры M24")).toBe(16);
     expect(c.materials.find((r) => r.name === "Сталь A500C")!.unit).toBe("кг");
