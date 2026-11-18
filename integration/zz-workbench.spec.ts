@@ -1,7 +1,57 @@
 import { test, expect } from "@playwright/test";
+import { jsPDF } from "jspdf";
 import { openSection } from "../e2e/navigation-helpers";
 
 test.use({ hasTouch: true });
+test("Сохранённый PDF автоматически открывается рядом с моделью", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Логин", { exact: true }).fill("admin");
+  await page.getByLabel("Пароль", { exact: true }).fill("Browser-admin-1234!");
+  await page.getByRole("button", { name: "Войти", exact: true }).click();
+  await page
+    .getByLabel("Текущая станция")
+    .selectOption({ label: "Картографический тест 1" });
+  await openSection(page, "Документы");
+  await page
+    .getByRole("button", { name: "Добавить документ", exact: true })
+    .click();
+  await page
+    .getByLabel("Название записи", { exact: true })
+    .fill("Синтетический источник КЖ");
+  await page.getByLabel("Номер документа").fill("10-25-М-КЖ1.5");
+  await page.getByLabel("Вид документа").selectOption("drawing");
+  const pdf = new jsPDF();
+  for (let i = 1; i <= 30; i++) {
+    if (i > 1) pdf.addPage();
+    pdf.text(`SYNTHETIC DRAWING ${i}`, 20, 20);
+  }
+  await page.getByLabel("Файл документа").setInputFiles({
+    name: "synthetic-linked-kzh.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from(pdf.output("arraybuffer")),
+  });
+  await page
+    .getByRole("button", { name: "Сохранить запись", exact: true })
+    .click();
+  await expect(page.getByLabel("Редактор записи стройки")).toHaveCount(0);
+  await page.reload();
+  await page
+    .getByLabel("Текущая станция")
+    .selectOption({ label: "Картографический тест 1" });
+  await page.getByLabel("Поиск конструкций").fill("Фм4 · оси 8/А");
+  await page
+    .getByRole("button", { name: "Фм4 Фм4 · оси 8/А", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Чертёж рядом", exact: true }).click();
+  await expect(page.locator(".drawing-comparison")).toBeVisible();
+  await expect(page.getByTestId("pdf-page-status")).toContainText("из 30", {
+    timeout: 15000,
+  });
+  await expect(page.locator(".drawing-comparison canvas")).toBeVisible();
+  await expect(page.locator(".comparison-empty")).toHaveCount(0);
+});
 test("Рабочий контекст сохраняется между моделью, документами, ресурсами и сменами", async ({
   page,
 }) => {

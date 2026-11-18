@@ -1698,7 +1698,7 @@ export default function App() {
                   <DrawingComparison
                     project={s.project}
                     selected={selected}
-                    url={pdfUrl}
+                    url={connectedPdfUrl}
                     page={pdfPage}
                     onPage={setPdfPage}
                     onOpen={() => pdf.current?.click()}

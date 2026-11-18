@@ -145,7 +145,7 @@ export async function createWorkspaceServer(options: Options) {
         json(res, {
           service: "buildscope-workspace",
           version: 2,
-          appVersion: "0.15.1",
+          appVersion: "0.15.2",
         });
         return;
       }
