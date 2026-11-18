@@ -1,3 +1,7 @@
+## Мобильное исправление 0.15.3 — проверка продолжается
+
+Читать верх PROJECT_STATE. Ветка codex/mobile-order-scroll, checkpoint4e057b0. Изменения в order-experience.css: общий мобильный scroll формы/карты, кнопки не перекрывают поля,16px ввод, длинные действия переносятся. Новый e2e/mobile-form-scroll.spec.ts: пять размеров и hit-test полей. Typecheck/lint/116unit/10workspace/обе сборки прошли; полные E2E и WebKit ещё выполняются, production0.15.2. Дальше закончить проверки, осмотреть .deploy/mobile-final-0153, commit/push, upgrade с текущей БД, smoke/новый backup. Не трогать чужие PNG/.gitignore/share-скрипты. Старые backups не перезаписывать.
+
 ## Актуально: 0.15.2 опубликован и проверен
 
 Сначала верх PROJECT_STATE и docs/WORKSPACE_UX.md. Код fb997eb в PRIVATE codex/unified-construction-workspace опубликован release20261118T032812. Typecheck/lint/116 unit/10 workspace/37 E2E/обе сборки успешны. Все23 раздела и редакторы осмотрены. Внешние проверки всех3 ролей, реальные mobile tap подписи/списка/маркера, автоматический серверный PDF в обоих режимах, SHA обоих оригиналов и независимый backup прошли. БД schema2,3 пользователя,1 наряд,44 construction-записи сохранены; текущий SHA пакета и имя копии в PROJECT_STATE.

@@ -407,6 +407,7 @@
     flex: 1;
   }
   .app .work-order-submit {
+    position: static;
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
@@ -478,5 +479,67 @@
     font-size: 12px;
     color: var(--muted);
     min-width: 100px;
+  }
+}
+
+/* The phone has one scrolling work surface. A fixed map plus two sticky bars
+   leaves no usable form area when the browser chrome or keyboard is visible. */
+@media (max-width: 850px) {
+  .app .work-order-layout {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scroll-padding-top: 64px;
+  }
+  .app .work-order-map {
+    flex: 0 0 260px;
+  }
+  .app .work-order-layout .work-order-panel {
+    flex: 0 0 auto;
+    height: auto;
+    overflow: visible;
+  }
+}
+@media (max-width: 850px) {
+  .app .work-order-title {
+    position: static;
+  }
+  .app .work-order-panel [id^="order-step-"] {
+    scroll-margin-top: 68px;
+  }
+  .app .work-order-panel :is(input, select, textarea) {
+    font-size: 16px;
+  }
+  .app .cm-editor-actions,
+  .app .cm-editor button.primary,
+  .app .field-editor form > fieldset > button.primary {
+    position: static;
+    box-shadow: none;
+  }
+  .app :is(.cm-editor, .field-editor) :is(input, select, textarea) {
+    font-size: 16px;
+  }
+  .app .cm-heading {
+    flex-wrap: wrap;
+  }
+  .app .cm-heading-actions .primary {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+@media (min-width: 600px) and (max-width: 850px) and (max-height: 500px) {
+  .app .work-order-layout {
+    display: grid;
+    overflow: hidden;
+  }
+  .app .work-order-map {
+    height: 100%;
+  }
+  .app .work-order-layout .work-order-panel {
+    height: 100%;
+    overflow-y: auto;
+    scroll-padding-top: 64px;
   }
 }
