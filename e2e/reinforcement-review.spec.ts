@@ -37,7 +37,7 @@ for (const mobile of [false, true])
     await footing
       .getByText("Основания и ограничения сверки", { exact: true })
       .click();
-    await expect(footing).toContainText("шагом195");
+    await expect(footing).toContainText("шагом 195");
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(mobile ? 390 : 1440);

@@ -562,6 +562,10 @@
 .reinforcement-review li {
   margin: 6px 0;
 }
+.app .reinforcement-review p {
+  font-size: 14px;
+  line-height: 1.55;
+}
 .reinforcement-review > strong {
   color: var(--muted);
 }
