@@ -1332,6 +1332,20 @@ export default function App() {
                   {opened.root.mark} · {opened.root.name}
                 </span>
                 <small>Отдельный вид · {items.length} частей</small>
+                {opened.root.evidence?.reinforcementReview && (
+                  <button
+                    aria-label={`Полнота армирования ${opened.root.mark}`}
+                    onClick={() => {
+                      s.select(opened.root.id);
+                      setTab("reinforcement");
+                    }}
+                  >
+                    {opened.root.evidence.reinforcementReview.status ===
+                    "partial"
+                      ? "Каркас частично · сверка"
+                      : "Каркас не восстановлен · сверка"}
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     s.set({

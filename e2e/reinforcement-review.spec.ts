@@ -42,3 +42,31 @@ for (const mobile of [false, true])
       await page.evaluate(() => document.documentElement.scrollWidth),
     ).toBeLessThanOrEqual(mobile ? 390 : 1440);
   });
+
+test("Отдельный вид сразу предупреждает о неполноте каркаса", async ({
+  page,
+}) => {
+  await page.goto("/?assembly=canopy");
+  await page.getByLabel("Поиск конструкций").fill("Пм6");
+  await page
+    .getByRole("button", { name: "Пм6 Плита Пм6", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Открыть отдельно", exact: true })
+    .click();
+  const warning = page.getByRole("button", {
+    name: "Полнота армирования Пм6",
+    exact: true,
+  });
+  await expect(warning).toBeVisible();
+  await expect(warning).toContainText("Каркас частично");
+  await warning.click();
+  await expect(
+    page
+      .getByRole("region", { name: "Сверка армирования Пм6", exact: true })
+      .first(),
+  ).toContainText("Х1");
+  await expect(
+    page.getByLabel("Марка армирования").locator("option"),
+  ).toHaveCount(2);
+});
