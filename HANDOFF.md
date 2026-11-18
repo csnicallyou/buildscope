@@ -1,3 +1,11 @@
+## Актуально: 0.15.2 опубликован и проверен
+
+Сначала верх PROJECT_STATE и docs/WORKSPACE_UX.md. Код fb997eb в PRIVATE codex/unified-construction-workspace опубликован release20261118T032812. Typecheck/lint/116 unit/10 workspace/37 E2E/обе сборки успешны. Все23 раздела и редакторы осмотрены. Внешние проверки всех3 ролей, реальные mobile tap подписи/списка/маркера, автоматический серверный PDF в обоих режимах, SHA обоих оригиналов и независимый backup прошли. БД schema2,3 пользователя,1 наряд,44 construction-записи сохранены; текущий SHA пакета и имя копии в PROJECT_STATE.
+
+Новая оболочка: WorkbenchNavigation/WorkContextBar, ConstructionTree, OrderEvidencePane, experience.css/order-experience.css. Наряд имеет Работы/Люди и подписи/Вложения/Проверка; оригинал/данные рядом на ПК и Фото/Данные на телефоне. Не разделять URL источника: SourcePanel и DrawingComparison используют connectedPdfUrl. Декоративные tooltip и предупреждение карты не перехватывают касания, интерактивна сама map-site-link. На коротком canvas Gizmo сверху, строка статусов не меняет высоту от выбора. Mode=server устанавливается после получения черновика; тест управляет задержкой GET. Геометрия и Project не менялись.
+
+Дальше только прежний upgrade с текущей общей БД, без bootstrap/restore. Caddy/VPN не менять. Секреты/исходники/фото/БД/снимки остаются в исключённых каталогах. Старые .gitignore/share-скрипты/PNG не включать. Версию приложения в package-lock менять только у корня и packages[""], не у зависимостей. Приватные .deploy/cloud-workbench-check-0152.mjs и model-first-check.mjs — внешний smoke; при повторном скачивании backup выбрать новое имя, не перезаписывать существующую копию.
+
 ## 0.15.0 — интерфейс проверен, требуется выкладка
 
 Прочитать верх PROJECT_STATE и docs/WORKSPACE_UX.md. Ветка codex/unified-construction-workspace, checkpoint ae1241e. Все9 workspace/37 E2E/116 unit/typecheck/lint/обе сборки прошли,23 раздела/редакторы осмотрены. Новые модули WorkbenchNavigation/WorkContextBar/ConstructionTree/OrderEvidencePane и experience/order-experience. В useWorkspace mode=server устанавливать только после загрузки серверного черновика; regression integration/workspace.spec.ts управляет задержкой GET. На коротком canvas виджет осей сверху, строка статусов не меняет высоту при выборе. Геометрия/Project/schema2 не менялись.
