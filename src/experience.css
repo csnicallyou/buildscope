@@ -1,4 +1,13 @@
 /* A work surface with a permanent place/date/shift and task-level navigation. */
+.app .portfolio-map .leaflet-tooltip {
+  pointer-events: none;
+}
+.app .portfolio-map .map-site-link {
+  pointer-events: auto;
+}
+.app .map-network-note {
+  pointer-events: none;
+}
 .app .resource-navigation {
   display: flex;
   gap: 6px;
