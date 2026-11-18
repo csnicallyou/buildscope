@@ -1,3 +1,9 @@
+## 0.15.3 опубликован: мобильные формы
+
+Сначала верх PROJECT_STATE и docs/WORKSPACE_UX.md. Код0369629, ветка codex/mobile-order-scroll, release20261118T035247. Typecheck/lint/116unit/42E2E/10workspace/обе сборки и5 WebKit успешны. На телефоне work-order-layout — единый scroll карты и формы; только широкий экран600–850px и высота≤500px сохраняет две колонки. Не возвращать sticky выдачу/заголовок/сохранение редакторов. Поля16px; e2e/mobile-form-scroll проверяет реальные касания и hit-test, включая390×400.
+
+Внешние проверки всех3 ролей и мобильного WebKit прошли, база3users/1order/44records/schema2 и оригиналы сохранены. Новый независимый backup0.15.3, старые не перезаписывать. Скрипты и снимки в .deploy; .deploy/mobile-cloud-webkit.mjs проверяет опубликованный наряд без ввода значений, cloud-workbench-check-0153.mjs — роли/оригиналы/backup. Повторный backup требует нового имени (flagwx). Только прежний upgrade без bootstrap/restore, Caddy/VPN не менять. Чужие .gitignore/share-скрипты/PNG не включать. Физический iPhone ещё должен проверить пользователь.
+
 ## Мобильное исправление 0.15.3 — проверка продолжается
 
 Читать верх PROJECT_STATE. Ветка codex/mobile-order-scroll, checkpoint4e057b0. Изменения в order-experience.css: общий мобильный scroll формы/карты, кнопки не перекрывают поля,16px ввод, длинные действия переносятся. Новый e2e/mobile-form-scroll.spec.ts: пять размеров и hit-test полей. Typecheck/lint/116unit/10workspace/обе сборки прошли; полные E2E и WebKit ещё выполняются, production0.15.2. Дальше закончить проверки, осмотреть .deploy/mobile-final-0153, commit/push, upgrade с текущей БД, smoke/новый backup. Не трогать чужие PNG/.gitignore/share-скрипты. Старые backups не перезаписывать.
