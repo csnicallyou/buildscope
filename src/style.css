@@ -2453,3 +2453,6 @@ tfoot {
  .personal-entry-form button{grid-column:span 2}
  .personal-totals>div{flex-direction:column}
 }
+
+.app.mode-personal .workspace>.tree-panel,.app.mode-personal .workspace>.inspector-panel,.app.mode-personal .workspace>.properties-panel{display:none!important}
+.app.mode-personal .workspace>.main{display:block;flex:1 1 auto;max-width:100%;width:100%;min-width:0}
