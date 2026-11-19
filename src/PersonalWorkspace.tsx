@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Building2, ClipboardList, MapPinned, Box, FileCheck2, Plus, Download, ChevronLeft, Menu, X, Search } from "lucide-react";
+import { Building2, ClipboardList, MapPinned, Box, FileCheck2, Plus, Download, Menu, X, Search } from "lucide-react";
 import type { Project } from "./model";
 
 type Site = {id:string;name:string;address:string;notes:string;lat?:number;lon?:number};
@@ -10,7 +10,6 @@ const KEY="buildscope-personal-v2";
 const uuid=()=>crypto.randomUUID?.()||String(Date.now())+Math.random();
 const dateToday=()=>new Date().toLocaleDateString("sv-SE");
 const parseNumber=(v:string)=>v.trim()===""?null:Number(v);
-const clean=(v:unknown)=>typeof v==="string"?v:"";
 function load():DB {
  try {
   const saved=JSON.parse(localStorage.getItem(KEY)||"null");
