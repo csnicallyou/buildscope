@@ -1,5 +1,5 @@
 // Независимый прототип сменного журнала. Данные хранятся только в localStorage.
-const STORAGE='buildscope-reboot-ledger-v1';
+const STORAGE='buildscope-reboot-ledger-v2';
 const initial=[];
 let records;
 try{const raw=localStorage.getItem(STORAGE);records=raw?JSON.parse(raw):structuredClone(initial);if(!Array.isArray(records))throw Error('invalid')}catch{records=structuredClone(initial)}
