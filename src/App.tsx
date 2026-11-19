@@ -551,6 +551,13 @@ export default function App() {
     download(JSON.stringify(s.project, null, 2), "buildscope.json");
     setMessage("Проект сохранён в JSON");
   }
+  if (tab === "personal") {
+    return (
+      <div className="personal-shell">
+        <PersonalWorkspace project={s.project} onModel={() => setTab("model")} />
+      </div>
+    );
+  }
   return (
     <div
       className={`app mode-${tab} ${treeCollapsed ? "tree-collapsed" : ""} ${inspectorCollapsed ? "inspector-collapsed" : ""} ${displayOpen || s.section ? "display-options-open" : ""} ${tab === "workorder" ? "work-order-active" : ""} ${workActive ? "installation-active" : ""} ${s.theme} mobile-${s.mobilePanel} ${s.mobileExpanded ? "mobile-expanded" : ""} ${mobileTools ? "mobile-tools-open" : ""}`}
