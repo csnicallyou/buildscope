@@ -1,0 +1,1 @@
+{"name":"buildscope-reboot-prototype","private":true,"version":"0.1.0","type":"module","scripts":{"test":"node --test","check":"node --check app.js && node --check ledger.js"}}
