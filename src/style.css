@@ -2456,3 +2456,22 @@ tfoot {
 
 .app.mode-personal .workspace>.tree-panel,.app.mode-personal .workspace>.inspector-panel,.app.mode-personal .workspace>.properties-panel{display:none!important}
 .app.mode-personal .workspace>.main{display:block;flex:1 1 auto;max-width:100%;width:100%;min-width:0}
+
+/* Personal runs as its own shell; engineering controls are mounted only on demand. */
+.personal-shell{min-height:100dvh;width:100%;overflow-x:hidden;background:#0c131d;color:#e7edf4}
+.personal-shell .personal{max-width:1600px;margin:auto;min-height:100dvh}
+.personal-shell .personal-head{position:sticky;top:0;z-index:5;background:#0c131df5;padding:12px 0;border-bottom:1px solid #293a4c}
+.personal-shell .personal-panel{box-shadow:0 6px 24px #00000014}
+.personal-shell .personal-entry-form button[type=submit]{background:#e58a36}
+@media(max-width:760px){
+.personal-shell .personal-head{position:relative;padding:4px 0 12px}
+.personal-shell .personal-head h1{font-size:25px}
+.personal-shell .personal-head p{font-size:12px;margin:4px 0}
+.personal-shell .personal-panel{padding:14px;border-radius:12px}
+.personal-shell .personal-entry-form{gap:9px}
+.personal-shell .personal-entry-form label{font-size:12px}
+.personal-shell .personal-entry-form input,.personal-shell .personal-entry-form select{font-size:16px}
+.personal-shell .personal-toolbar{position:sticky;top:0;z-index:4;background:#0c131df5;padding:8px 0;margin:0 0 12px}
+.personal-shell .personal-table-wrap{margin:0 -8px}
+.personal-shell .personal-site-list{grid-template-columns:1fr}
+}
