@@ -1,6 +1,7 @@
 name: BuildScope preview (Pages)
 on:
   workflow_dispatch:
+  # Publish the current development-branch preview on every main workflow update.
   push:
     branches: [main]
     paths:
