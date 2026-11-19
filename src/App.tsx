@@ -659,7 +659,6 @@ export default function App() {
         </button>
       </div>
       <nav className="tabs workspace-modes" aria-label="Режимы работы">
-        <button className={tab === "personal" ? "active" : ""} onClick={() => setTab("personal")}><ClipboardList size={17} /> Объекты и смены</button>
         <button
           className={tab === "model" ? "active" : ""}
           onClick={() => setTab("model")}
@@ -1419,8 +1418,6 @@ export default function App() {
                   }}
                 />
               </div>
-            ) : tab === "personal" ? (
-              <PersonalWorkspace project={s.project} onModel={() => setTab("model")} />
             ) : tab === "workdays" ? (
               <DailyWorkOrders
                 orders={workArchive.orders}
