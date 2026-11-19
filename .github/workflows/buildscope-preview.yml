@@ -1,0 +1,41 @@
+name: Publish BuildScope visual preview
+on:
+  push:
+    branches: [design/buildscope-reboot-2026-11-19]
+    paths:
+      - 'reboot-app/**'
+      - '.github/workflows/buildscope-preview.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: buildscope-pages-preview
+  cancel-in-progress: true
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Verify JavaScript syntax and tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
+        working-directory: reboot-app
+      - run: npm test
+        working-directory: reboot-app
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload static preview
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: reboot-app
+      - name: Deploy preview
+        id: deployment
+        uses: actions/deploy-pages@v4
