@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Box, Building2, CalendarDays, ClipboardList, Package, Home, Plus, Download, Search, X, ChevronRight, FileText, Bell, ArrowLeft, MapPinned } from "lucide-react";
+import { Box, Building2, CalendarDays, ClipboardList, Package, Home, Plus, Download, Search, X, ChevronRight, FileText, Bell, MapPinned } from "lucide-react";
 import type { Project } from "./model";
 
 type Site={id:string;name:string;address:string;notes:string;lat?:number;lon?:number};
