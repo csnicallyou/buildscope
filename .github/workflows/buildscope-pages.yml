@@ -1,0 +1,44 @@
+name: BuildScope preview (Pages)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/buildscope-pages.yml'
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout BuildScope preview from development branch
+        uses: actions/checkout@v4
+        with:
+          ref: design/buildscope-reboot-2026-11-19
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript
+        run: npm run check
+        working-directory: reboot-app
+      - name: Test preview
+        run: npm test
+        working-directory: reboot-app
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload preview
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: reboot-app
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
