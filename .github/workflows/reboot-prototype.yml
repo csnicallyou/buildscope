@@ -1,0 +1,22 @@
+name: Reboot prototype checks
+on:
+  push:
+    branches:
+      - design/buildscope-reboot-2026-11-19
+    paths:
+      - 'reboot-app/**'
+      - '.github/workflows/reboot-prototype.yml'
+  workflow_dispatch:
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: reboot-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
+      - run: npm test
