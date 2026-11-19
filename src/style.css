@@ -2395,3 +2395,61 @@ tfoot {
     grid-template-rows: minmax(0, 1fr);
   }
 }
+
+
+/* BuildScope Personal: mobile-first real-work interface, existing engineering viewer preserved */
+.app.mode-personal .workspace{display:block}
+.app.mode-personal .sidebar,.app.mode-personal .inspector,.app.mode-personal .mobile-controls{display:none!important}
+.app.mode-personal .main{width:100%;max-width:none;min-width:0;overflow:auto}
+.personal{padding:clamp(14px,3vw,36px);color:#e7edf4;min-height:65vh;background:#0c131d;box-sizing:border-box}
+.personal *{box-sizing:border-box}
+.personal-head{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.personal-head small{color:#ed963e;letter-spacing:.12em;font-weight:700}
+.personal h1{font-size:clamp(24px,3vw,38px);margin:7px 0}
+.personal h2{font-size:20px;margin:0 0 10px}
+.personal h3{font-size:15px;margin:20px 0 10px}
+.personal p,.personal small{color:#a5b3c3}
+.personal-actions,.personal-toolbar,.personal-toolbar nav{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.personal button,.personal input,.personal select{font:inherit;min-height:42px;border-radius:9px;border:1px solid #354356;padding:9px 12px;background:#192433;color:#e7edf4}
+.personal button{cursor:pointer}
+.personal button:hover,.personal button.selected{border-color:#ed963e;background:#45301f}
+.personal button:disabled{opacity:.45;cursor:not-allowed}
+.personal-toolbar{margin:12px 0 20px}
+.personal-toolbar>select{max-width:300px;width:100%}
+.personal-panel{border:1px solid #293a4c;border-radius:16px;background:#121d2b;padding:clamp(14px,2vw,24px);margin-bottom:16px;min-width:0}
+.personal-form-row{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}
+.personal-form-row input{flex:1;min-width:200px}
+.personal-site-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.personal-site-list button{text-align:left;display:flex;flex-direction:column;gap:8px}
+.personal-entry-form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.personal-entry-form label{display:flex;flex-direction:column;gap:6px;color:#b6c3d0;font-size:13px;min-width:0}
+.personal-entry-form input,.personal-entry-form select{width:100%;min-width:0}
+.personal-entry-form .personal-wide{grid-column:span 2}
+.personal-entry-form button{align-self:end;background:#d97d2c;border-color:#d97d2c;color:#101820;font-weight:700}
+.personal-search{width:min(100%,430px);margin:8px 0 16px}
+.personal-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.personal table{border-collapse:collapse;width:100%;min-width:740px;font-size:13px}
+.personal th,.personal td{border-bottom:1px solid #293a4c;padding:12px;text-align:left;vertical-align:top}
+.personal th{color:#b7c6d5}
+.personal td small{display:block;margin-top:5px}
+.personal-totals{display:grid;gap:8px}
+.personal-totals>div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #293a4c;padding:8px 0}
+@media(max-width:760px){
+ .app.mode-personal .header{min-height:48px}
+ .app.mode-personal .project-name,.app.mode-personal .file-actions{display:none}
+ .app.mode-personal .workspace-modes{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+ .app.mode-personal .workspace-modes button{white-space:nowrap;flex:0 0 auto}
+ .app.mode-personal .workspace{min-height:0}
+ .app.mode-personal .main{height:auto;min-height:70vh}
+ .personal{padding:12px}
+ .personal-head{align-items:flex-start}
+ .personal-actions{width:100%}
+ .personal-actions button{flex:1}
+ .personal-toolbar>select{max-width:none}
+ .personal-toolbar nav{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .personal-toolbar nav button{font-size:12px;padding:8px 4px}
+ .personal-entry-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .personal-entry-form .personal-wide{grid-column:span 2}
+ .personal-entry-form button{grid-column:span 2}
+ .personal-totals>div{flex-direction:column}
+}
