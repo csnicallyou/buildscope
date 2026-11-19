@@ -1,10 +1,15 @@
-name: BuildScope preview (Pages)
+name: BuildScope 3D visual preview (Pages)
 on:
   workflow_dispatch:
-  # Publish the current development-branch preview on every main workflow update.
   push:
     branches: [main]
     paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
       - '.github/workflows/buildscope-pages.yml'
 permissions:
   contents: read
@@ -20,26 +25,25 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout BuildScope preview from development branch
+      - name: Checkout original BuildScope 3D application
         uses: actions/checkout@v4
-        with:
-          ref: design/buildscope-reboot-2026-11-19
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Check JavaScript
-        run: npm run check
-        working-directory: reboot-app
-      - name: Test preview
-        run: npm test
-        working-directory: reboot-app
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build original 3D app
+        run: npm run build
+        env:
+          GITHUB_PAGES: 'true'
       - name: Configure Pages
         uses: actions/configure-pages@v5
-      - name: Upload preview
+      - name: Upload built app
         uses: actions/upload-pages-artifact@v3
         with:
-          path: reboot-app
+          path: dist
       - name: Deploy to Pages
         id: deployment
         uses: actions/deploy-pages@v4
