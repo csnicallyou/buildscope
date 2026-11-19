@@ -52,3 +52,5 @@ python3 -m http.server 8080
 
 Workflow `.github/workflows/buildscope-preview.yml` публикует содержимое `reboot-app` в GitHub Pages после прохождения проверок. В настройках репозитория **Settings → Pages** необходимо выбрать **Build and deployment → Source: GitHub Actions**. Если GitHub Pages не поддерживается для приватного репозитория на текущем тарифе, понадобится иной хостинг или изменение видимости; не делайте репозиторий публичным без отдельного решения.
 
+
+Публичный тестовый просмотр: публикация запускается автоматически при изменениях этой папки после включения GitHub Pages (Source: GitHub Actions).
