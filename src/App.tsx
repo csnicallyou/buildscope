@@ -554,7 +554,7 @@ export default function App() {
   if (tab === "personal") {
     return (
       <div className="personal-shell">
-        <PersonalWorkspace project={s.project} onModel={() => setTab("model")} onMalenkovskayaModel={() => openAssembly("canopy")} onMalenkovskayaPavilion={() => openAssembly("pavilion")} onMalenkovskayaSections={() => openAssembly("canopy", "sections")} onMalenkovskayaDetails={() => { s.load(createKzhDetails()); setTab("model"); }} />
+        <PersonalWorkspace project={s.project} onModel={() => setTab("model")} />
       </div>
     );
   }
